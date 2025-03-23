@@ -1,6 +1,6 @@
 {
-  "name": "wxt-svelte-starter",
-  "description": "manifest.json description",
+  "name": "degree_audit_plus",
+  "description": "An extension to create 4-year plans at UT Austin",
   "private": true,
   "version": "0.0.0",
   "type": "module",
