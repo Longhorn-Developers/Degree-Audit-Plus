@@ -1,6 +1,7 @@
 <script lang="ts">
   import svelteLogo from '../../assets/svelte.svg'
   import Counter from '../../lib/Counter.svelte'
+  import '~/assets/tailwind.css'
 
   function doThing() {
     browser.tabs.create({
@@ -12,7 +13,7 @@
 <main>
   <div>
   </div>
-  <h1>Degree Audit Plus</h1>
+  <h1 class="text-red-400">Degree Audit Plus</h1>
 
   <div class="card">
     <Counter />
