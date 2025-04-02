@@ -44,6 +44,7 @@ An extension to make making 4-year plans at UT austin easier
 - ^^ (firefox): `bun build:firefox`
 - make a distribution zip (chrome): `bun zip`
 - ^^ (firefox) (do you see the pattern yet?): `bun zip:firefox`
+- run testing scripts: `bun run test`
 - make ts types?: `bun postinstall`
 
 ## Structure
