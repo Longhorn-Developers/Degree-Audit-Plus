@@ -37,6 +37,14 @@ An extension to make making 4-year plans at UT austin easier
 - contribution guidelines: don't be mean
 - code of conduct: don't be mean
 
+## Tooling
+- ESLint — linting
+- Prettier — formatting
+- Vitest — unit testing
+- Commitlint — commit message checking
+- Husky — git hooks
+- GitHub Actions — automated workflows
+
 ## Available Scripts
 - build the extension for development (chrome): `bun dev`
 - ^^ (firefox): `bun dev:firefox`
