@@ -1,5 +1,4 @@
 <script lang="ts">
-  import svelteLogo from '../../assets/svelte.svg'
   import Counter from '../../lib/Counter.svelte'
   import '~/assets/tailwind.css'
 
@@ -23,8 +22,7 @@
     Soon!
   </p>
 
-  <!-- svelte-ignore a11y_consider_explicit_label -->
-   <button on:click={doThing}>click to plan</button>
+  <button on:click={doThing}>click to plan</button>
 
 </main>
 
