@@ -1,62 +1,112 @@
-# Degree Audit Plus
 
-Build status badge once i get that setup
+# UT Degree Audit Plus ✨
 
-An extension to make making 4-year plans at UT austin easier
+An unofficial Chrome extension designed to enhance and modernize the degree planning experience for students at the University of Texas at Austin.
 
-## Overview
-- problem: making 4 year plans is hard
-- solution: make it easier!
-- target audience: people who go to UT who intend to graduate
-- screenshots: soon
+## The Problem
 
-## Getting Started
+The official degree audit system is powerful but can be difficult to read, non-interactive, and challenging for long-term planning.ee Audit Plus aims to solve this by transforming the static audit page into a dynamic, interactive, and user-friendly dashboard through an extension.
 
-### Install
-- install bun [here](https://bun.sh)
-- clone the repo: `git clone https://github.com/Longhorn-Developers/Degree-Audit-Plus`
-- go into the appropriate directory: `cd Degree-Audit-Plus`
-- install deps: `bun install`
+## Key Features (to be implemented)
 
-### Use
-- for end users: install from chrome store
-- devs: use `bun dev` to start the extension, which puts the output in `.output`, but it'll autoload into a new chrome window
+  * ** Interactive Dashboard:** Replaces the default audit layout with a clean, modern interface that visualizes your degree progress.
+  * ** Dynamic Checklists:** See exactly which requirements you've fulfilled and what's left to complete for your majors, minors, and certificates.
+  * ** What-If Scenarios:** Experiment with adding a minor or changing majors to instantly see how it would affect your graduation requirements.
+  * ** Prerequisite Visualization:** A clear, graphical view of course dependencies so you never register for a class out of sequence.
+  * ** Four-Year Planner:** Drag and drop courses into a semester-by-semester plan to build a clear roadmap to graduation.
+  * ** Secure & Private:** The extension runs entirely in your local browser. Your academic data is never sent to, stored on, or seen by any external server.
 
-### Other stuff
-??
+*(Add a screenshot or a GIF of your extension in action here\!)*
 
-## Architecture 
-- chrome extension, wxt, tailwind css, idk what else
-- key components: 4 year plan maker, degree audit runner, this needs more planning
-- design principles: be aesthetically pleasing
+## Tech Stack
 
-## Workflow
-- use conventional commits
-- name branches as `your-name-or-github/feat-or-fix/DESCRIPTION`
-- PR process: idk make one, describe the feature and such
-- contribution guidelines: don't be mean
-- code of conduct: don't be mean
+  * **Frontend:** React, TypeScript
+  * **Styling:** Tailwind CSS
+  * **State Management:** Redux Toolkit
+  * **Backend & Data:** Supabase (for storing user-created plans)
+  * **Platform:** Chrome Extension API (Manifest V3)
+  * **Build Tools:** WXT, Vite, Node.js
 
-## Tooling
-- ESLint — linting
-- Prettier — formatting
-- Vitest — unit testing
-- Commitlint — commit message checking
-- Husky — git hooks
-- GitHub Actions — automated workflows
+## Installation
 
-## Available Scripts
-- build the extension for development (chrome): `bun dev`
-- ^^ (firefox): `bun dev:firefox`
-- make an actual build of the extension (chrome): `bun build`
-- ^^ (firefox): `bun build:firefox`
-- make a distribution zip (chrome): `bun zip`
-- ^^ (firefox) (do you see the pattern yet?): `bun zip:firefox`
-- run testing scripts: `bun run test`
-- make ts types?: `bun postinstall`
+### For Students (Recommended)
 
-## Structure
-see wxt's project structure [here](https://wxt.dev/guide/essentials/project-structure.html)
+1.  Install the extension from the [**Chrome Web Store**](https://www.google.com/search?q=https://chrome.google.com/webstore/detail/your-extension-id) (Link coming soon\!).
+2.  Navigate to the UT Degree Audit page, run an audit, and the extension will automatically activate.
 
-## Deployment
-- tbd
+### For Developers
+
+To get the development environment running locally:
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/your-username/ut-degree-audit-plus.git
+    cd ut-degree-audit-plus
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Run the development build:**
+    This command will watch for file changes and rebuild the extension automatically.
+
+    ```bash
+    npm run dev
+    ```
+
+4.  **Load the extension in Chrome:**
+
+      * Open Chrome and navigate to `chrome://extensions`.
+      * Enable **"Developer mode"** in the top right corner.
+      * Click on **"Load unpacked"**.
+      * Select the `.output/chrome-mv3` folder that was created in the project directory.
+
+5.  **Development Tools:**
+
+    The project uses WXT as the extension framework, which provides:
+    * Hot Module Replacement (HMR) for fast development
+    * TypeScript support out of the box
+    * Automatic manifest generation
+
+    **Available Scripts:**
+    * `npm run dev` - Start development mode with hot reload
+    * `npm run dev:firefox` - Start development mode for Firefox
+    * `npm run build` - Build production-ready extension for Chrome
+    * `npm run build:firefox` - Build production-ready extension for Firefox
+    * `npm run compile` - Type-check without building
+
+    **Styling with Tailwind CSS:**
+    * Tailwind CSS is configured and ready to use
+    * Use utility classes directly in your React components
+    * Configuration file: `tailwind.config.js`
+    * Main stylesheet: `entrypoints/popup/style.css`
+
+## Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## The Team
+
+This project is led and maintained by a dedicated group of UT Austin students.
+ 
+## License
+
+This project is distributed under the MIT License. See `LICENSE.txt` for more information.
+
+-----
+
+### ⚖️ Disclaimer
+
+UT Degree Audit Plus is an independent, student-led project and is **not** an official application of, or affiliated with, The University of Texas at Austin. The tool is provided as-is, without warranty. Always confirm your academic plan with your academic advisor.
