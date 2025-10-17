@@ -1,6 +1,26 @@
-import { defineConfig } from 'wxt';
+import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ['@wxt-dev/module-react'],
+	modules: ["@wxt-dev/module-react"],
+
+	manifest: {
+		name: "Degree Audit + by LHD",
+		description:
+			"Created by Longhorn Developers (LHD) to enhance the degree planning experience for students at the University of Texas at Austin.",
+		version: "1.0.0",
+		manifest_version: 3,
+		action: {
+			default_popup: "index.html",
+		},
+		icons: {
+			"16": "icon/LHD Logo.png",
+			"32": "icon/LHD Logo.png",
+			"48": "icon/LHD Logo.png",
+			"128": "icon/LHD Logo.png",
+			"256": "icon/LHD Logo.png",
+		},
+
+		permissions: ["storage", "tabs", "scripting"],
+	},
 });
