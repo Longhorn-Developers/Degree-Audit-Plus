@@ -110,3 +110,5 @@ This project is distributed under the MIT License. See `LICENSE.txt` for more in
 ### ⚖️ Disclaimer
 
 UT Degree Audit Plus is an independent, student-led project and is **not** an official application of, or affiliated with, The University of Texas at Austin. The tool is provided as-is, without warranty. Always confirm your academic plan with your academic advisor.
+
+suhas's super cool branch!!!
