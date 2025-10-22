@@ -23,4 +23,12 @@ export default defineConfig({
 
 		permissions: ["storage", "tabs", "scripting"],
 	},
+
+	vite: () => ({
+		css: {
+			postcss: {
+				plugins: [require("@tailwindcss/postcss"), require("autoprefixer")],
+			},
+		},
+	}),
 });
