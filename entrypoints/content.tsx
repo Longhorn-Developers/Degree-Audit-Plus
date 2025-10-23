@@ -1,31 +1,6 @@
 import { createRoot } from "react-dom/client";
 import TryDAPBanner from "./components/banner";
 
-export default defineContentScript({
-  matches: ["https://utdirect.utexas.edu/apps/degree/audits/"],
-  cssInjectionMode: "ui",
-  async main(ctx) {
-    console.log("Content script loaded.");
-
-    // Load fonts dynamically
-    loadFonts();
-
-    defineUTDToppageHeight();
-
-    const tryDapBanner = await createShadowRootUi(ctx, {
-      name: "dap-banner-ui",
-      position: "inline",
-      append: "before",
-      anchor: "#service_content",
-      onMount(container) {
-        createRoot(container).render(<TryDAPBanner />);
-      },
-    });
-
-    tryDapBanner.mount();
-  },
-});
-
 function loadFonts() {
   const preconnect1 = document.createElement("link");
   preconnect1.rel = "preconnect";
@@ -46,6 +21,28 @@ function loadFonts() {
 
   console.log("Staatliches and Roboto Flex fonts loaded dynamically");
 }
+
+export default defineContentScript({
+  matches: ["https://utdirect.utexas.edu/apps/degree/audits/"],
+  cssInjectionMode: "ui",
+  async main(ctx) {
+    console.log("Content script loaded.");
+    // Load fonts dynamically
+    loadFonts();
+    defineUTDToppageHeight();
+    const tryDapBanner = await createShadowRootUi(ctx, {
+      name: "dap-banner-ui",
+      position: "inline",
+      append: "before",
+      anchor: "#service_content",
+      onMount(container) {
+        createRoot(container).render(<TryDAPBanner />);
+      },
+    });
+
+    tryDapBanner.mount();
+  },
+});
 
 function defineUTDToppageHeight() {
   const utdToppage = document.querySelector("#utd_toppage");
