@@ -22,6 +22,10 @@ export default defineConfig({
 		},
 
 		permissions: ["storage", "tabs", "scripting"],
+		// Allow injecting scripts into UTDirect pages or via activeTab when user clicks
+		host_permissions: ["https://utdirect.utexas.edu/*"],
+		optional_host_permissions: [],
+		optional_permissions: ["activeTab"],
 	},
 
 	vite: () => ({
