@@ -1,20 +1,25 @@
 import { forwardRef } from "react";
 import { cn } from "~/lib/utils";
 
-type DivProps = React.HTMLAttributes<HTMLDivElement> & {
-	xSpacing?: "left" | "center" | "right" | "baseline" | "stretch";
-	ySpacing?: "top" | "middle" | "bottom" | "space-between" | "space-around";
+type HelperDivProps = React.HTMLAttributes<HTMLDivElement> & {
 	gap?: number;
 	centered?: boolean;
+	fill?: boolean;
 };
 
-export const VStack = forwardRef<HTMLDivElement, DivProps>(
+type VerticalDivProps = HelperDivProps & {
+	xSpacing?: "left" | "center" | "right" | "space-between" | "space-around";
+	ySpacing?: "top" | "middle" | "bottom" | "stretch" | "baseline";
+};
+
+export const VStack = forwardRef<HTMLDivElement, VerticalDivProps>(
 	(
 		{
 			children,
 			className,
 			gap = 4,
 			centered = false,
+			fill = false,
 			xSpacing,
 			ySpacing,
 			...props
@@ -28,14 +33,17 @@ export const VStack = forwardRef<HTMLDivElement, DivProps>(
 			<div
 				ref={ref}
 				className={cn("flex flex-col", className, {
+					"h-full": fill,
+					"items-start": _xSpacing === "left",
 					"items-center": _xSpacing === "center",
-					"items-left": _xSpacing === "left",
-					"items-right": _xSpacing === "right",
-					"justify-center": _ySpacing === "middle",
+					"items-end": _xSpacing === "right",
+					"items-stretch": _xSpacing === "space-between",
+					"items-baseline": _xSpacing === "space-around",
 					"justify-start": _ySpacing === "top",
+					"justify-center": _ySpacing === "middle",
 					"justify-end": _ySpacing === "bottom",
-					"justify-between": _ySpacing === "space-between",
-					"justify-around": _ySpacing === "space-around",
+					"justify-between": _ySpacing === "stretch",
+					"justify-around": _ySpacing === "baseline",
 				})}
 				style={{ gap: `${gap / 4}rem` }}
 				{...props}
@@ -46,12 +54,18 @@ export const VStack = forwardRef<HTMLDivElement, DivProps>(
 	}
 );
 
-export const HStack = forwardRef<HTMLDivElement, DivProps>(
+type HorizontalDivProps = HelperDivProps & {
+	xSpacing?: "left" | "center" | "right" | "between" | "around";
+	ySpacing?: "top" | "middle" | "bottom" | "stretch" | "baseline";
+};
+
+export const HStack = forwardRef<HTMLDivElement, HorizontalDivProps>(
 	(
 		{
 			children,
 			className,
 			gap = 4,
+			fill = false,
 			centered = false,
 			xSpacing,
 			ySpacing,
@@ -62,18 +76,22 @@ export const HStack = forwardRef<HTMLDivElement, DivProps>(
 		HStack.displayName = "HStack";
 		const _xSpacing = centered ? "center" : xSpacing ?? "left";
 		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+
 		return (
 			<div
 				ref={ref}
 				className={cn("flex flex-row", className, {
-					"items-center": _xSpacing === "center",
-					"items-left": _xSpacing === "left",
-					"items-right": _xSpacing === "right",
-					"justify-start": _ySpacing === "top",
-					"justify-center": _ySpacing === "middle",
-					"justify-end": _ySpacing === "bottom",
-					"justify-between": _ySpacing === "space-between",
-					"justify-around": _ySpacing === "space-around",
+					"w-full": fill,
+					"justify-start": _xSpacing === "left",
+					"justify-center": _xSpacing === "center",
+					"justify-end": _xSpacing === "right",
+					"justify-between": _xSpacing === "between",
+					"justify-around": _xSpacing === "around",
+					"items-start": _ySpacing === "top",
+					"items-center": _ySpacing === "middle",
+					"items-end": _ySpacing === "bottom",
+					"items-stretch": _ySpacing === "stretch",
+					"items-baseline": _ySpacing === "baseline",
 				})}
 				style={{ gap: `${gap / 4}rem` }}
 				{...props}
@@ -84,13 +102,17 @@ export const HStack = forwardRef<HTMLDivElement, DivProps>(
 	}
 );
 
-export const Wrap = forwardRef<HTMLDivElement, DivProps & { maxCols?: number }>(
+export const Wrap = forwardRef<
+	HTMLDivElement,
+	HorizontalDivProps & { maxCols?: number }
+>(
 	(
 		{
 			children,
 			className,
 			gap = 4,
 			centered = false,
+			fill = false,
 			xSpacing,
 			ySpacing,
 			maxCols,
@@ -105,15 +127,18 @@ export const Wrap = forwardRef<HTMLDivElement, DivProps & { maxCols?: number }>(
 			<div
 				ref={ref}
 				className={cn("flex flex-row flex-wrap", className, {
+					"w-full": fill,
 					"flex-wrap": maxCols !== -1,
-					"items-center": _xSpacing === "center",
-					"items-left": _xSpacing === "left",
-					"items-right": _xSpacing === "right",
-					"justify-center": _ySpacing === "middle",
-					"justify-start": _ySpacing === "top",
-					"justify-end": _ySpacing === "bottom",
-					"justify-between": _ySpacing === "space-between",
-					"justify-around": _ySpacing === "space-around",
+					"justify-start": _xSpacing === "left",
+					"justify-center": _xSpacing === "center",
+					"justify-end": _xSpacing === "right",
+					"justify-between": _xSpacing === "between",
+					"justify-around": _xSpacing === "around",
+					"items-start": _ySpacing === "top",
+					"items-center": _ySpacing === "middle",
+					"items-end": _ySpacing === "bottom",
+					"items-stretch": _ySpacing === "stretch",
+					"items-baseline": _ySpacing === "baseline",
 				})}
 				style={{ gap: `${gap / 4}rem` }}
 				{...props}
@@ -143,6 +168,7 @@ type GridProps = React.HTMLAttributes<HTMLDivElement> & {
 		| "space-between"
 		| "space-around"
 		| "space-evenly";
+	fill?: boolean;
 };
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
 	(
@@ -155,6 +181,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 			direction = "row",
 			xSpacing = "left",
 			ySpacing = "top",
+			fill = false,
 			...props
 		},
 		ref
@@ -164,6 +191,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 			<div
 				ref={ref}
 				className={cn("grid", className, {
+					"w-full": fill,
 					"grid-cols-1": direction === "column",
 					"grid-cols-2": direction === "row",
 					"items-center": xSpacing === "center",
