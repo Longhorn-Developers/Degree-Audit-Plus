@@ -8,8 +8,8 @@ type HelperDivProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 type VerticalDivProps = HelperDivProps & {
-	xSpacing?: "left" | "center" | "right" | "space-between" | "space-around";
-	ySpacing?: "top" | "middle" | "bottom" | "stretch" | "baseline";
+	x?: "left" | "center" | "right" | "space-between" | "space-around";
+	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
 };
 
 export const VStack = forwardRef<HTMLDivElement, VerticalDivProps>(
@@ -20,15 +20,15 @@ export const VStack = forwardRef<HTMLDivElement, VerticalDivProps>(
 			gap = 4,
 			centered = false,
 			fill = false,
-			xSpacing,
-			ySpacing,
+			x,
+			y,
 			...props
 		},
 		ref
 	) => {
 		VStack.displayName = "VStack";
-		const _xSpacing = centered ? "center" : xSpacing ?? "left";
-		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+		const _xSpacing = centered ? "center" : x ?? "left";
+		const _ySpacing = centered ? "middle" : y ?? "top";
 		return (
 			<div
 				ref={ref}
@@ -55,8 +55,8 @@ export const VStack = forwardRef<HTMLDivElement, VerticalDivProps>(
 );
 
 type HorizontalDivProps = HelperDivProps & {
-	xSpacing?: "left" | "center" | "right" | "between" | "around";
-	ySpacing?: "top" | "middle" | "bottom" | "stretch" | "baseline";
+	x?: "left" | "center" | "right" | "between" | "around";
+	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
 };
 
 export const HStack = forwardRef<HTMLDivElement, HorizontalDivProps>(
@@ -67,8 +67,8 @@ export const HStack = forwardRef<HTMLDivElement, HorizontalDivProps>(
 			gap = 4,
 			fill = false,
 			centered = false,
-			xSpacing,
-			ySpacing,
+			x: xSpacing,
+			y: ySpacing,
 			...props
 		},
 		ref
@@ -113,8 +113,8 @@ export const Wrap = forwardRef<
 			gap = 4,
 			centered = false,
 			fill = false,
-			xSpacing,
-			ySpacing,
+			x: xSpacing,
+			y: ySpacing,
 			maxCols,
 			...props
 		},

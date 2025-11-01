@@ -78,4 +78,16 @@ export const CloseButton = forwardRef<HTMLButtonElement, ButtonProps>(
 	}
 );
 
+export const IconButton = forwardRef<
+	HTMLButtonElement,
+	Omit<ButtonProps, "children"> & { icon: React.ReactNode; label: string }
+>((props, ref) => {
+	return (
+		<Button ref={ref} {...props}>
+			{props.icon}
+			{props.label}
+		</Button>
+	);
+});
+
 export default Button;

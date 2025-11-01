@@ -14,8 +14,8 @@ const TryDAPBanner = () => {
 			exit={{ opacity: 0, y: -100 }}
 			transition={{ duration: 0.3 }}
 		>
-			<HStack xSpacing="between" ySpacing="stretch" className="h-full w-full">
-				<HStack xSpacing="left" ySpacing="middle" className="flex-1">
+			<HStack x="between" y="stretch" className="h-full w-full">
+				<HStack x="left" y="middle" className="flex-1">
 					<div className="relative z-10">
 						<LHDLogo />
 					</div>
@@ -29,7 +29,7 @@ const TryDAPBanner = () => {
 						</p>
 					</div>
 				</HStack>
-				<HStack xSpacing="right" ySpacing="bottom">
+				<HStack x="right" y="bottom">
 					<Button onClick={openDAPMainPage} color="white">
 						<ArrowTopRightIcon className="w-8 h-8" /> Open Degree Audit Plus
 					</Button>
