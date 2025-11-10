@@ -1,5 +1,7 @@
 import { createRoot } from "react-dom/client";
 import TryDAPBanner from "./components/banner";
+// Import your Tailwind CSS - THIS IS CRITICAL for shadow DOM
+import "./styles/content.css"; // Make sure this path is correct
 
 function loadFonts() {
   const preconnect1 = document.createElement("link");
@@ -24,18 +26,21 @@ function loadFonts() {
 
 export default defineContentScript({
   matches: ["https://utdirect.utexas.edu/apps/degree/audits/"],
-  cssInjectionMode: "ui",
+  cssInjectionMode: "ui", // This should inject CSS into shadow DOM
   async main(ctx) {
     console.log("Content script loaded.");
     // Load fonts dynamically
     loadFonts();
     defineUTDToppageHeight();
+
     const tryDapBanner = await createShadowRootUi(ctx, {
       name: "dap-banner-ui",
       position: "inline",
       append: "before",
       anchor: "#service_content",
       onMount(container) {
+        // The container here is inside the shadow DOM
+        // WXT should automatically inject your CSS here with cssInjectionMode: "ui"
         createRoot(container).render(<TryDAPBanner />);
       },
     });

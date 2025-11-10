@@ -26,6 +26,12 @@ export default defineConfig({
 		host_permissions: ["https://utdirect.utexas.edu/*"],
 		optional_host_permissions: [],
 		optional_permissions: ["activeTab"],
+		web_accessible_resources: [
+			{
+				resources: ["Grid.png"],
+				matches: ["<all_urls>"],
+			},
+		],
 	},
 
 	vite: () => ({

@@ -1,27 +1,28 @@
 @import "tailwindcss";
 
 /* Load Staatliches font directly */
-@import url("https://fonts.googleapis.com/css2?family=Staatliches:wght@400&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Staatliches&display=swap");
 
 /* Load Roboto Flex font directly */
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap");
 
 /* Colors and fonts */
 @theme {
-	--color-dap-primary: #bf5700;
-	--color-ut-charcoal: #333f48;
-	--color-ut-off-white: #d6d2c4;
+  --color-dap-primary: #bf5700;
+  --color-ut-charcoal: #333f48;
+  --color-ut-off-white: #d6d2c4;
 
-	--font-family-staatliches: Staatliches, cursive;
-	--font-family-roboto-flex: "Roboto Flex", sans-serif;
+  --font-family-staatliches: Staatliches, cursive;
+  --font-family-roboto-flex: "Roboto Flex", sans-serif;
 }
 
 /* Ensure proper font loading in shadow DOM */
 * {
-	font-family: "Roboto Flex", "Staatliches", "Arial Black", "Helvetica Neue",
-		sans-serif;
+  font-family: "Roboto Flex", "Staatliches", "Arial Black", "Helvetica Neue",
+    sans-serif;
 }
 
 .font-header-title {
-	font-family: "Staatliches", "Arial Black", "Helvetica Neue", sans-serif;
+  font-family: "Staatliches", "Arial Black", "Helvetica Neue", sans-serif;
 }
