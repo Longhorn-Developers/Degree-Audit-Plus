@@ -1,6 +1,12 @@
-import { IconButton } from "@/entrypoints/components/common/button";
+import Button, { IconButton } from "@/entrypoints/components/common/button";
 import { HStack } from "@/entrypoints/components/common/helperdivs";
-import { ExportIcon, GearIcon, RepeatIcon } from "@phosphor-icons/react";
+import { usePreferences } from "@/entrypoints/providers/main-page";
+import {
+	ExportIcon,
+	GearIcon,
+	ListIcon,
+	RepeatIcon,
+} from "@phosphor-icons/react";
 
 const Logo = ({ size }: { size: number }) => {
 	return (
@@ -18,6 +24,8 @@ const Logo = ({ size }: { size: number }) => {
 };
 
 const Navbar = () => {
+	const { toggleSidebar, sidebarIsOpen } = usePreferences();
+
 	return (
 		<HStack
 			fill
@@ -25,6 +33,16 @@ const Navbar = () => {
 			y="middle"
 			className="border-b-4 border-gray-800 px-10 py-2"
 		>
+			{!sidebarIsOpen && (
+				<Button
+					className="p-2 rounded-full"
+					fill="none"
+					onClick={async () => await toggleSidebar()}
+				>
+					<ListIcon className="w-6 h-6" />
+				</Button>
+			)}
+
 			<HStack centered>
 				<Logo size={50} />
 				<h1 className="text-2xl font-bold">Degree Audit Plus</h1>

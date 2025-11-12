@@ -80,12 +80,12 @@ export const CloseButton = forwardRef<HTMLButtonElement, ButtonProps>(
 
 export const IconButton = forwardRef<
 	HTMLButtonElement,
-	Omit<ButtonProps, "children"> & { icon: React.ReactNode; label: string }
+	Omit<ButtonProps, "children"> & { icon: React.ReactNode; label?: string }
 >((props, ref) => {
 	return (
 		<Button ref={ref} {...props}>
 			{props.icon}
-			{props.label}
+			{props.label && <span className="text-sm">{props.label}</span>}
 		</Button>
 	);
 });
