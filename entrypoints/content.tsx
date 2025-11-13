@@ -2,6 +2,8 @@ import { createRoot } from "react-dom/client";
 import TryDAPBanner from "./components/banner";
 // Import your Tailwind CSS - THIS IS CRITICAL for shadow DOM
 import "./styles/content.css"; // Make sure this path is correct
+import { fetchAuditHistory } from "@/lib/audit-history-scraper";
+import { saveAuditHistory } from "@/lib/storage";
 
 function loadFonts() {
   const preconnect1 = document.createElement("link");
@@ -25,10 +27,11 @@ function loadFonts() {
 }
 
 export default defineContentScript({
+  // ONLY runs on UT Direct audits home page - this is where we fetch fresh data
   matches: ["https://utdirect.utexas.edu/apps/degree/audits/"],
   cssInjectionMode: "ui", // This should inject CSS into shadow DOM
   async main(ctx) {
-    console.log("Content script loaded.");
+    console.log("Content script loaded on UT Direct audits page.");
     // Load fonts dynamically
     loadFonts();
     defineUTDToppageHeight();
@@ -46,8 +49,32 @@ export default defineContentScript({
     });
 
     tryDapBanner.mount();
+
+    // Fetch fresh audit history and update storage
+    // This ONLY runs when user visits the UT Direct audits home page
+    fetchAndStoreAuditHistory();
   },
 });
+
+/**
+ * Fetch audit history from UT Direct and store in browser storage
+ * This function only runs when the user is on the UT Direct audits home page
+ * The popup will read from this cached storage data when opened from any page
+ */
+async function fetchAndStoreAuditHistory() {
+  try {
+    console.log("Fetching audit history...");
+    const audits = await fetchAuditHistory();
+    console.log(`Successfully fetched ${audits.length} audits`);
+    await saveAuditHistory(audits);
+    console.log("Audit history saved to storage");
+  } catch (error) {
+    console.error("Error fetching audit history:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    await saveAuditHistory([], errorMessage);
+  }
+}
 
 function defineUTDToppageHeight() {
   const utdToppage = document.querySelector("#utd_toppage");

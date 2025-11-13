@@ -1,27 +1,21 @@
 export type Progress = {
-	current: number;
-	total: number;
+  current: number;
+  total: number;
 };
 
-export type DoneAndWorkingAndUnmetRequirementsProgress = {
-	done: number;
-	working: number;
-	unmet: number;
-};
+export interface DegreeAuditCardProps {
+  title?: string;
+  majors?: string[];
+  minors?: string[];
+  percentage?: number;
+}
 
-export type RequirementBreakdownProps = {
-	title: string;
-	hours: Progress;
-	credits: Progress;
-	courses: Course[];
-};
+export interface AuditHistoryData {
+  audits: DegreeAuditCardProps[];
+  timestamp: number;
+  error?: string;
+}
 
-export type Course = {
-	code: string;
-	name: string;
-	hours: number;
-	credits: number;
-	semester: string;
-	grade: string;
-	status: "Completed" | "In Progress" | "Not Started";
-};
+export interface AuditData {
+  // holds complete information for an audit.
+}

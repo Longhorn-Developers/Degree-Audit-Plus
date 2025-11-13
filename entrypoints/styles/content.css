@@ -12,11 +12,11 @@
   --color-dap-primary: #bf5700;
   --color-ut-charcoal: #333f48;
   --color-ut-off-white: #d6d2c4;
-
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
 }
 
+/* 333F48 */
 /* Ensure proper font loading in shadow DOM */
 * {
   font-family: "Roboto Flex", "Staatliches", "Arial Black", "Helvetica Neue",

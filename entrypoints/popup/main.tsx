@@ -3,159 +3,230 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { browser } from "wxt/browser";
 import Button from "../components/common/button";
+import DegreeAuditCard from "../components/audit-card";
 import "./style.css";
+import DAPLogo from "@/assets/svgs/dap-circle-logo";
+import { PlusIcon } from "@phosphor-icons/react";
+import { getAuditHistory } from "@/lib/storage";
+import type { DegreeAuditCardProps } from "@/lib/general-types";
 
 const UT_AUDIT_URL =
-	"https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
+  "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
 export default function App() {
-	const handleOpenDegreeAuditPage = () => {
-		const url = browser.runtime.getURL("degree-audit.html" as any);
-		browser.tabs.create({ url });
-	};
+  const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-	const injectClicker = async (tabId: number) => {
-		await browser.scripting.executeScript({
-			target: { tabId },
-			func: () => {
-				const clickWhenReady = () => {
-					const click = () => {
-						const btn =
-							document.querySelector<HTMLButtonElement>(".run_button");
-						if (btn) {
-							btn.click();
-							return true;
-						}
-						return false;
-					};
+  // Load audit history from cached storage
+  // Storage is updated ONLY when user visits UT Direct audits home page
+  // This allows popup to work from any page using cached data
+  React.useEffect(() => {
+    async function loadAudits() {
+      try {
+        console.log("Popup: Loading audit history from cached storage...");
+        const data = await getAuditHistory();
+        console.log("Popup: Storage data:", data);
 
-					if (click()) return;
+        if (data) {
+          if (data.error) {
+            console.error("Popup: Stored error:", data.error);
+            setError(data.error);
+            setAudits([]);
+          } else {
+            console.log("Popup: Loaded audits from cache:", data.audits);
+            setAudits(data.audits);
+            setError(null);
+          }
+        } else {
+          console.log("Popup: No audit history in cache - visit UT Direct audits page to fetch");
+        }
+      } catch (e) {
+        console.error("Error loading audit history:", e);
+        setError("Failed to load audit history");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-					let tries = 0;
-					const maxTries = 120;
-					const iv = setInterval(() => {
-						if (click() || ++tries >= maxTries) clearInterval(iv);
-					}, 500);
+    loadAudits();
+  }, []);
 
-					const mo = new MutationObserver(() => {
-						if (click()) mo.disconnect();
-					});
-					mo.observe(document.documentElement, {
-						childList: true,
-						subtree: true,
-					});
+  const handleOpenDegreeAuditPage = () => {
+    const url = browser.runtime.getURL("degree-audit.html" as any);
+    browser.tabs.create({ url });
+  };
 
-					setTimeout(() => {
-						const isLogin =
-							document.querySelector('input[type="password"]') ||
-							document.querySelector(
-								'form[action*="logon"], form[action*="login"]'
-							);
-						if (isLogin) {
-							console.warn(
-								"UTDirect login detected. Please sign in; the audit will run afterward."
-							);
-						}
-					}, 1500);
-				};
+  const injectClicker = async (tabId: number) => {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        const clickWhenReady = () => {
+          const click = () => {
+            const btn =
+              document.querySelector<HTMLButtonElement>(".run_button");
+            if (btn) {
+              btn.click();
+              return true;
+            }
+            return false;
+          };
 
-				if (document.readyState === "complete") clickWhenReady();
-				else window.addEventListener("load", clickWhenReady, { once: true });
-			},
-		});
-	};
+          if (click()) return;
 
-	const handleRerunAudit = async () => {
-		const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
-		const idaTab =
-			tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL)) ??
-			tabs.find((t) => t.url?.includes("/apps/degree/audits/"));
+          let tries = 0;
+          const maxTries = 120;
+          const iv = setInterval(() => {
+            if (click() || ++tries >= maxTries) clearInterval(iv);
+          }, 500);
 
-		if (idaTab?.id) {
-			// Ensure we’re on the exact page; if not, navigate then inject.
-			if (!idaTab.url?.startsWith(UT_AUDIT_URL)) {
-				await browser.tabs.update(idaTab.id, {
-					url: UT_AUDIT_URL,
-					active: true,
-				});
-				const listener = async (tabId: number, info: any) => {
-					if (tabId === idaTab.id && info.status === "complete") {
-						browser.tabs.onUpdated.removeListener(listener);
-						await injectClicker(tabId);
-					}
-				};
-				browser.tabs.onUpdated.addListener(listener);
-			} else {
-				await browser.tabs.update(idaTab.id, { active: true });
-				await injectClicker(idaTab.id);
-			}
-		} else {
-			const newTab = await browser.tabs.create({
-				url: UT_AUDIT_URL,
-				active: true,
-			});
-			const listener = async (tabId: number, info: any) => {
-				if (tabId === newTab.id && info.status === "complete") {
-					browser.tabs.onUpdated.removeListener(listener);
-					await injectClicker(tabId);
-				}
-			};
-			browser.tabs.onUpdated.addListener(listener);
-		}
-	};
+          const mo = new MutationObserver(() => {
+            if (click()) mo.disconnect();
+          });
+          mo.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+          });
 
-	return (
-		<div className="w-[438px] bg-white rounded-md font-sans overflow-hidden">
-			<header className="flex justify-between items-center p-3 border-b border-gray-200">
-				<div className="flex items-center space-x-2">
-					<img
-						className="rounded-full"
-						src="/icon/LHD Logo.png"
-						height={48}
-						width={48}
-					/>
-					<span className="font-bold text-lg text-dap-primary">
-						Degree Audit
-						<br /> Plus
-					</span>
-				</div>
+          setTimeout(() => {
+            const isLogin =
+              document.querySelector('input[type="password"]') ||
+              document.querySelector(
+                'form[action*="logon"], form[action*="login"]'
+              );
+            if (isLogin) {
+              console.warn(
+                "UTDirect login detected. Please sign in; the audit will run afterward."
+              );
+            }
+          }, 1500);
+        };
 
-				<div className="flex items-center space-x-3">
-					<Button>
-						<CalendarDotsIcon weight="fill" color="white" size={24} />
-						<p className="text-lg">Past Audits</p>
-					</Button>
+        if (document.readyState === "complete") clickWhenReady();
+        else window.addEventListener("load", clickWhenReady, { once: true });
+      },
+    });
+  };
 
-					<Button color="black" size="icon" fill="none">
-						<GearSixIcon size={25} />
-					</Button>
-				</div>
-			</header>
+  const handleRerunAudit = async () => {
+    const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
+    const idaTab =
+      tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL)) ??
+      tabs.find((t) => t.url?.includes("/apps/degree/audits/"));
 
-			<main className="p-6">
-				<h1 className="text-2xl font-bold text-gray-900">
-					Welcome to Degree Audit Plus
-				</h1>
+    if (idaTab?.id) {
+      // Ensure we’re on the exact page; if not, navigate then inject.
+      if (!idaTab.url?.startsWith(UT_AUDIT_URL)) {
+        await browser.tabs.update(idaTab.id, {
+          url: UT_AUDIT_URL,
+          active: true,
+        });
+        const listener = async (tabId: number, info: any) => {
+          if (tabId === idaTab.id && info.status === "complete") {
+            browser.tabs.onUpdated.removeListener(listener);
+            await injectClicker(tabId);
+          }
+        };
+        browser.tabs.onUpdated.addListener(listener);
+      } else {
+        await browser.tabs.update(idaTab.id, { active: true });
+        await injectClicker(idaTab.id);
+      }
+    } else {
+      const newTab = await browser.tabs.create({
+        url: UT_AUDIT_URL,
+        active: true,
+      });
+      const listener = async (tabId: number, info: any) => {
+        if (tabId === newTab.id && info.status === "complete") {
+          browser.tabs.onUpdated.removeListener(listener);
+          await injectClicker(tabId);
+        }
+      };
+      browser.tabs.onUpdated.addListener(listener);
+    }
+  };
 
-				<Button onClick={handleOpenDegreeAuditPage} color="orange">
-					<span>Take me to Degree Audit Plus</span>
-				</Button>
+  return (
+    <div className="w-[438px] bg-white rounded-md font-sans overflow-hidden">
+      <header className="flex justify-between items-center p-3 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <DAPLogo />
+          <span className="font-bold text-lg text-dap-primary leading-tight">
+            Degree Audit
+            <br />
+            Plus
+          </span>
+        </div>
 
-				<Button
-					onClick={handleRerunAudit}
-					color="black"
-					className="w-full mt-4 text-lg"
-				>
-					<PlayIcon size={22} color="white" weight="fill" />
-					<span>Rerun Audit</span>
-				</Button>
-			</main>
-		</div>
-	);
+        <div className="flex items-center space-x-3">
+          <Button>
+            <PlusIcon size={24} />
+            <p className="text-lg">Run New Audit</p>
+          </Button>
+        </div>
+      </header>
+
+      <main className="p-6">
+        <h1 className="text-[25.63px] font-bold text-[#1a2024] mb-5">
+          Current Audits
+        </h1>
+
+        {loading ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-[#9cadb7]">Loading audit history...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-red-600 max-w-[250px]">
+              Error loading audits: {error}
+            </p>
+            <p className="text-sm text-[#9cadb7]">
+              Please visit the UT Direct degree audits page to refresh.
+            </p>
+          </div>
+        ) : audits.length === 0 ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-[#9cadb7] tracking-[0.32px] max-w-[250px]">
+              Alas! Your future is veiled. I do not know what is to come.
+            </p>
+            <p className="text-[14.22px] font-medium text-[#333f48]">
+              (No current audits)
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2 mb-6">
+            {audits.map((audit, index) => (
+              <DegreeAuditCard
+                key={index}
+                title={audit.title}
+                majors={audit.majors}
+                minors={audit.minors}
+                percentage={audit.percentage}
+              />
+            ))}
+          </div>
+        )}
+
+        <Button onClick={handleOpenDegreeAuditPage} color="orange">
+          <span>Take me to Degree Audit Plus</span>
+        </Button>
+
+        <Button
+          onClick={handleRerunAudit}
+          color="black"
+          className="w-full mt-4 text-lg"
+        >
+          <PlayIcon size={22} color="white" weight="fill" />
+          <span>Rerun Audit</span>
+        </Button>
+      </main>
+    </div>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-	<React.StrictMode>
-		<App />
-	</React.StrictMode>
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
