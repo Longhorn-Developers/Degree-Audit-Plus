@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import ArrowTopRightIcon from "../../assets/svgs/arrow-top-right";
 import DAPLogo from "../../assets/svgs/dap-logo";
-import gridBg from "../../assets/Grid.png";
+import gridBg from "../../public/Grid.png";
 import noiseTexture from "../../assets/noise-texture.svg";
 import { XIcon } from "@phosphor-icons/react";
 
@@ -15,21 +15,28 @@ const TryDAPBanner = () => {
   return (
     <div>
       {isOpen && (
-        <div className="relative w-full overflow-hidden 20 rounded-t-md">
+        <div className="relative w-full rounded-t-md">
           <div
             className="bg-dap-primary relative w-full h-[150px] p-4 z-[2] flex justify-start items-center gap-6 flex-row text-white"
-            style={{
-              backgroundImage: `url(${gridBg})`,
-              backgroundSize: "auto",
-              backgroundPosition: "center",
-              backgroundRepeat: "repeat",
-            }}
           >
             {/* Noise texture overlay */}
             <img
               src={noiseTexture}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover pointer-events-none z-[0] opacity-70"
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none z-[0] opacity-40"
+            />
+            {/* Grid overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none z-[1]"
+              style={{
+                backgroundImage: `url(${gridBg})`,
+                backgroundSize: "auto",
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat",
+                opacity: 0.2,
+                filter: "invert(1) contrast(145%) brightness(70%)",
+                mixBlendMode: "multiply",
+              }}
             />
             <div className="relative z-10">
               <DAPLogo />
