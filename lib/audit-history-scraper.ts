@@ -6,9 +6,24 @@ const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 
 function parseMajor(programText: string): string {
-  // Match pattern like "B S Computer Science, CS" or "B A Economics"
-  const match = programText.match(/B [SA] (.+?)(?:,|\()/);
-  return match ? match[1].trim() : programText.split("\n")[0].trim();
+  // Clean up whitespace first (normalize spaces and newlines)
+  const cleanText = programText.replace(/\s+/g, " ").trim();
+
+  // Pattern 1: "B S in Communication and Leadership" (with "in")
+  const withInMatch = cleanText.match(/B [SA] in (.+?)(?:\(|$)/);
+  if (withInMatch) return withInMatch[1].trim();
+
+  // Pattern 2: "B S Computer Science, CS" or "B A Economics"
+  const spacedMatch = cleanText.match(/B [SA] (.+?)(?:,|\()/);
+  if (spacedMatch) return spacedMatch[1].trim();
+
+  // Pattern 3: "BSGS, Climate System Science" or "DEGREE_CODE, Major Name"
+  // Handles degrees where code comes first, then major name after comma
+  const codeFirstMatch = cleanText.match(/^[A-Z]+,\s*(.+?)(?:\(|$)/);
+  if (codeFirstMatch) return codeFirstMatch[1].trim();
+
+  // Fallback: first line
+  return cleanText.split(" ")[0];
 }
 
 function parseCredential(programText: string): string | null {

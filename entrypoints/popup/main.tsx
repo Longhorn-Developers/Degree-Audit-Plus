@@ -39,7 +39,7 @@ export default function App() {
             setError(null);
           }
         } else {
-          console.log("Popup: No audit history in cache - visit UT Direct audits page to fetch");
+          console.log("Popup: No audit history in cache go to the ");
         }
       } catch (e) {
         console.error("Error loading audit history:", e);
@@ -160,7 +160,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button>
+          <Button onClick={handleRerunAudit}>
             <PlusIcon size={24} />
             <p className="text-lg">Run New Audit</p>
           </Button>
@@ -207,19 +207,6 @@ export default function App() {
             ))}
           </div>
         )}
-
-        <Button onClick={handleOpenDegreeAuditPage} color="orange">
-          <span>Take me to Degree Audit Plus</span>
-        </Button>
-
-        <Button
-          onClick={handleRerunAudit}
-          color="black"
-          className="w-full mt-4 text-lg"
-        >
-          <PlayIcon size={22} color="white" weight="fill" />
-          <span>Rerun Audit</span>
-        </Button>
       </main>
     </div>
   );
