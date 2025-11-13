@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "chrome-extension-toolkit": "^0.0.54",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "react": "^19.1.1",
