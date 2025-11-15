@@ -124,6 +124,12 @@ export default function App() {
       active: false,
     });
 
+    // Safety timeout - close tab after 30 seconds if nothing happens
+    const safetyTimeout = setTimeout(() => {
+      if (newTab.id) browser.tabs.remove(newTab.id);
+      setRunningAudit(false);
+    }, 30000);
+
     const listener = async (tabId: number, info: any) => {
       if (tabId === newTab.id && info.status === "complete") {
         browser.tabs.onUpdated.removeListener(listener);
@@ -133,7 +139,40 @@ export default function App() {
 
     browser.tabs.onUpdated.addListener(listener);
 
-    setRunningAudit(false);
+    // Listen for storage changes - when audit completes, storage will update
+    const storageListener = (changes: any) => {
+      if (changes.auditHistory) {
+        console.log("Popup: Audit complete! Storage updated.");
+        // Clear safety timeout
+        clearTimeout(safetyTimeout);
+        // Close the background tab
+        if (newTab.id) browser.tabs.remove(newTab.id);
+        // Reload audit history
+        async function reload() {
+          try {
+            const data = await getAuditHistory();
+            if (data) {
+              if (data.error) {
+                setError(data.error);
+                setAudits([]);
+              } else {
+                setAudits(data.audits);
+                setError(null);
+              }
+            }
+          } catch (e) {
+            console.error("Error reloading audit history:", e);
+          } finally {
+            setRunningAudit(false);
+          }
+        }
+        reload();
+        // Remove this listener
+        browser.storage.onChanged.removeListener(storageListener);
+      }
+    };
+
+    browser.storage.onChanged.addListener(storageListener);
   };
 
   // Determine which audits to display
