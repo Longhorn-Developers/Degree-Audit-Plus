@@ -37,8 +37,10 @@ export interface AuditHistoryData {
   audits: DegreeAuditCardProps[];
   timestamp: number;
   error?: string;
+  auditNumber?: number;
 }
 
 export interface AuditData {
   // holds complete information for an audit.
+  auditNumber: number;
 }

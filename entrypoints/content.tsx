@@ -36,20 +36,23 @@ export default defineContentScript({
     // Load fonts dynamically
     loadFonts();
     defineUTDToppageHeight();
+    // banner
+    const isHomePage =
+      window.location.pathname === "/apps/degree/audits/" ||
+      window.location.pathname === "/apps/degree/audits";
+    if (isHomePage) {
+      const tryDapBanner = await createShadowRootUi(ctx, {
+        name: "dap-banner-ui",
+        position: "inline",
+        append: "before",
+        anchor: "#service_content",
+        onMount(container) {
+          createRoot(container).render(<TryDAPBanner />);
+        },
+      });
 
-    const tryDapBanner = await createShadowRootUi(ctx, {
-      name: "dap-banner-ui",
-      position: "inline",
-      append: "before",
-      anchor: "#service_content",
-      onMount(container) {
-        // The container here is inside the shadow DOM
-        // WXT should automatically inject your CSS here with cssInjectionMode: "ui"
-        createRoot(container).render(<TryDAPBanner />);
-      },
-    });
-
-    tryDapBanner.mount();
+      tryDapBanner.mount();
+    }
 
     // Fetch fresh audit history and update storage
     // This ONLY runs when user visits the UT Direct audits home page
@@ -57,11 +60,8 @@ export default defineContentScript({
   },
 });
 
-/**
- * Fetch audit history from UT Direct and store in browser storage
- * Runs on any UT Direct audit page and sets up observer for auto-refresh
- * The popup will read from this cached storage data when opened from any page
- */
+// get audit info
+//TODO: Update this code to work for getting all audit data.
 async function fetchAndStoreAuditHistory() {
   try {
     console.log("Fetching audit history...");
@@ -149,4 +149,69 @@ function defineUTDToppageHeight() {
   if (utdToppage) {
     (utdToppage as HTMLElement).style.height = "96px";
   }
+}
+
+//
+// --- Silent Background Audit Runner ---
+//
+
+browser.runtime.onMessage.addListener(async (msg, sender) => {
+  if (msg.action !== "run_audit_headless") return;
+
+  console.log("[Content] Received headless audit request", msg);
+
+  try {
+    const csrf = getCSRFToken();
+    if (!csrf) {
+      console.error("[Content] No CSRF token found on page.");
+      browser.runtime.sendMessage({
+        type: "audit_error",
+        error: "csrf_missing",
+      });
+      return;
+    }
+
+    // Build POST data exactly like the UT form would
+    const form = new FormData();
+    form.append("csrfmiddlewaretoken", csrf);
+    form.append("student_eid", msg.student_eid);
+    form.append("degree_plan", msg.degree_plan);
+    form.append("catalog", msg.catalog);
+    form.append("minor", JSON.stringify(msg.minor || []));
+    form.append("effective_ccyys", JSON.stringify(msg.effective_ccyys || []));
+    form.append("incl_current_crswk", msg.incl_current ?? "Y");
+    form.append("incl_future_crswk", msg.incl_future ?? "Y");
+    form.append("incl_planned_crswk", msg.incl_planned ?? " ");
+
+    // Fire the POST request silently — NO navigation
+    const res = await fetch(
+      "https://utdirect.utexas.edu/apps/degree/audits/requests/test_profile_button/",
+      {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      }
+    );
+
+    console.log("[Content] Audit POST finished. Status:", res.status);
+
+    browser.runtime.sendMessage({
+      type: "audit_complete",
+      ok: res.ok,
+      status: res.status,
+    });
+  } catch (err: any) {
+    console.error("[Content] Headless audit failed:", err);
+    browser.runtime.sendMessage({
+      type: "audit_error",
+      error: err?.message ?? "unknown_error",
+    });
+  }
+});
+
+function getCSRFToken(): string | null {
+  const input = document.querySelector<HTMLInputElement>(
+    "input[name='csrfmiddlewaretoken']"
+  );
+  return input?.value ?? null;
 }

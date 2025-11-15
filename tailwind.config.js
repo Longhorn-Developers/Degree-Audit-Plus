@@ -16,6 +16,7 @@ export default {
     "text-white",
     "hover:opacity-70",
     "hover:scale-105",
+    "font-roboto-flex",
     // Add any other classes you're using
     {
       pattern:

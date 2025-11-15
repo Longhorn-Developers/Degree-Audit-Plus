@@ -4,6 +4,13 @@ import { defineConfig } from "wxt";
 export default defineConfig({
 	modules: ["@wxt-dev/module-react"],
 
+	dev: {
+		// Disable auto-opening browser
+		server: {
+			open: false,
+		},
+	},
+
 	manifest: {
 		name: "Degree Audit + by LHD",
 		description:

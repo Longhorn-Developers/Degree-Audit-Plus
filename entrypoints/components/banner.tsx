@@ -15,10 +15,8 @@ const TryDAPBanner = () => {
   return (
     <div>
       {isOpen && (
-        <div className="relative w-full rounded-t-md">
-          <div
-            className="bg-dap-primary relative w-full h-[150px] p-4 z-[2] flex justify-start items-center gap-6 flex-row text-white"
-          >
+        <div className="relative w-full overflow-hidden rounded-t-md">
+          <div className="bg-dap-primary relative w-full h-[150px] p-4 z-[2] flex justify-start items-center gap-6 flex-row text-white rounded-t-md">
             {/* Noise texture overlay */}
             <img
               src={noiseTexture}
@@ -41,7 +39,7 @@ const TryDAPBanner = () => {
             <div className="relative z-10">
               <DAPLogo />
             </div>
-            <div className="flex flex-col gap-2 relative z-10">
+            <div className="flex flex-col gap-2 relative z-10 pr-[180px]">
               <h2
                 className="font-staatliches text-[54.976px] font-normal leading-[49.949px] tracking-[-0.55px]"
                 style={{

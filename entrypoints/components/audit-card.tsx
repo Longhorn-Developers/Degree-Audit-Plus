@@ -9,7 +9,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   percentage = 90,
 }) => {
   return (
-    <div className="bg-white rounded  border-1 border-[#333f48] px-4 py-3 w-full">
+    <div className="bg-white rounded border-1 border-[#333f48] px-4 py-3 w-full transition-all duration-200 hover:shadow-md hover:border-dap-primary hover:-translate-y-0.5 cursor-pointer">
       <div className="flex flex-col gap-3">
         {/* Title */}
         <div className="font-bold text-[13px] leading-[18px] text-[#1a2024] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
@@ -30,17 +30,18 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             </div>
 
             {/* Minors/Certs */}
-
-            <div className="flex gap-2 items-center">
-              <span className="text-[11px] leading-[12px] text-black">
-                Minor/cert:
-              </span>
-              <div className="flex gap-1">
-                {minors.map((minor, index) => (
-                  <Tag key={index} index={index} major={minor} type="minor" />
-                ))}
+            {minors && minors.length > 0 && (
+              <div className="flex gap-2 items-center">
+                <span className="text-[11px] leading-[12px] text-black">
+                  Minor/cert:
+                </span>
+                <div className="flex gap-1">
+                  {minors.map((minor, index) => (
+                    <Tag key={index} index={index} major={minor} type="minor" />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/*Percentage */}
