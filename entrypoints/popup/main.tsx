@@ -9,6 +9,9 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { getAuditHistory } from "@/lib/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
 import { SpinnerIcon } from "@phosphor-icons/react";
+import HypotheticalCourseModal, {
+  type HypotheticalCourse,
+} from "../components/hypothetical-course-modal";
 
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
@@ -16,6 +19,10 @@ export default function App() {
   const [error, setError] = React.useState<string | null>(null);
   const [showAll, setShowAll] = React.useState(false);
   const [runningAudit, setRunningAudit] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
+    HypotheticalCourse[]
+  >([]);
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
@@ -179,8 +186,14 @@ export default function App() {
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
 
+  const handleAddHypotheticalCourse = (course: HypotheticalCourse) => {
+    console.log("Adding hypothetical course:", course);
+    setHypotheticalCourses((prev) => [...prev, course]);
+    // TODO: Store in browser storage and send to degree audit page
+  };
+
   return (
-    <div className="w-[438px] h-[600px] bg-white rounded-md font-sans overflow-hidden flex flex-col">
+    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white rounded-2xl font-sans overflow-hidden flex flex-col border border-gray-100">
       <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <DAPLogo />
@@ -192,7 +205,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button onClick={handleRerunAudit}>
+          <Button className="rounded-md" onClick={handleRerunAudit}>
             {runningAudit ? (
               <div className="flex items-center space-x-2">
                 <SpinnerIcon size={24} className="animate-spin-slow" />
@@ -208,13 +221,25 @@ export default function App() {
         </div>
       </header>
 
-      <main className="p-5 py-4 overflow-y-auto flex-1">
-        <h1
-          style={{ fontFamily: "Roboto Flex" }}
-          className="text-[25.63px] font-bold text-[#1a2024] mb-4"
-        >
-          Current Audits
-        </h1>
+      <main className="p-5 pt-4 overflow-y-auto flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <h1
+            style={{ fontFamily: "Roboto Flex" }}
+            className="text-[25.63px] font-bold text-[#1a2024]"
+          >
+            Current Audits
+          </h1>
+          <Button
+            size="small"
+            color="orange"
+            fill="outline"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5"
+          >
+            <PlusIcon size={16} />
+            <span className="text-sm">Hypothetical</span>
+          </Button>
+        </div>
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
@@ -242,29 +267,34 @@ export default function App() {
           <>
             <div className="space-y-2 mb-4">
               {displayedAudits.map((audit, index) => (
-                <DegreeAuditCard
-                  key={index}
-                  title={audit.title}
-                  majors={audit.majors}
-                  minors={audit.minors}
-                  percentage={audit.percentage}
-                />
+                <div key={index} onClick={handleOpenDegreeAuditPage}>
+                  <DegreeAuditCard
+                    title={audit.title}
+                    majors={audit.majors}
+                    minors={audit.minors}
+                    percentage={audit.percentage}
+                  />
+                </div>
               ))}
             </div>
             {hasMoreAudits && (
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="w-full text-center text-[#0066cc] font-medium text-sm mb-4 hover:underline"
+                className="w-full text-center text-[#0066cc] font-medium text-sm mb-1 hover:underline"
               >
                 {showAll ? "Show Less" : `Show ${audits.length - 3} More`}
               </button>
             )}
           </>
         )}
-        <Button onClick={handleOpenDegreeAuditPage} color="orange">
-          <span>Take me to Degree Audit Plus</span>
-        </Button>
       </main>
+
+      {/* Hypothetical Course Modal */}
+      <HypotheticalCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAddHypotheticalCourse}
+      />
     </div>
   );
 }

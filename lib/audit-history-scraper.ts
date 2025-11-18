@@ -71,6 +71,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
 
         // Extract data from table cells
         const programCell = cells[3]; // Program column
+        const auditIdCell = cells[6]; // Audit ID column (contains link)
         const percentCell = cells[7]; // Completion Percentage column
 
         if (!programCell || !percentCell) continue;
@@ -78,9 +79,14 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
         const programText = programCell.textContent || "";
         const percentText = percentCell.textContent || "";
 
+        // Extract audit ID from link
+        const auditLink = auditIdCell.querySelector("a");
+        const auditId = auditLink?.textContent?.trim() || "";
+
         console.log("Parsing row:", {
           programText: programText.substring(0, programText.length),
           percentText,
+          auditId,
         });
 
         // Parse major, credential, and percentage
@@ -88,7 +94,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
         const credential = parseCredential(programText);
         const percentage = parsePercentage(percentText);
 
-        console.log("Parsed values:", { major, credential, percentage });
+        console.log("Parsed values:", { major, credential, percentage, auditId });
 
         // Create a unique key for this audit configuration
         const auditKey = `${major}-${credential || "none"}-${percentage}`;
@@ -105,6 +111,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
           majors: [major],
           minors: credential ? [credential] : [],
           percentage,
+          auditId,
         };
 
         console.log("Created audit:", audit);

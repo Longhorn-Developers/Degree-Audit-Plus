@@ -1,10 +1,11 @@
 import { Course } from "@/lib/general-types";
 import { ListIcon } from "@phosphor-icons/react";
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 import Button from "../components/common/button";
 import { HStack, VStack } from "../components/common/helperdivs";
 import { Title } from "../components/common/text";
+import Modal from "../components/common/modal";
 import DegreeProgressOverviewCard from "../components/degree-progress-overview-card";
 import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import "../styles/content.css";
@@ -150,6 +151,15 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
 
 const DegreeAuditPage = () => {
   const dummyData = DUMMY_DATA["courseBreakdown"];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <HStack fill className="w-screen" gap={0}>
@@ -172,27 +182,44 @@ const DegreeAuditPage = () => {
             hours={{ current: 5, total: 20 }}
             credits={{ current: 10, total: 20 }}
             courses={dummyData.courses}
+            onAddCourse={handleOpenModal}
           />
           <RequirementBreakdown
             title="Major(s)"
             hours={{ current: 5, total: 20 }}
             credits={{ current: 10, total: 20 }}
             courses={dummyData.courses}
+            onAddCourse={handleOpenModal}
           />
           <RequirementBreakdown
             title="Minor(s) + Certificate(s)"
             hours={{ current: 5, total: 20 }}
             credits={{ current: 10, total: 20 }}
             courses={dummyData.courses}
+            onAddCourse={handleOpenModal}
           />
           <RequirementBreakdown
             title="Electives"
             hours={{ current: 5, total: 20 }}
             credits={{ current: 10, total: 20 }}
             courses={dummyData.courses}
+            onAddCourse={handleOpenModal}
           />
         </VStack>
       </MainContent>
+
+      {/* Blank Modal for Adding Hypothetical Course */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title="Add Hypothetical Course"
+        size="lg"
+        position="center"
+      >
+        <div className="min-h-[200px] flex items-center justify-center text-gray-500">
+          Modal content will go here
+        </div>
+      </Modal>
     </HStack>
   );
 };

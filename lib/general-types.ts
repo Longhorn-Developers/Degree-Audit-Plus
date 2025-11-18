@@ -9,12 +9,13 @@ export type Progress = {
 //   unmet: number;
 // };
 
-// export type RequirementBreakdownProps = {
-//   title: string;
-//   hours: Progress;
-//   credits: Progress;
-//   courses: Course[];
-// };
+export type RequirementBreakdownProps = {
+  title: string;
+  hours: Progress;
+  credits: Progress;
+  courses: Course[];
+  onAddCourse?: () => void;
+};
 
 export type Course = {
   code: string;
@@ -31,6 +32,7 @@ export interface DegreeAuditCardProps {
   majors?: string[];
   minors?: string[];
   percentage?: number;
+  auditId?: string;
 }
 
 export interface AuditHistoryData {

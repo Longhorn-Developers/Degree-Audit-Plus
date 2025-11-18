@@ -42,7 +42,7 @@ const Tag: React.FC<TagProps> = ({ index, major, type }) => {
   return (
     <span
       key={index}
-      className="px-3 py-[3px] rounded h-[18px] flex items-center justify-center text-[11px] leading-[12px] font-semibold"
+      className="px-3 py-[3px] rounded h-[18px] flex items-center justify-center text-[13px] leading-[12px] font-semibold"
       style={{
         backgroundColor: getBackgroundColor(index, type),
         color: getColor(index, type),

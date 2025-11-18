@@ -13,3 +13,23 @@
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
 }
+
+/* Create rounded popup effect */
+html {
+  background: transparent;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+#root {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
