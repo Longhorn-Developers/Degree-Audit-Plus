@@ -1,4 +1,3 @@
-import { CalendarDotsIcon, GearSixIcon, PlayIcon } from "@phosphor-icons/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { browser } from "wxt/browser";
@@ -9,18 +8,26 @@ import DAPLogo from "@/assets/svgs/dap-circle-logo";
 import { PlusIcon } from "@phosphor-icons/react";
 import { getAuditHistory } from "@/lib/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
-
-const UT_AUDIT_URL =
-  "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
+import { SpinnerIcon } from "@phosphor-icons/react";
+import HypotheticalCourseModal, {
+  type HypotheticalCourse,
+} from "../components/hypothetical-course-modal";
 
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
+  const [showAll, setShowAll] = React.useState(false);
+  const [runningAudit, setRunningAudit] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
+    HypotheticalCourse[]
+  >([]);
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
+  const UT_AUDIT_URL =
+    "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
   React.useEffect(() => {
     async function loadAudits() {
       try {
@@ -39,7 +46,7 @@ export default function App() {
             setError(null);
           }
         } else {
-          console.log("Popup: No audit history in cache - visit UT Direct audits page to fetch");
+          console.log("Popup: No audit history in cache go to the ");
         }
       } catch (e) {
         console.error("Error loading audit history:", e);
@@ -109,47 +116,85 @@ export default function App() {
   };
 
   const handleRerunAudit = async () => {
-    const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
-    const idaTab =
-      tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL)) ??
-      tabs.find((t) => t.url?.includes("/apps/degree/audits/"));
+    console.log("Popup: Rerun audit button clicked");
+    setRunningAudit(true);
 
-    if (idaTab?.id) {
-      // Ensure we’re on the exact page; if not, navigate then inject.
-      if (!idaTab.url?.startsWith(UT_AUDIT_URL)) {
-        await browser.tabs.update(idaTab.id, {
-          url: UT_AUDIT_URL,
-          active: true,
-        });
-        const listener = async (tabId: number, info: any) => {
-          if (tabId === idaTab.id && info.status === "complete") {
-            browser.tabs.onUpdated.removeListener(listener);
-            await injectClicker(tabId);
-          }
-        };
-        browser.tabs.onUpdated.addListener(listener);
-      } else {
-        await browser.tabs.update(idaTab.id, { active: true });
-        await injectClicker(idaTab.id);
-      }
-    } else {
-      const newTab = await browser.tabs.create({
-        url: UT_AUDIT_URL,
-        active: true,
-      });
-      const listener = async (tabId: number, info: any) => {
-        if (tabId === newTab.id && info.status === "complete") {
-          browser.tabs.onUpdated.removeListener(listener);
-          await injectClicker(tabId);
-        }
-      };
-      browser.tabs.onUpdated.addListener(listener);
+    const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
+    const exactAuditTab = tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL));
+    if (exactAuditTab?.id) {
+      await injectClicker(exactAuditTab.id);
+      setRunningAudit(false);
+      return;
     }
+    const newTab = await browser.tabs.create({
+      url: UT_AUDIT_URL,
+      active: false,
+    });
+
+    // Safety timeout - close tab after 30 seconds if nothing happens
+    const safetyTimeout = setTimeout(() => {
+      if (newTab.id) browser.tabs.remove(newTab.id);
+      setRunningAudit(false);
+    }, 30000);
+
+    const listener = async (tabId: number, info: any) => {
+      if (tabId === newTab.id && info.status === "complete") {
+        browser.tabs.onUpdated.removeListener(listener);
+        await injectClicker(tabId);
+      }
+    };
+
+    browser.tabs.onUpdated.addListener(listener);
+
+    // Listen for storage changes - when audit completes, storage will update
+    const storageListener = (changes: any) => {
+      if (changes.auditHistory) {
+        console.log("Popup: Audit complete! Storage updated.");
+        // Clear safety timeout
+        clearTimeout(safetyTimeout);
+        // Close the background tab
+        if (newTab.id) browser.tabs.remove(newTab.id);
+        // Reload audit history
+        async function reload() {
+          try {
+            const data = await getAuditHistory();
+            if (data) {
+              if (data.error) {
+                setError(data.error);
+                setAudits([]);
+              } else {
+                setAudits(data.audits);
+                setError(null);
+              }
+            }
+          } catch (e) {
+            console.error("Error reloading audit history:", e);
+          } finally {
+            setRunningAudit(false);
+          }
+        }
+        reload();
+        // Remove this listener
+        browser.storage.onChanged.removeListener(storageListener);
+      }
+    };
+
+    browser.storage.onChanged.addListener(storageListener);
+  };
+
+  // Determine which audits to display
+  const displayedAudits = showAll ? audits : audits.slice(0, 3);
+  const hasMoreAudits = audits.length > 3;
+
+  const handleAddHypotheticalCourse = (course: HypotheticalCourse) => {
+    console.log("Adding hypothetical course:", course);
+    setHypotheticalCourses((prev) => [...prev, course]);
+    // TODO: Store in browser storage and send to degree audit page
   };
 
   return (
-    <div className="w-[438px] bg-white rounded-md font-sans overflow-hidden">
-      <header className="flex justify-between items-center p-3 border-b border-gray-200">
+    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white rounded-2xl font-sans overflow-hidden flex flex-col border border-gray-100">
+      <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <DAPLogo />
           <span className="font-bold text-lg text-dap-primary leading-tight">
@@ -160,17 +205,41 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button>
-            <PlusIcon size={24} />
-            <p className="text-lg">Run New Audit</p>
+          <Button className="rounded-md" onClick={handleRerunAudit}>
+            {runningAudit ? (
+              <div className="flex items-center space-x-2">
+                <SpinnerIcon size={24} className="animate-spin-slow" />
+                <p className="text-lg font-bold">Running Audit...</p>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <PlusIcon size={24} />
+                <p className="text-lg font-bold">Run New Audit</p>
+              </div>
+            )}
           </Button>
         </div>
       </header>
 
-      <main className="p-6">
-        <h1 className="text-[25.63px] font-bold text-[#1a2024] mb-5">
-          Current Audits
-        </h1>
+      <main className="p-5 pt-4 overflow-y-auto flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <h1
+            style={{ fontFamily: "Roboto Flex" }}
+            className="text-[25.63px] font-bold text-[#1a2024]"
+          >
+            Current Audits
+          </h1>
+          <Button
+            size="small"
+            color="orange"
+            fill="outline"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5"
+          >
+            <PlusIcon size={16} />
+            <span className="text-sm">Hypothetical</span>
+          </Button>
+        </div>
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
@@ -195,32 +264,37 @@ export default function App() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2 mb-6">
-            {audits.map((audit, index) => (
-              <DegreeAuditCard
-                key={index}
-                title={audit.title}
-                majors={audit.majors}
-                minors={audit.minors}
-                percentage={audit.percentage}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-2 mb-4">
+              {displayedAudits.map((audit, index) => (
+                <div key={index} onClick={handleOpenDegreeAuditPage}>
+                  <DegreeAuditCard
+                    title={audit.title}
+                    majors={audit.majors}
+                    minors={audit.minors}
+                    percentage={audit.percentage}
+                  />
+                </div>
+              ))}
+            </div>
+            {hasMoreAudits && (
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="w-full text-center text-[#0066cc] font-medium text-sm mb-1 hover:underline"
+              >
+                {showAll ? "Show Less" : `Show ${audits.length - 3} More`}
+              </button>
+            )}
+          </>
         )}
-
-        <Button onClick={handleOpenDegreeAuditPage} color="orange">
-          <span>Take me to Degree Audit Plus</span>
-        </Button>
-
-        <Button
-          onClick={handleRerunAudit}
-          color="black"
-          className="w-full mt-4 text-lg"
-        >
-          <PlayIcon size={22} color="white" weight="fill" />
-          <span>Rerun Audit</span>
-        </Button>
       </main>
+
+      {/* Hypothetical Course Modal */}
+      <HypotheticalCourseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAddHypotheticalCourse}
+      />
     </div>
   );
 }

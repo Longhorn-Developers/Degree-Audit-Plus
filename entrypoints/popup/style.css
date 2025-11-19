@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Import Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Staatliches&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap");
+
 /* Define custom theme colors for Tailwind v4 */
 @theme {
   --color-dap-primary: #bf5700;
@@ -8,4 +12,24 @@
 
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
+}
+
+/* Create rounded popup effect */
+html {
+  background: transparent;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+#root {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }

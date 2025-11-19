@@ -10,7 +10,7 @@ import { PlusCircleIcon } from "@phosphor-icons/react";
 import CourseCard from "./course-card";
 
 const RequirementBreakdown = (props: RequirementBreakdownProps) => {
-	const { title, hours, credits, courses } = props;
+	const { title, hours, credits, courses, onAddCourse } = props;
 
 	const Header = () => {
 		return (
@@ -45,6 +45,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
 						color="black"
 						fill="solid"
 						className="w-full text-lg font-bold py-4 px-6 mt-5"
+						onClick={onAddCourse}
 					>
 						<PlusCircleIcon className="w-6 h-6 ml-2" />
 						Add Hypothetical Course

@@ -6,9 +6,24 @@ const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 
 function parseMajor(programText: string): string {
-  // Match pattern like "B S Computer Science, CS" or "B A Economics"
-  const match = programText.match(/B [SA] (.+?)(?:,|\()/);
-  return match ? match[1].trim() : programText.split("\n")[0].trim();
+  // Clean up whitespace first (normalize spaces and newlines)
+  const cleanText = programText.replace(/\s+/g, " ").trim();
+
+  // Pattern 1: "B S in Communication and Leadership" (with "in")
+  const withInMatch = cleanText.match(/B [SA] in (.+?)(?:\(|$)/);
+  if (withInMatch) return withInMatch[1].trim();
+
+  // Pattern 2: "B S Computer Science, CS" or "B A Economics"
+  const spacedMatch = cleanText.match(/B [SA] (.+?)(?:,|\()/);
+  if (spacedMatch) return spacedMatch[1].trim();
+
+  // Pattern 3: "BSGS, Climate System Science" or "DEGREE_CODE, Major Name"
+  // Handles degrees where code comes first, then major name after comma
+  const codeFirstMatch = cleanText.match(/^[A-Z]+,\s*(.+?)(?:\(|$)/);
+  if (codeFirstMatch) return codeFirstMatch[1].trim();
+
+  // Fallback: first line
+  return cleanText.split(" ")[0];
 }
 
 function parseCredential(programText: string): string | null {
@@ -56,6 +71,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
 
         // Extract data from table cells
         const programCell = cells[3]; // Program column
+        const auditIdCell = cells[6]; // Audit ID column (contains link)
         const percentCell = cells[7]; // Completion Percentage column
 
         if (!programCell || !percentCell) continue;
@@ -63,9 +79,14 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
         const programText = programCell.textContent || "";
         const percentText = percentCell.textContent || "";
 
+        // Extract audit ID from link
+        const auditLink = auditIdCell.querySelector("a");
+        const auditId = auditLink?.textContent?.trim() || "";
+
         console.log("Parsing row:", {
           programText: programText.substring(0, programText.length),
           percentText,
+          auditId,
         });
 
         // Parse major, credential, and percentage
@@ -73,7 +94,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
         const credential = parseCredential(programText);
         const percentage = parsePercentage(percentText);
 
-        console.log("Parsed values:", { major, credential, percentage });
+        console.log("Parsed values:", { major, credential, percentage, auditId });
 
         // Create a unique key for this audit configuration
         const auditKey = `${major}-${credential || "none"}-${percentage}`;
@@ -90,6 +111,7 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
           majors: [major],
           minors: credential ? [credential] : [],
           percentage,
+          auditId,
         };
 
         console.log("Created audit:", audit);
