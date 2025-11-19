@@ -1,6 +1,5 @@
 import { Course } from "@/lib/general-types";
-import { ListIcon } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import Button from "../components/common/button";
 import { HStack, VStack } from "../components/common/helperdivs";
@@ -9,6 +8,18 @@ import Modal from "../components/common/modal";
 import DegreeProgressOverviewCard from "../components/degree-progress-overview-card";
 import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import "../styles/content.css";
+import devImage from "../../public/developer_image.png";
+import logoImage from "../../public/logo_image.png";
+import { NotebookIcon } from "@phosphor-icons/react";
+
+
+import {
+  DiscordLogo,
+  GithubLogo,
+  InstagramLogo,
+  LinkedinLogo,
+  Moon,
+} from "@phosphor-icons/react";
 import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
 import RequirementBreakdown from "./components/requirement-breakdown";
@@ -107,26 +118,129 @@ const opacityAnimationTime = 0.1;
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const maxWidth = 400;
+  const maxWidth = 340;
 
   return (
     <VStack
-      className="h-full py-6 border-gray-200 fixed left-0 top-0"
+      className="h-full py-6 border-gray-200 fixed left-0 top-0 bg-white shadow-lg overflow-y-auto"
       style={{
         width: sidebarIsOpen ? maxWidth : 0,
         opacity: sidebarIsOpen ? 1 : 0,
-        borderRightWidth: sidebarIsOpen ? 4 : 0,
-        transition: `width ${widthAnimationTime}s ease-in-out, opacity ${opacityAnimationTime}s ease-in-out, border-right-width ${widthAnimationTime}s ease-in-out`,
+        borderRightWidth: sidebarIsOpen ? 3 : 0,
+        transition: `width ${widthAnimationTime}s ease-in-out,
+                     opacity ${opacityAnimationTime}s ease-in-out,
+                     border-right-width ${widthAnimationTime}s ease-in-out`,
       }}
-      aria-hidden={!sidebarIsOpen}
     >
       <Button
-        className="p-2 rounded-full"
-        fill="none"
-        onClick={async () => await toggleSidebar()}
-      >
-        <ListIcon className="w-6 h-6" />
+  className="p-2 rounded-full self-end mr-4"
+  fill="none"
+  onClick={toggleSidebar}
+>
+<HStack y="middle" gap={3}>
+          <img
+          src={logoImage}
+          className="w-66"
+          />
+        </HStack>
+  <NotebookIcon className="w-6 h-6" />
       </Button>
+      <VStack className="px-6 py-2">
+      </VStack>
+      <div className="px-6 mt-4 text-xl font-bold">MY AUDITS</div>
+      <VStack className="px-4 mt-3 gap-3">
+        <div className="bg-orange-100 rounded-xl p-4">
+          <HStack y="middle" x="between">
+            <div className="font-bold text-lg">Degree Audit 1</div>
+            <div className="bg-[#b25d22] text-white px-3 py-1 rounded-md font-bold">   
+            </div>
+          </HStack>
+        </div>
+
+        <div
+          className="
+            flex items-center justify-between
+            px-4 py-3
+            rounded-xl
+            bg-[#FFFFFF]
+            shadow-sm
+            text-black
+          "
+        >
+          <HStack y="middle" gap={2}>
+            <span className="text-lg">▾</span>
+            <span className="font-semibold">what if i try this</span>
+          </HStack>
+
+          <HStack y="middle" gap={2}>
+            <span className="text-xl font-bold"></span>
+            <div className="bg-[#B45309] text-white px-3 py-1 rounded-md font-bold">
+            </div>
+          </HStack>
+        </div>
+
+
+        <div
+        className="
+          flex items-center justify-between
+          px-4 py-3
+          rounded-xl
+          bg-[#FFFFFF]
+          shadow-sm
+          text-black
+        ">
+        <HStack y="middle" gap={2}>
+          <span className="text-lg">▾</span>
+          <span className="font-semibold">what if i try this</span>
+        </HStack>
+
+        <HStack y="middle" gap={2}>
+          <span className="text-xl font-bold"></span>
+          <div className="bg-[#B45309] text-white px-3 py-1 rounded-md font-bold">
+          </div>
+        </HStack>
+      </div>
+      </VStack>
+      <div className="px-6 mt-6 text-xl font-bold">RESOURCES</div>
+
+      <VStack className="px-6 mt-3 gap-2 text-orange-700 font-medium">
+        <a href="#">UT Core Requirements ↗</a>
+        <a href="#">UT Degree Plans ↗</a>
+        <a href="#">Registration Info Sheet (RIS) ↗</a>
+        <a href="#">Register for Courses ↗</a>
+      </VStack>
+      <div className="px-6 mt-8 text-orange-700 font-semibold">
+        Send us Feedback! ↗
+      </div>
+      <VStack className="px-6 mt-10 mb-10">
+        <img
+          src={devImage}
+          alt="Made with love by Longhorn Developers"
+          className="w-56 mb-4"
+        />
+
+        <HStack x="center" gap={6} className="mt-4 text-black">
+          <a href="#" aria-label="Discord">
+            <DiscordLogo size={28}/>
+          </a>
+
+          <a href="#" aria-label="Instagram">
+            <InstagramLogo size={28} />
+          </a>
+
+          <a href="#" aria-label="LinkedIn">
+            <LinkedinLogo size={28}/>
+          </a>
+
+          <a href="#" aria-label="GitHub">
+            <GithubLogo size={28}/>
+          </a>
+
+          <a href="#" aria-label="Dark Mode">
+            <Moon size={28}/>
+          </a>
+        </HStack>
+      </VStack>
     </VStack>
   );
 };
