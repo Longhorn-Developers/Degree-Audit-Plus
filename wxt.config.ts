@@ -17,9 +17,9 @@ export default defineConfig({
 			"Created by Longhorn Developers (LHD) to enhance the degree planning experience for students at the University of Texas at Austin.",
 		version: "1.0.0",
 		manifest_version: 3,
-		action: {
-			default_popup: "index.html",
-		},
+		// No default_popup - icon click triggers browser.action.onClicked
+		// Popup UI is injected via content script for rounded corners
+		action: {},
 		icons: {
 			"16": "icon/LHD Logo.png",
 			"32": "icon/LHD Logo.png",
@@ -28,11 +28,11 @@ export default defineConfig({
 			"256": "icon/LHD Logo.png",
 		},
 
-		permissions: ["storage", "tabs", "scripting"],
-		// Allow injecting scripts into UTDirect pages or via activeTab when user clicks
-		host_permissions: ["https://utdirect.utexas.edu/*"],
+		permissions: ["storage", "tabs", "scripting", "activeTab"],
+		// Allow injecting scripts into UTDirect pages and all URLs for popup injection
+		host_permissions: ["https://utdirect.utexas.edu/*", "<all_urls>"],
 		optional_host_permissions: [],
-		optional_permissions: ["activeTab"],
+		optional_permissions: [],
 		web_accessible_resources: [
 			{
 				resources: ["Grid.png"],
@@ -41,11 +41,13 @@ export default defineConfig({
 		],
 	},
 
-	vite: () => ({
-		css: {
-			postcss: {
-				plugins: [require("@tailwindcss/postcss"), require("autoprefixer")],
+	vite: () => import("@tailwindcss/postcss").then((tailwindcss) =>
+		import("autoprefixer").then((autoprefixer) => ({
+			css: {
+				postcss: {
+					plugins: [tailwindcss.default, autoprefixer.default],
+				},
 			},
-		},
-	}),
+		}))
+	),
 });

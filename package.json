@@ -5,17 +5,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wxt",
-    "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
-    "build:firefox": "wxt build -b firefox",
-    "zip": "wxt zip",
-    "zip:firefox": "wxt zip -b firefox",
-    "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare",
+    "dev": "bun run wxt",
+    "dev:firefox": "bun run wxt -b firefox",
+    "build": "bun run wxt build",
+    "build:firefox": "bun run wxt build -b firefox",
+    "zip": "bun run wxt zip",
+    "zip:firefox": "bun run wxt zip -b firefox",
+    "compile": "bun run tsc --noEmit",
+    "postinstall": "bun run wxt prepare",
     "prepare": "husky",
-    "tailwind:init": "tailwindcss init -p"
+    "tailwind:init": "bun run tailwindcss init -p"
   },
+  "trustedDependencies": [
+    "esbuild",
+    "sharp"
+  ],
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "chrome-extension-toolkit": "^0.0.54",

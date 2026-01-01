@@ -2,16 +2,16 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { browser } from "wxt/browser";
 import Button from "../components/common/button";
-import DegreeAuditCard from "../components/audit-card";
+import { DegreeAuditCardPopup } from "../components/audit-card";
 import "./style.css";
 import DAPLogo from "@/assets/svgs/dap-circle-logo";
 import { PlusIcon } from "@phosphor-icons/react";
 import { getAuditHistory } from "@/lib/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
 import { SpinnerIcon } from "@phosphor-icons/react";
-import HypotheticalCourseModal, {
-  type HypotheticalCourse,
-} from "../components/hypothetical-course-modal";
+// import HypotheticalCourseModal, {
+//   type HypotheticalCourse,
+// } from "../components/hypothetical-course-modal";
 
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
@@ -19,10 +19,10 @@ export default function App() {
   const [error, setError] = React.useState<string | null>(null);
   const [showAll, setShowAll] = React.useState(false);
   const [runningAudit, setRunningAudit] = React.useState(false);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
-    HypotheticalCourse[]
-  >([]);
+  // const [isModalOpen, setIsModalOpen] = React.useState(false);
+  // const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
+  //   HypotheticalCourse[]
+  // >([]);
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
@@ -186,14 +186,14 @@ export default function App() {
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
 
-  const handleAddHypotheticalCourse = (course: HypotheticalCourse) => {
-    console.log("Adding hypothetical course:", course);
-    setHypotheticalCourses((prev) => [...prev, course]);
-    // TODO: Store in browser storage and send to degree audit page
-  };
+  // const handleAddHypotheticalCourse = (course: HypotheticalCourse) => {
+  //   console.log("Adding hypothetical course:", course);
+  //   setHypotheticalCourses((prev) => [...prev, course]);
+  //   // TODO: Store in browser storage and send to degree audit page
+  // };
 
   return (
-    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white rounded-2xl font-sans overflow-hidden flex flex-col border border-gray-100">
+    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white font-sans overflow-hidden flex flex-col border border-gray-100">
       <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <DAPLogo />
@@ -229,7 +229,7 @@ export default function App() {
           >
             Current Audits
           </h1>
-          <Button
+          {/* <Button
             size="small"
             color="orange"
             fill="outline"
@@ -238,7 +238,7 @@ export default function App() {
           >
             <PlusIcon size={16} />
             <span className="text-sm">Hypothetical</span>
-          </Button>
+          </Button> */}
         </div>
 
         {loading ? (
@@ -268,7 +268,7 @@ export default function App() {
             <div className="space-y-2 mb-4">
               {displayedAudits.map((audit, index) => (
                 <div key={index} onClick={handleOpenDegreeAuditPage}>
-                  <DegreeAuditCard
+                  <DegreeAuditCardPopup
                     title={audit.title}
                     majors={audit.majors}
                     minors={audit.minors}
@@ -280,7 +280,7 @@ export default function App() {
             {hasMoreAudits && (
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="w-full text-center text-[#0066cc] font-medium text-sm mb-1 hover:underline"
+                className="w-full text-center text-[#0066cc] font-medium text-sm mb-1 hover:underline hover:cursor-pointer"
               >
                 {showAll ? "Show Less" : `Show ${audits.length - 3} More`}
               </button>
@@ -290,17 +290,21 @@ export default function App() {
       </main>
 
       {/* Hypothetical Course Modal */}
-      <HypotheticalCourseModal
+      {/* <HypotheticalCourseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddHypotheticalCourse}
-      />
+      /> */}
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Only render if we're in the standalone popup context (not injected via content script)
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}

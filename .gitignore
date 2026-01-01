@@ -13,7 +13,7 @@ stats.html
 stats-*.json
 .wxt
 web-ext.config.ts
-
+claude.md
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,3 +26,4 @@ web-ext.config.ts
 *.sw?
 .claude
 *.code-workspace
+.claude

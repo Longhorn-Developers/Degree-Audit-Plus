@@ -1,6 +1,7 @@
 import { Course } from "@/lib/general-types";
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
+import clsx from "clsx";
 import Button from "../components/common/button";
 import { HStack, VStack } from "../components/common/helperdivs";
 import { Title } from "../components/common/text";
@@ -10,15 +11,18 @@ import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import "../styles/content.css";
 import devImage from "../../public/developer_image.png";
 import logoImage from "../../public/logo_image.png";
-import { NotebookIcon } from "@phosphor-icons/react";
-
-
+import lhdLogo from "../../public/icon/LHD Logo.png";
+import DegreeAuditCard from "../components/audit-card";
 import {
+  Sidebar as SidebarIcon,
   DiscordLogo,
   GithubLogo,
   InstagramLogo,
   LinkedinLogo,
   Moon,
+  Plus,
+  ArrowSquareOut,
+  Gear,
 } from "@phosphor-icons/react";
 import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
@@ -113,135 +117,178 @@ const App = () => {
   );
 };
 
-const widthAnimationTime = 0.3;
-const opacityAnimationTime = 0.1;
-
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const maxWidth = 340;
+  const [expandedAuditId, setExpandedAuditId] = useState<string | null>("1");
+
+  const audits = [
+    {
+      id: "1",
+      title: "Degree Audit 1",
+      majors: ["Informatics", "Design"],
+      minors: ["Business", "Studio Art", "Elements of Computing"],
+      percentage: 68,
+    },
+    {
+      id: "2",
+      title: "what if i try this",
+      majors: ["Computer Science"],
+      minors: [],
+      percentage: 90,
+    },
+    {
+      id: "3",
+      title: "if i go crazy",
+      majors: ["Mathematics"],
+      minors: ["Physics"],
+      percentage: 90,
+    },
+  ];
 
   return (
-    <VStack
-      className="h-full py-6 border-gray-200 fixed left-0 top-0 bg-white shadow-lg overflow-y-auto"
-      style={{
-        width: sidebarIsOpen ? maxWidth : 0,
-        opacity: sidebarIsOpen ? 1 : 0,
-        borderRightWidth: sidebarIsOpen ? 3 : 0,
-        transition: `width ${widthAnimationTime}s ease-in-out,
-                     opacity ${opacityAnimationTime}s ease-in-out,
-                     border-right-width ${widthAnimationTime}s ease-in-out`,
-      }}
+    <div
+      className={clsx(
+        "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[#eae8e1] overflow-hidden whitespace-nowrap transition-[max-width] duration-300 ease-out",
+        {
+          "max-w-[325px]": sidebarIsOpen,
+          "max-w-0 pointer-events-none": !sidebarIsOpen,
+        }
+      )}
+      aria-hidden={!sidebarIsOpen}
+      {...(!sidebarIsOpen ? { inert: true } : {})}
     >
-      <Button
-  className="p-2 rounded-full self-end mr-4"
-  fill="none"
-  onClick={toggleSidebar}
->
-<HStack y="middle" gap={3}>
-          <img
-          src={logoImage}
-          className="w-66"
-          />
-        </HStack>
-  <NotebookIcon className="w-6 h-6" />
-      </Button>
-      <VStack className="px-6 py-2">
-      </VStack>
-      <div className="px-6 mt-4 text-xl font-bold">MY AUDITS</div>
-      <VStack className="px-4 mt-3 gap-3">
-        <div className="bg-orange-100 rounded-xl p-4">
-          <HStack y="middle" x="between">
-            <div className="font-bold text-lg">Degree Audit 1</div>
-            <div className="bg-[#b25d22] text-white px-3 py-1 rounded-md font-bold">   
-            </div>
-          </HStack>
-        </div>
-
-        <div
-          className="
-            flex items-center justify-between
-            px-4 py-3
-            rounded-xl
-            bg-[#FFFFFF]
-            shadow-sm
-            text-black
-          "
-        >
-          <HStack y="middle" gap={2}>
-            <span className="text-lg">▾</span>
-            <span className="font-semibold">what if i try this</span>
-          </HStack>
-
-          <HStack y="middle" gap={2}>
-            <span className="text-xl font-bold"></span>
-            <div className="bg-[#B45309] text-white px-3 py-1 rounded-md font-bold">
-            </div>
-          </HStack>
-        </div>
-
-
-        <div
-        className="
-          flex items-center justify-between
-          px-4 py-3
-          rounded-xl
-          bg-[#FFFFFF]
-          shadow-sm
-          text-black
-        ">
-        <HStack y="middle" gap={2}>
-          <span className="text-lg">▾</span>
-          <span className="font-semibold">what if i try this</span>
-        </HStack>
-
-        <HStack y="middle" gap={2}>
-          <span className="text-xl font-bold"></span>
-          <div className="bg-[#B45309] text-white px-3 py-1 rounded-md font-bold">
+      {/* Header */}
+      <div className="px-8 pb-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-12 h-12 bg-[#bf5700] rounded-full flex items-center justify-center">
+            <img src="" />
           </div>
-        </HStack>
+          <span className="text-[#bf5700] font-semibold text-xl">
+            Degree Audit Plus
+          </span>
+        </div>
+        <button
+          className="p-1 hover:bg-black/5 rounded"
+          onClick={toggleSidebar}
+        >
+          <SidebarIcon size={24} className="text-[#0f1215]" />
+        </button>
       </div>
-      </VStack>
-      <div className="px-6 mt-6 text-xl font-bold">RESOURCES</div>
 
-      <VStack className="px-6 mt-3 gap-2 text-orange-700 font-medium">
-        <a href="#">UT Core Requirements ↗</a>
-        <a href="#">UT Degree Plans ↗</a>
-        <a href="#">Registration Info Sheet (RIS) ↗</a>
-        <a href="#">Register for Courses ↗</a>
-      </VStack>
-      <div className="px-6 mt-8 text-orange-700 font-semibold">
-        Send us Feedback! ↗
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-8">
+        {/* MY AUDITS Section */}
+        <div className="flex items-center justify-between">
+          <span className="text-[19px] font-bold text-[#040506] tracking-[-0.19px]">
+            MY AUDITS
+          </span>
+          <button className="p-1 hover:bg-black/5 rounded">
+            <Plus size={24} className="text-[#0f1215]" />
+          </button>
+        </div>
+
+        <div className="mt-2 flex flex-col gap-3">
+          {audits.map((audit) => (
+            <DegreeAuditCard
+              key={audit.id}
+              title={audit.title}
+              majors={audit.majors}
+              minors={audit.minors}
+              percentage={audit.percentage}
+              isSelected={expandedAuditId === audit.id}
+              isExpanded={expandedAuditId === audit.id}
+              onToggle={() =>
+                setExpandedAuditId(
+                  expandedAuditId === audit.id ? null : audit.id
+                )
+              }
+              onMenuClick={() => {
+                console.log("Menu clicked for", audit.title);
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Divider */}
+        <hr className="my-5 border-[#eae8e1]" />
+
+        {/* RESOURCES Section */}
+        <div className="text-[19px] font-bold text-[#040506] tracking-[-0.19px]">
+          RESOURCES
+        </div>
+        <div className="mt-3 flex flex-col gap-2">
+          <a
+            href="#"
+            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+          >
+            UT Core Requirements <ArrowSquareOut size={14} />
+          </a>
+          <a
+            href="#"
+            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+          >
+            UT Degree Plans <ArrowSquareOut size={14} />
+          </a>
+          <a
+            href="#"
+            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+          >
+            Registration Info Sheet (RIS) <ArrowSquareOut size={14} />
+          </a>
+          <a
+            href="#"
+            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+          >
+            Register for Courses <ArrowSquareOut size={14} />
+          </a>
+        </div>
+
+        {/* Divider */}
+        <hr className="my-5 border-[#eae8e1]" />
+
+        {/* Feedback Link */}
+        <a
+          href="#"
+          className="text-[#bf5700] font-semibold hover:underline flex items-center gap-1"
+        >
+          Send us Feedback! <ArrowSquareOut size={14} />
+        </a>
       </div>
-      <VStack className="px-6 mt-10 mb-10">
-        <img
-          src={devImage}
-          alt="Made with love by Longhorn Developers"
-          className="w-56 mb-4"
-        />
 
-        <HStack x="center" gap={6} className="mt-4 text-black">
+      {/* Footer */}
+      <div className="px-8 pt-6 pb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <img src={lhdLogo} alt="Longhorn Developers" className="w-6 h-6" />
+          <div className="text-sm">
+            <span className="text-gray-600">MADE WITH LOVE, BY</span>
+            <br />
+            <span className="text-[#bf5700] font-semibold">
+              LONGHORN DEVELOPERS
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center justify-start gap-4 text-[#1a2024]">
           <a href="#" aria-label="Discord">
-            <DiscordLogo size={28}/>
+            <DiscordLogo size={24} />
           </a>
-
           <a href="#" aria-label="Instagram">
-            <InstagramLogo size={28} />
+            <InstagramLogo size={24} />
           </a>
-
           <a href="#" aria-label="LinkedIn">
-            <LinkedinLogo size={28}/>
+            <LinkedinLogo size={24} />
           </a>
-
           <a href="#" aria-label="GitHub">
-            <GithubLogo size={28}/>
+            <GithubLogo size={24} />
           </a>
-
           <a href="#" aria-label="Dark Mode">
-            <Moon size={28}/>
+            <Moon size={24} />
           </a>
-        </HStack>
-      </VStack>
-    </VStack>
+          <a href="#" aria-label="Settings">
+            <Gear size={24} />
+          </a>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -252,11 +299,10 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
     <VStack
       fill
       x="center"
-      className="w-full"
-      style={{
-        marginLeft: sidebarIsOpen ? 400 : 0,
-        transition: `margin-left ${widthAnimationTime}s ease-in-out`,
-      }}
+      className={clsx("w-full transition-[margin-left] duration-300 ease-out", {
+        "ml-[325px]": sidebarIsOpen,
+        "ml-0": !sidebarIsOpen,
+      })}
     >
       {children}
     </VStack>

@@ -33,6 +33,10 @@ export interface DegreeAuditCardProps {
   minors?: string[];
   percentage?: number;
   auditId?: string;
+  isSelected?: boolean;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+  onMenuClick?: () => void;
 }
 
 export interface AuditHistoryData {
