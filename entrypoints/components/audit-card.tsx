@@ -93,7 +93,7 @@ export const DegreeAuditCardPopup: React.FC<DegreeAuditCardProps> = ({
   percentage = 90,
 }) => {
   return (
-    <div className="bg-[#f1f5f9] rounded-md px-4 py-3 w-full transition-all duration-200 hover:bg-[#e2e8f0] cursor-pointer">
+    <div className="bg-[#f1f5f9] rounded-sm px-4 py-3 w-full transition-all duration-200 hover:bg-[#e2e8f0] cursor-pointer">
       <div className="flex flex-col gap-3">
         {/* Title */}
         <div className="font-bold text-[13px] leading-[18px] text-[#1a2024] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">

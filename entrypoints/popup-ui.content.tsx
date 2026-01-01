@@ -2,7 +2,36 @@ import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import App from "./popup-app/main";
 // Import Tailwind styles - WXT will inject these into the shadow DOM with cssInjectionMode: "ui"
-import "./styles/content.css";
+import "./popup-app/style.css";
+
+// Load Google Fonts into document.head (required for shadow DOM to use them)
+function loadFonts() {
+  // Check if already loaded to avoid duplicates
+  if (
+    document.querySelector(
+      'link[href*="fonts.googleapis.com/css2?family=Roboto+Flex"]'
+    )
+  ) {
+    return;
+  }
+
+  const preconnect1 = document.createElement("link");
+  preconnect1.rel = "preconnect";
+  preconnect1.href = "https://fonts.googleapis.com";
+  document.head.appendChild(preconnect1);
+
+  const preconnect2 = document.createElement("link");
+  preconnect2.rel = "preconnect";
+  preconnect2.href = "https://fonts.gstatic.com";
+  preconnect2.crossOrigin = "anonymous";
+  document.head.appendChild(preconnect2);
+
+  const fontLink = document.createElement("link");
+  fontLink.rel = "stylesheet";
+  fontLink.href =
+    "https://fonts.googleapis.com/css2?family=Staatliches&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap";
+  document.head.appendChild(fontLink);
+}
 
 // Wrapper component that adds positioning, click-outside handling, and animations
 function PopupWrapper({ onClose }: { onClose: () => void }) {
@@ -76,6 +105,9 @@ export default defineContentScript({
   cssInjectionMode: "ui",
   async main(ctx) {
     console.log("[DAP Popup] Content script loaded");
+
+    // Load fonts immediately so they're ready when popup opens
+    loadFonts();
 
     let isVisible = false;
     let ui: Awaited<ReturnType<typeof createShadowRootUi>> | null = null;

@@ -265,7 +265,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="space-y-2 mb-4">
+            <div className="space-y-4 mb-4">
               {displayedAudits.map((audit, index) => (
                 <div key={index} onClick={handleOpenDegreeAuditPage}>
                   <DegreeAuditCardPopup
