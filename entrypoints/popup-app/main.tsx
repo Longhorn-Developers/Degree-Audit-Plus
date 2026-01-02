@@ -60,8 +60,7 @@ export default function App() {
   }, []);
 
   const handleOpenDegreeAuditPage = () => {
-    const url = browser.runtime.getURL("degree-audit.html" as any);
-    browser.tabs.create({ url });
+    browser.runtime.sendMessage({ action: "openDegreeAudit" });
   };
 
   const injectClicker = async (tabId: number) => {
@@ -267,7 +266,13 @@ export default function App() {
           <>
             <div className="space-y-4 mb-4">
               {displayedAudits.map((audit, index) => (
-                <div key={index} onClick={handleOpenDegreeAuditPage}>
+                <div
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDegreeAuditPage();
+                  }}
+                >
                   <DegreeAuditCardPopup
                     title={audit.title}
                     majors={audit.majors}

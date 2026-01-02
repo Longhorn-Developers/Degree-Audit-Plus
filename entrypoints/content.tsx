@@ -152,7 +152,7 @@ function defineUTDToppageHeight() {
 }
 
 //
-// --- Silent Background Audit Runner ---
+// --- Silent Background stuff ---
 //
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
@@ -209,6 +209,69 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   }
 });
 
+// code to scrape user audit data
+browser.runtime.onMessage.addListener(async (msg, sender) => {
+  console.log("Content script received message:", msg.type);
+
+  if (msg.type === "RUN_SCRAPER") {
+    console.log("🔍 Starting scraper...");
+    const table = document.querySelector("#coursework table.results");
+    if (!table) {
+      console.error("❌ Table not found!");
+      alert("ERROR: Table not found! Check selector.");
+      return;
+    }
+    console.log("✅ Table found:", table);
+
+    // Get all rows first to debug
+    const allRows = table.querySelectorAll("tr");
+    console.log("Total rows:", allRows.length);
+
+    // Debug each row's class
+    allRows.forEach((row, idx) => {
+      console.log(`Row ${idx}:`, {
+        className: row.className,
+        hasAlias: row.classList.contains("alias"),
+        firstCell: row.querySelector("td")?.textContent?.trim(),
+      });
+    });
+
+    // Filter out alias rows
+    const rows = table.querySelectorAll("tr:not(.alias)");
+    console.log("Filtered rows (no alias):", rows.length);
+
+    const courses = Array.from(rows)
+      .map((row) => {
+        const cells = row.querySelectorAll("td");
+        if (!cells.length) return null;
+
+        const courseData = {
+          course: cells[0]?.textContent?.trim(),
+          title: cells[1]?.textContent?.trim(),
+          grade: cells[2]?.textContent?.trim(),
+          unique: cells[3]?.textContent?.trim(),
+          type: cells[4]?.textContent?.trim(),
+          creditHours: cells[5]?.textContent?.trim(),
+          school: cells[6]?.textContent?.trim(),
+        };
+
+        console.log(
+          "Course extracted:",
+          courseData.course,
+          "- alias:",
+          row.classList.contains("alias")
+        );
+        return courseData;
+      })
+      .filter(Boolean);
+
+    console.log("Final courses array:", courses);
+    console.log("📤 Sending results to background script...");
+
+    // Send results back - background script will close this tab automatically
+    browser.runtime.sendMessage({ type: "AUDIT_RESULTS", data: courses });
+  }
+});
 function getCSRFToken(): string | null {
   const input = document.querySelector<HTMLInputElement>(
     "input[name='csrfmiddlewaretoken']"

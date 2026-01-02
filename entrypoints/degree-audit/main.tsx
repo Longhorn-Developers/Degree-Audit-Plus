@@ -12,6 +12,7 @@ import "../styles/content.css";
 import devImage from "../../public/developer_image.png";
 import logoImage from "../../public/logo_image.png";
 import lhdLogo from "../../public/icon/LHD Logo.png";
+import dapLogo from "../../public/dap-logo.png";
 import DegreeAuditCard from "../components/audit-card";
 import {
   Sidebar as SidebarIcon,
@@ -27,6 +28,8 @@ import {
 import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
 import RequirementBreakdown from "./components/requirement-breakdown";
+
+import type { RequirementData } from "@/lib/general-types";
 
 const DUMMY_DATA = {
   donutGraph: [
@@ -107,9 +110,96 @@ const DUMMY_DATA = {
       },
     ] satisfies Course[],
   },
+  // New structure for RequirementBreakdown component
+  coreRequirements: [
+    {
+      code: "CORE (010)",
+      description: "RHE 306 or its equivalent are required.",
+      hours: { current: 3, total: 3 },
+      status: "Completed",
+      courses: [
+        {
+          code: "RHE 306",
+          name: "RHETORIC AND WRITING",
+          uniqueNumber: "12345",
+          semester: "Fall 2023",
+          grade: "A",
+          status: "Completed",
+        },
+      ],
+    },
+    {
+      code: "CORE (040)",
+      description:
+        "3 hours in humanities (E 316L, M, N, P, or the equivalent) are required",
+      hours: { current: 3, total: 3 },
+      status: "Completed",
+      courses: [
+        {
+          code: "E 316L",
+          name: "AMERICAN LITERATURE",
+          uniqueNumber: "23456",
+          semester: "Spring 2024",
+          grade: "A",
+          status: "Completed",
+        },
+      ],
+    },
+    {
+      code: "CORE (060)",
+      description:
+        "6 hours in U.S. history, including no more than 3 hours in Texas history, are required.",
+      hours: { current: 3, total: 6 },
+      status: "Partial",
+      courses: [
+        {
+          code: "HIS 315K",
+          name: "U.S. HISTORY 1",
+          uniqueNumber: "00000",
+          semester: "Spring 2024",
+          grade: "A",
+          status: "Completed",
+        },
+        {
+          code: "HIS 315L",
+          name: "U.S. HISTORY 2",
+          uniqueNumber: "00000",
+          semester: "Fall 2025",
+          status: "InProgress",
+        },
+      ],
+    },
+  ] satisfies RequirementData[],
 };
 
 const App = () => {
+  const AUDIT_URL =
+    "https://utdirect.utexas.edu/apps/degree/audits/results/100017390968/";
+
+  const runScraper = () => {
+    browser.runtime.sendMessage(
+      { type: "SCRAPE_AUDIT", url: AUDIT_URL },
+      (response) => {
+        console.log("Scraper started:", response);
+      }
+    );
+  };
+
+  // Listen for scraper results
+  React.useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message.type === "AUDIT_RESULTS") {
+        console.log("Received audit data->:", message.data);
+        // TODO: Store this data in state and display it
+      }
+    };
+
+    browser.runtime.onMessage.addListener(handleMessage);
+    return () => browser.runtime.onMessage.removeListener(handleMessage);
+  }, []);
+
+  runScraper();
+
   return (
     <PreferencesProvider>
       <DegreeAuditPage />
@@ -160,10 +250,8 @@ const Sidebar = () => {
       {/* Header */}
       <div className="px-8 pb-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-12 h-12 bg-[#bf5700] rounded-full flex items-center justify-center">
-            <img src="" />
-          </div>
-          <span className="text-[#bf5700] font-semibold text-xl">
+          <img src={dapLogo} alt="DAP Logo" className="w-12 h-12" />
+          <span className="text-dap-orange font-semibold text-xl">
             Degree Audit Plus
           </span>
         </div>
@@ -219,7 +307,7 @@ const Sidebar = () => {
         <div className="mt-3 flex flex-col gap-2">
           <a
             href="#"
-            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+            className="text-[#bf5700] font-[50px] hover:underline flex items-center gap-1"
           >
             UT Core Requirements <ArrowSquareOut size={14} />
           </a>
@@ -338,32 +426,32 @@ const DegreeAuditPage = () => {
             creditsRequired={dummyData.creditsRequired}
           />
           <RequirementBreakdown
-            title="Core"
-            hours={{ current: 5, total: 20 }}
-            credits={{ current: 10, total: 20 }}
-            courses={dummyData.courses}
+            title="Core Curriculum"
+            hours={{ current: 9, total: 42 }}
+            requirements={DUMMY_DATA.coreRequirements}
             onAddCourse={handleOpenModal}
+            colorIndex={0}
           />
           <RequirementBreakdown
             title="Major(s)"
             hours={{ current: 5, total: 20 }}
-            credits={{ current: 10, total: 20 }}
-            courses={dummyData.courses}
+            requirements={DUMMY_DATA.coreRequirements}
             onAddCourse={handleOpenModal}
+            colorIndex={1}
           />
           <RequirementBreakdown
             title="Minor(s) + Certificate(s)"
             hours={{ current: 5, total: 20 }}
-            credits={{ current: 10, total: 20 }}
-            courses={dummyData.courses}
+            requirements={DUMMY_DATA.coreRequirements}
             onAddCourse={handleOpenModal}
+            colorIndex={2}
           />
           <RequirementBreakdown
             title="Electives"
             hours={{ current: 5, total: 20 }}
-            credits={{ current: 10, total: 20 }}
-            courses={dummyData.courses}
+            requirements={DUMMY_DATA.coreRequirements}
             onAddCourse={handleOpenModal}
+            colorIndex={3}
           />
         </VStack>
       </MainContent>

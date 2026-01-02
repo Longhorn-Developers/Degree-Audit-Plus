@@ -29,6 +29,15 @@ export default {
         staatliches: ["Staatliches", "cursive"],
         "roboto-flex": ["Roboto Flex", "sans-serif"],
       },
+      colors: {
+        dap: {
+          orange: "#BF5700",
+          teal: "#00A9B7",
+          yellow: "#FFD600",
+          indigo: "#6366F1",
+          pink: "#EC4899",
+        },
+      },
     },
   },
   plugins: [],

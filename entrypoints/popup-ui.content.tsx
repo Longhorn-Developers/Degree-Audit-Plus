@@ -73,7 +73,7 @@ function PopupWrapper({ onClose }: { onClose: () => void }) {
     >
       <div
         style={{
-          borderRadius: "4px",
+          borderRadius: "6px",
           borderColor: "#EAE8E1",
           borderWidth: "1px",
           backgroundColor: "#fff",

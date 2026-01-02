@@ -49,4 +49,35 @@ export interface AuditHistoryData {
 export interface AuditData {
   // holds complete information for an audit.
   auditNumber: number;
+  completion: number;
+  requirements: RequirementData[];
+  courses: CourseRowData[]; // completed courses
 }
+
+export type RequirementStatus = "Completed" | "Partial" | "NotStarted";
+export type CourseStatus = "Completed" | "InProgress" | "Planned";
+
+export type CourseRowData = {
+  code: string;
+  name: string;
+  uniqueNumber?: string;
+  semester: string;
+  grade?: string;
+  hours?: number;
+  status: CourseStatus;
+};
+
+export type RequirementData = {
+  code: string;
+  description: string;
+  hours: { current: number; total: number };
+  status: RequirementStatus;
+  courses: CourseRowData[];
+};
+
+export type RequirementBreakdownComponentProps = {
+  title: string;
+  hours: { current: number; total: number };
+  requirements: RequirementData[];
+  onAddCourse?: () => void;
+};
