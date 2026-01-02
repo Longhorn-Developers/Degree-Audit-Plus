@@ -1,5 +1,10 @@
-import { Course } from "@/lib/general-types";
-import React, { useState } from "react";
+import {
+  Course,
+  RequirementSection,
+  DegreeAuditCardProps,
+} from "@/lib/general-types";
+import { getAuditHistory, getAuditData, saveAuditData } from "@/lib/storage";
+import React, { useState, createContext, useContext } from "react";
 import ReactDOM from "react-dom/client";
 import clsx from "clsx";
 import Button from "../components/common/button";
@@ -29,7 +34,18 @@ import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
 import RequirementBreakdown from "./components/requirement-breakdown";
 
-import type { RequirementData } from "@/lib/general-types";
+// Context for sharing audit data betw sidebar and main
+interface AuditContextType {
+  sections: RequirementSection[];
+  currentAuditId: string | null;
+  setCurrentAuditId: (id: string | null) => void;
+}
+const AuditContext = createContext<AuditContextType>({
+  sections: [],
+  currentAuditId: null,
+  setCurrentAuditId: () => {},
+});
+const useAuditContext = () => useContext(AuditContext);
 
 const DUMMY_DATA = {
   donutGraph: [
@@ -110,130 +126,96 @@ const DUMMY_DATA = {
       },
     ] satisfies Course[],
   },
-  // New structure for RequirementBreakdown component
-  coreRequirements: [
-    {
-      code: "CORE (010)",
-      description: "RHE 306 or its equivalent are required.",
-      hours: { current: 3, total: 3 },
-      status: "Completed",
-      courses: [
-        {
-          code: "RHE 306",
-          name: "RHETORIC AND WRITING",
-          uniqueNumber: "12345",
-          semester: "Fall 2023",
-          grade: "A",
-          status: "Completed",
-        },
-      ],
-    },
-    {
-      code: "CORE (040)",
-      description:
-        "3 hours in humanities (E 316L, M, N, P, or the equivalent) are required",
-      hours: { current: 3, total: 3 },
-      status: "Completed",
-      courses: [
-        {
-          code: "E 316L",
-          name: "AMERICAN LITERATURE",
-          uniqueNumber: "23456",
-          semester: "Spring 2024",
-          grade: "A",
-          status: "Completed",
-        },
-      ],
-    },
-    {
-      code: "CORE (060)",
-      description:
-        "6 hours in U.S. history, including no more than 3 hours in Texas history, are required.",
-      hours: { current: 3, total: 6 },
-      status: "Partial",
-      courses: [
-        {
-          code: "HIS 315K",
-          name: "U.S. HISTORY 1",
-          uniqueNumber: "00000",
-          semester: "Spring 2024",
-          grade: "A",
-          status: "Completed",
-        },
-        {
-          code: "HIS 315L",
-          name: "U.S. HISTORY 2",
-          uniqueNumber: "00000",
-          semester: "Fall 2025",
-          status: "InProgress",
-        },
-      ],
-    },
-  ] satisfies RequirementData[],
 };
 
 const App = () => {
-  const AUDIT_URL =
-    "https://utdirect.utexas.edu/apps/degree/audits/results/100017390968/";
+  const [sections, setSections] = useState<RequirementSection[]>([]);
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get("auditId") // look at broswer
+  );
+  const [isLoading, setIsLoading] = useState(false);
 
-  const runScraper = () => {
-    browser.runtime.sendMessage(
-      { type: "SCRAPE_AUDIT", url: AUDIT_URL },
-      (response) => {
-        console.log("Scraper started:", response);
+  // Load audit data dynamicly
+  React.useEffect(() => {
+    if (!currentAuditId) return;
+
+    async function loadAudit() {
+      // 1. Check broswer first
+      const cached = await getAuditData(currentAuditId!);
+      if (cached) {
+        console.log("Loaded from cache:", currentAuditId);
+        setSections(cached.requirements);
+        return;
       }
-    );
-  };
+      // 2. If not cached, scrape
+      console.log("Not in cache, scraping:", currentAuditId);
+      setIsLoading(true);
+      const url = `https://utdirect.utexas.edu/apps/degree/audits/results/${currentAuditId}/`;
+      browser.runtime.sendMessage({ type: "SCRAPE_AUDIT", url });
+    }
+    loadAudit();
+  }, [currentAuditId]);
 
-  // Listen for scraper results
+  // Listen for scraper results & cache them
   React.useEffect(() => {
     const handleMessage = (message: any) => {
-      if (message.type === "AUDIT_RESULTS") {
-        console.log("Received audit data->:", message.data);
-        // TODO: Store this data in state and display it
+      if (message.type === "AUDIT_RESULTS" && currentAuditId) {
+        console.log("Received audit data, caching:", currentAuditId);
+        setSections(message.requirements as RequirementSection[]);
+        saveAuditData(currentAuditId, {
+          requirements: message.requirements,
+          courses: message.data,
+        });
+        setIsLoading(false);
       }
     };
 
     browser.runtime.onMessage.addListener(handleMessage);
     return () => browser.runtime.onMessage.removeListener(handleMessage);
-  }, []);
-
-  runScraper();
+  }, [currentAuditId]);
 
   return (
     <PreferencesProvider>
-      <DegreeAuditPage />
+      <AuditContext.Provider
+        value={{ sections, currentAuditId, setCurrentAuditId }}
+      >
+        <DegreeAuditPage />
+        {isLoading && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-[#bf5700] border-t-transparent rounded-full animate-spin" />
+              <p className="text-lg font-semibold text-gray-800">
+                Loading audit data...
+              </p>
+            </div>
+          </div>
+        )}
+      </AuditContext.Provider>
     </PreferencesProvider>
   );
 };
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const [expandedAuditId, setExpandedAuditId] = useState<string | null>("1");
+  const { currentAuditId, setCurrentAuditId } = useAuditContext();
+  const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const audits = [
-    {
-      id: "1",
-      title: "Degree Audit 1",
-      majors: ["Informatics", "Design"],
-      minors: ["Business", "Studio Art", "Elements of Computing"],
-      percentage: 68,
-    },
-    {
-      id: "2",
-      title: "what if i try this",
-      majors: ["Computer Science"],
-      minors: [],
-      percentage: 90,
-    },
-    {
-      id: "3",
-      title: "if i go crazy",
-      majors: ["Mathematics"],
-      minors: ["Physics"],
-      percentage: 90,
-    },
-  ];
+  React.useEffect(() => {
+    async function loadAudits() {
+      try {
+        const data = await getAuditHistory();
+        if (data && !data.error) {
+          setAudits(data.audits);
+        }
+      } catch (e) {
+        console.error("Error loading audit history:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAudits();
+  }, []);
 
   return (
     <div
@@ -276,56 +258,65 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-2 flex flex-col gap-3">
-          {audits.map((audit) => (
-            <DegreeAuditCard
-              key={audit.id}
-              title={audit.title}
-              majors={audit.majors}
-              minors={audit.minors}
-              percentage={audit.percentage}
-              isSelected={expandedAuditId === audit.id}
-              isExpanded={expandedAuditId === audit.id}
-              onToggle={() =>
-                setExpandedAuditId(
-                  expandedAuditId === audit.id ? null : audit.id
-                )
-              }
-              onMenuClick={() => {
-                console.log("Menu clicked for", audit.title);
-              }}
-            />
-          ))}
+          {loading ? (
+            <p className="text-sm text-gray-500">Loading audits...</p>
+          ) : audits.length === 0 ? (
+            <p className="text-sm text-gray-500">No audits found</p>
+          ) : (
+            audits.map((audit, index) => {
+              const id = audit.auditId || String(index);
+              return (
+                <DegreeAuditCard
+                  key={id}
+                  title={audit.title}
+                  majors={audit.majors}
+                  minors={audit.minors}
+                  percentage={audit.percentage}
+                  isSelected={currentAuditId === id}
+                  isExpanded={currentAuditId === id}
+                  onToggle={() => {
+                    if (audit.auditId) {
+                      setCurrentAuditId(audit.auditId); // No page refresh, just update state
+                    }
+                  }}
+                  onMenuClick={() => {
+                    console.log("Menu clicked for", audit.title);
+                  }}
+                />
+              );
+            })
+          )}
         </div>
 
         {/* Divider */}
         <hr className="my-5 border-[#eae8e1]" />
 
         {/* RESOURCES Section */}
-        <div className="text-[19px] font-bold text-[#040506] tracking-[-0.19px]">
+        <div className="text-[25px] font-bold text-[#040506] tracking-[-0.19px]">
           RESOURCES
         </div>
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-2 ">
           <a
             href="#"
-            className="text-[#bf5700] font-[50px] hover:underline flex items-center gap-1"
+            className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
             UT Core Requirements <ArrowSquareOut size={14} />
           </a>
           <a
             href="#"
-            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+            className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
             UT Degree Plans <ArrowSquareOut size={14} />
           </a>
           <a
             href="#"
-            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+            className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
             Registration Info Sheet (RIS) <ArrowSquareOut size={14} />
           </a>
           <a
             href="#"
-            className="text-[#bf5700] font-medium hover:underline flex items-center gap-1"
+            className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
             Register for Courses <ArrowSquareOut size={14} />
           </a>
@@ -348,7 +339,9 @@ const Sidebar = () => {
         <div className="flex items-center gap-2 mb-4">
           <img src={lhdLogo} alt="Longhorn Developers" className="w-6 h-6" />
           <div className="text-sm">
-            <span className="text-gray-600">MADE WITH LOVE, BY</span>
+            <span className="text-[#bf5700] font-semibold">
+              MADE WITH LOVE, BY
+            </span>
             <br />
             <span className="text-[#bf5700] font-semibold">
               LONGHORN DEVELOPERS
@@ -397,8 +390,29 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Helper to calculate total hours for a section
+const calcSectionHours = (section?: RequirementSection) => {
+  if (!section) return { current: 0, total: 0 };
+  const rules = section.rules;
+  return {
+    current: rules.reduce((sum, r) => sum + r.appliedHours, 0),
+    total: rules.reduce((sum, r) => sum + r.requiredHours, 0),
+  };
+};
+
+// Section titles by index
+const SECTION_TITLES = [
+  "Core Curriculum",
+  "General Education",
+  "Major(s)",
+  "Minor(s) + Certificate(s)",
+  "GPA Totals",
+  "Credit Hour Totals",
+];
+
 const DegreeAuditPage = () => {
   const dummyData = DUMMY_DATA["courseBreakdown"];
+  const { sections } = useAuditContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
@@ -414,45 +428,27 @@ const DegreeAuditPage = () => {
       <Sidebar />
       <MainContent>
         <Navbar />
-        <VStack x="center" className="w-[80%] max-w-7xl mx-auto">
+        <VStack x="center" className="w-[80%] max-w-7xl mx-auto mb-[30px]">
           <Title text="Degree Progress Overview" />
           <DegreeCompletionPercentage />
           <Title text="Degree Checklist" />
-          <DegreeProgressOverviewCard
+          {/* <DegreeProgressOverviewCard
             hoursCompleted={dummyData.hoursCompleted}
             hoursInProgress={dummyData.hoursInProgress}
             hoursRequired={dummyData.hoursRequired}
             creditsCompleted={dummyData.creditsCompleted}
             creditsRequired={dummyData.creditsRequired}
-          />
-          <RequirementBreakdown
-            title="Core Curriculum"
-            hours={{ current: 9, total: 42 }}
-            requirements={DUMMY_DATA.coreRequirements}
-            onAddCourse={handleOpenModal}
-            colorIndex={0}
-          />
-          <RequirementBreakdown
-            title="Major(s)"
-            hours={{ current: 5, total: 20 }}
-            requirements={DUMMY_DATA.coreRequirements}
-            onAddCourse={handleOpenModal}
-            colorIndex={1}
-          />
-          <RequirementBreakdown
-            title="Minor(s) + Certificate(s)"
-            hours={{ current: 5, total: 20 }}
-            requirements={DUMMY_DATA.coreRequirements}
-            onAddCourse={handleOpenModal}
-            colorIndex={2}
-          />
-          <RequirementBreakdown
-            title="Electives"
-            hours={{ current: 5, total: 20 }}
-            requirements={DUMMY_DATA.coreRequirements}
-            onAddCourse={handleOpenModal}
-            colorIndex={3}
-          />
+          /> */}
+          {SECTION_TITLES.map((title, idx) => (
+            <RequirementBreakdown
+              key={title}
+              title={title}
+              hours={calcSectionHours(sections[idx])}
+              requirements={sections[idx]?.rules ?? []}
+              onAddCourse={handleOpenModal}
+              colorIndex={idx}
+            />
+          ))}
         </VStack>
       </MainContent>
 
@@ -480,7 +476,7 @@ const DegreeCompletionPercentage = () => {
       bars={bars}
       tooltipContent={(bar) => (
         <VStack
-          className="p-2 rounded-md border font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
+          className="p-2 rounded-md border border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
           style={{ borderColor: bar.color, color: bar.color }}
         >
           <HStack

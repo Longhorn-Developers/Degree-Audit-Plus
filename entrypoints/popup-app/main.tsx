@@ -59,8 +59,11 @@ export default function App() {
     loadAudits();
   }, []);
 
-  const handleOpenDegreeAuditPage = () => {
-    browser.runtime.sendMessage({ action: "openDegreeAudit" });
+  const handleOpenDegreeAuditPage = (auditId: string | undefined) => {
+    browser.runtime.sendMessage({
+      action: "openDegreeAudit",
+      auditId: auditId,
+    });
   };
 
   const injectClicker = async (tabId: number) => {
@@ -270,7 +273,7 @@ export default function App() {
                   key={index}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleOpenDegreeAuditPage();
+                    handleOpenDegreeAuditPage(audit?.auditId);
                   }}
                 >
                   <DegreeAuditCardPopup

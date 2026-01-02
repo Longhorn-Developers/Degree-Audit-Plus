@@ -15,7 +15,9 @@ export default defineBackground(() => {
   // Listen for messages from content scripts
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "openDegreeAudit") {
-      const url = browser.runtime.getURL("/degree-audit.html");
+      const url = browser.runtime.getURL(
+        `/degree-audit.html&${message.auditId}`
+      );
       browser.tabs
         .create({ url })
         .then(() => {
@@ -28,7 +30,8 @@ export default defineBackground(() => {
     }
   });
 
-  // Track active scraper tabs for cleanup
+  // scrape audit data
+
   const scraperTabs = new Map<number, NodeJS.Timeout>();
 
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {

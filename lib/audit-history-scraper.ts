@@ -39,6 +39,8 @@ function parsePercentage(percentText: string): number {
 /**
  * Fetch and parse audit history from UT Direct
  */
+
+// may need to add real time functionality
 export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
   try {
     const response = await fetch(AUDIT_HISTORY_URL, {
@@ -83,25 +85,16 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
         const auditLink = auditIdCell.querySelector("a");
         const auditId = auditLink?.textContent?.trim() || "";
 
-        console.log("Parsing row:", {
-          programText: programText.substring(0, programText.length),
-          percentText,
-          auditId,
-        });
-
         // Parse major, credential, and percentage
         const major = parseMajor(programText);
         const credential = parseCredential(programText);
         const percentage = parsePercentage(percentText);
-
-        console.log("Parsed values:", { major, credential, percentage, auditId });
 
         // Create a unique key for this audit configuration
         const auditKey = `${major}-${credential || "none"}-${percentage}`;
 
         // Skip if we alr have this audit
         if (seenAudits.has(auditKey)) {
-          console.log("Skipping duplicate audit:", auditKey);
           continue;
         }
 
@@ -114,15 +107,12 @@ export async function fetchAuditHistory(): Promise<DegreeAuditCardProps[]> {
           auditId,
         };
 
-        console.log("Created audit:", audit);
         audits.push(audit);
         seenAudits.set(auditKey, audits.length);
       } catch (rowError) {
         console.warn("Error parsing audit row:", rowError);
       }
     }
-
-    console.log("Final audits array:", audits);
 
     if (audits.length === 0) {
       console.log("No audits found in history");

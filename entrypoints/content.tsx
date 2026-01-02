@@ -208,21 +208,25 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     });
   }
 });
-
+//-----------------------------------------------------------------
+//----------------------------------------------------------------
 // code to scrape user audit data
+import type {
+  RequirementRule,
+  RequirementSection,
+  CourseStatus,
+} from "@/lib/general-types";
+
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   console.log("Content script received message:", msg.type);
 
   if (msg.type === "RUN_SCRAPER") {
-    console.log("🔍 Starting scraper...");
     const table = document.querySelector("#coursework table.results");
     if (!table) {
       console.error("❌ Table not found!");
       alert("ERROR: Table not found! Check selector.");
       return;
     }
-    console.log("✅ Table found:", table);
-
     // Get all rows first to debug
     const allRows = table.querySelectorAll("tr");
     console.log("Total rows:", allRows.length);
@@ -254,22 +258,102 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
           creditHours: cells[5]?.textContent?.trim(),
           school: cells[6]?.textContent?.trim(),
         };
-
-        console.log(
-          "Course extracted:",
-          courseData.course,
-          "- alias:",
-          row.classList.contains("alias")
-        );
         return courseData;
       })
       .filter(Boolean);
 
-    console.log("Final courses array:", courses);
-    console.log("📤 Sending results to background script...");
+    const requirements = document.querySelector("#requirements table.results ");
+
+    console.log(requirements);
+
+    // GET DEGREE PROGRESS DATA
+    const sections = Array.from(
+      document.querySelectorAll("#requirements table.results tbody.section")
+    );
+
+    const parseHours = (text: string): number => {
+      const match = text.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
+
+    const parseCourseStatus = (text: string): CourseStatus => {
+      if (text.includes("Applied")) return "Applied";
+      if (text.includes("Planned")) return "Planned";
+      if (text.includes("Progress")) return "In Progress";
+      return "Unknown";
+    };
+
+    const results: RequirementSection[] = [];
+
+    sections.forEach((section) => {
+      const rules: RequirementRule[] = [];
+
+      const rows = Array.from(section.querySelectorAll("tr"));
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+
+        if (!row.classList.contains("rule")) continue;
+
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 6) continue;
+
+        let status: RequirementRule["status"] = "unfulfilled";
+        if (row.classList.contains("fulfilled")) status = "fulfilled";
+        else if (row.classList.contains("partial")) status = "partial";
+
+        // ---------- Parse rule metadata ----------
+        const rule: RequirementRule = {
+          text: cells[2].innerText.trim(),
+          requiredHours: parseHours(cells[3].innerText),
+          appliedHours: parseHours(cells[4].innerText),
+          remainingHours: parseHours(cells[5].innerText),
+          status,
+          courses: [],
+        };
+
+        // ---------- Parse details row ----------
+        const detailsRow = row.nextElementSibling;
+        if (detailsRow?.classList.contains("details")) {
+          const courseRows = Array.from(
+            detailsRow.querySelectorAll("table tbody tr")
+          );
+
+          courseRows.forEach((courseRow) => {
+            const courseCells = courseRow.querySelectorAll("td");
+            if (courseCells.length < 6) return;
+
+            rule.courses.push({
+              code: courseCells[0].innerText.trim(),
+              name: courseCells[1].innerText.trim(),
+              grade: courseCells[2].innerText.trim() || undefined,
+              semester: courseCells[3].innerText.trim(),
+              uniqueNumber: courseCells[4].innerText.trim(),
+              status: parseCourseStatus(
+                courseCells[courseCells.length - 1].innerText
+              ),
+              hours:
+                parseInt(courseCells[courseCells.length - 2]?.innerText, 10) ||
+                undefined,
+            });
+          });
+        }
+
+        rules.push(rule);
+      }
+
+      if (rules.length > 0) {
+        results.push({ rules });
+      }
+      console.log(results);
+    });
 
     // Send results back - background script will close this tab automatically
-    browser.runtime.sendMessage({ type: "AUDIT_RESULTS", data: courses });
+    browser.runtime.sendMessage({
+      type: "AUDIT_RESULTS",
+      data: courses,
+      requirements: results,
+    });
   }
 });
 function getCSRFToken(): string | null {

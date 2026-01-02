@@ -2,7 +2,7 @@
 // to save, retrieve, and clear the user's degree audit history.
 
 import { browser } from "wxt/browser";
-import type { AuditHistoryData, DegreeAuditCardProps } from "./general-types";
+import type { AuditHistoryData, DegreeAuditCardProps, RequirementSection } from "./general-types";
 
 const STORAGE_KEY = "auditHistory";
 
@@ -43,5 +43,41 @@ export async function clearAuditHistory(): Promise<void> {
   } catch (e) {
     console.error("Failed to clear audit history from storage:", e);
     throw e;
+  }
+}
+
+// ---- Audit Data Cache (per auditId) ----
+const AUDIT_DATA_PREFIX = "auditData_";
+
+export interface CachedAuditData {
+  requirements: RequirementSection[];
+  courses: any[]; // Raw course data from scraper
+}
+
+// Save scraped audit data (requirements + courses) to cache
+export async function saveAuditData(
+  auditId: string,
+  data: CachedAuditData
+): Promise<void> {
+  try {
+    await browser.storage.local.set({
+      [`${AUDIT_DATA_PREFIX}${auditId}`]: data,
+    });
+  } catch (e) {
+    console.error("Failed to save audit data to storage:", e);
+  }
+}
+
+// Get cached audit data (returns null if not cached)
+export async function getAuditData(
+  auditId: string
+): Promise<CachedAuditData | null> {
+  try {
+    const key = `${AUDIT_DATA_PREFIX}${auditId}`;
+    const result = await browser.storage.local.get(key);
+    return result[key] || null;
+  } catch (e) {
+    console.error("Failed to get audit data from storage:", e);
+    return null;
   }
 }

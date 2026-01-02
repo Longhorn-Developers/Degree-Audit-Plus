@@ -12,9 +12,10 @@ const StatusChip = (props: { status: CourseRowData["status"] }) => {
 	return (
 		<div
 			className={cn("px-2 py-1 border-2 rounded-full text-sm", {
-				"border-green-500 text-green-500": status === "Completed",
-				"border-yellow-500 text-yellow-500": status === "InProgress",
-				"border-red-500 text-red-500": status === "Planned",
+				"border-green-500 text-green-500": status === "Applied",
+				"border-yellow-500 text-yellow-500": status === "In Progress",
+				"border-blue-500 text-blue-500": status === "Planned",
+				"border-gray-500 text-gray-500": status === "Unknown",
 			})}
 		>
 			{status}

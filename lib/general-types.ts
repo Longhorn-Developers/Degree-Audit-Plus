@@ -3,18 +3,30 @@ export type Progress = {
   total: number;
 };
 
-// export type DoneAndWorkingAndUnmetRequirementsProgress = {
-//   done: number;
-//   working: number;
-//   unmet: number;
-// };
+// Scraper types - source of truth from audit page parsing
+export type CourseStatus = "Applied" | "Planned" | "In Progress" | "Unknown";
 
-export type RequirementBreakdownProps = {
-  title: string;
-  hours: Progress;
-  credits: Progress;
-  courses: Course[];
-  onAddCourse?: () => void;
+export type CourseRowData = {
+  code: string;
+  name: string;
+  uniqueNumber?: string;
+  semester: string;
+  grade?: string;
+  hours?: number;
+  status: CourseStatus;
+};
+
+export type RequirementRule = {
+  text: string;
+  requiredHours: number;
+  appliedHours: number;
+  remainingHours: number;
+  status: "fulfilled" | "partial" | "unfulfilled";
+  courses: CourseRowData[];
+};
+
+export type RequirementSection = {
+  rules: RequirementRule[];
 };
 
 export type Course = {
@@ -25,6 +37,14 @@ export type Course = {
   semester: string;
   grade: string;
   status: "Completed" | "In Progress" | "Not Started";
+};
+
+export type RequirementBreakdownProps = {
+  title: string;
+  hours: Progress;
+  credits: Progress;
+  courses: Course[];
+  onAddCourse?: () => void;
 };
 
 export interface DegreeAuditCardProps {
@@ -50,34 +70,13 @@ export interface AuditData {
   // holds complete information for an audit.
   auditNumber: number;
   completion: number;
-  requirements: RequirementData[];
-  courses: CourseRowData[]; // completed courses
-}
-
-export type RequirementStatus = "Completed" | "Partial" | "NotStarted";
-export type CourseStatus = "Completed" | "InProgress" | "Planned";
-
-export type CourseRowData = {
-  code: string;
-  name: string;
-  uniqueNumber?: string;
-  semester: string;
-  grade?: string;
-  hours?: number;
-  status: CourseStatus;
-};
-
-export type RequirementData = {
-  code: string;
-  description: string;
-  hours: { current: number; total: number };
-  status: RequirementStatus;
+  requirements: RequirementSection[];
   courses: CourseRowData[];
-};
+}
 
 export type RequirementBreakdownComponentProps = {
   title: string;
   hours: { current: number; total: number };
-  requirements: RequirementData[];
+  requirements: RequirementRule[];
   onAddCourse?: () => void;
 };
