@@ -3,7 +3,7 @@ import {
   RequirementSection,
   DegreeAuditCardProps,
 } from "@/lib/general-types";
-import { getAuditHistory, getAuditData, saveAuditData } from "@/lib/storage";
+import { getAuditHistory, getAuditData } from "@/lib/storage";
 import React, { useState, createContext, useContext } from "react";
 import ReactDOM from "react-dom/client";
 import clsx from "clsx";
@@ -133,45 +133,32 @@ const App = () => {
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
     new URLSearchParams(window.location.search).get("auditId") // look at broswer
   );
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Load audit data dynamicly
+  // Load audit data from cache (scraped upfront when user visits UT Direct)
   React.useEffect(() => {
-    if (!currentAuditId) return;
+    if (!currentAuditId) {
+      console.log("[Main] No audit ID provided");
+      return;
+    }
 
     async function loadAudit() {
-      // 1. Check broswer first
+      console.log(`[Main] Loading audit data for: ${currentAuditId}`);
+
+      // Check browser cache first (data should be scraped upfront)
       const cached = await getAuditData(currentAuditId!);
       if (cached) {
-        console.log("Loaded from cache:", currentAuditId);
+        console.log(`[Main] Loaded from cache: ${currentAuditId}`);
         setSections(cached.requirements);
         return;
       }
-      // 2. If not cached, scrape
-      console.log("Not in cache, scraping:", currentAuditId);
-      setIsLoading(true);
-      const url = `https://utdirect.utexas.edu/apps/degree/audits/results/${currentAuditId}/`;
-      browser.runtime.sendMessage({ type: "SCRAPE_AUDIT", url });
+
+      // Not cached - log warning
+      console.warn(
+        `[Main] Audit ${currentAuditId} not in cache. User needs to visit UT Direct.`
+      );
     }
+
     loadAudit();
-  }, [currentAuditId]);
-
-  // Listen for scraper results & cache them
-  React.useEffect(() => {
-    const handleMessage = (message: any) => {
-      if (message.type === "AUDIT_RESULTS" && currentAuditId) {
-        console.log("Received audit data, caching:", currentAuditId);
-        setSections(message.requirements as RequirementSection[]);
-        saveAuditData(currentAuditId, {
-          requirements: message.requirements,
-          courses: message.data,
-        });
-        setIsLoading(false);
-      }
-    };
-
-    browser.runtime.onMessage.addListener(handleMessage);
-    return () => browser.runtime.onMessage.removeListener(handleMessage);
   }, [currentAuditId]);
 
   return (
@@ -180,16 +167,6 @@ const App = () => {
         value={{ sections, currentAuditId, setCurrentAuditId }}
       >
         <DegreeAuditPage />
-        {isLoading && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-[#bf5700] border-t-transparent rounded-full animate-spin" />
-              <p className="text-lg font-semibold text-gray-800">
-                Loading audit data...
-              </p>
-            </div>
-          </div>
-        )}
       </AuditContext.Provider>
     </PreferencesProvider>
   );
@@ -198,7 +175,7 @@ const App = () => {
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
   const { currentAuditId, setCurrentAuditId } = useAuditContext();
-  const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]);
+  const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]); //history
   const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {

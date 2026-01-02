@@ -3,7 +3,7 @@ import TryDAPBanner from "./components/banner";
 // Import your Tailwind CSS - THIS IS CRITICAL for shadow DOM
 import "./styles/content.css"; // Make sure this path is correct
 import { fetchAuditHistory } from "@/lib/audit-history-scraper";
-import { saveAuditHistory } from "@/lib/storage";
+import { saveAuditHistory, getUncachedAuditIds } from "@/lib/storage";
 
 function loadFonts() {
   const preconnect1 = document.createElement("link");
@@ -60,20 +60,50 @@ export default defineContentScript({
   },
 });
 
-// get audit info
-//TODO: Update this code to work for getting all audit data.
+// Get audit history and trigger batch scraping for uncached audits
 async function fetchAndStoreAuditHistory() {
   try {
-    console.log("Fetching audit history...");
+    console.log("[Content] Fetching audit history...");
     const audits = await fetchAuditHistory();
-    console.log(`Successfully fetched ${audits.length} audits`);
+    console.log(`[Content] Successfully fetched ${audits.length} audits`);
     await saveAuditHistory(audits);
-    console.log("Audit history saved to storage");
+    console.log("[Content] Audit history saved to storage");
+
+    // Get list of audit IDs that aren't cached yet
+    const auditIds = audits
+      .map((a) => a.auditId)
+      .filter((id): id is string => Boolean(id));
+
+    console.log(
+      `[Content] Found ${auditIds.length} audit IDs: that aren't cached yet`,
+      auditIds
+    );
+
+    if (auditIds.length > 0) {
+      const uncachedIds = await getUncachedAuditIds(auditIds);
+      console.log(
+        `[Content] ${uncachedIds.length} audits need to be cached:`,
+        uncachedIds
+      );
+
+      if (uncachedIds.length > 0) {
+        // Trigger batch scraping in background
+        console.log(
+          "[Content] Sending SCRAPE_ALL_AUDITS to background script..."
+        );
+        browser.runtime.sendMessage({
+          type: "SCRAPE_ALL_AUDITS",
+          auditIds: uncachedIds,
+        });
+      } else {
+        console.log("[Content] All audits already cached, no scraping needed");
+      }
+    }
 
     // Setup observer to watch for table changes (new audits completed)
     setupHistoryTableObserver();
   } catch (error) {
-    console.error("Error fetching audit history:", error);
+    console.error("[Content] Error fetching audit history:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
     await saveAuditHistory([], errorMessage);
@@ -218,15 +248,37 @@ import type {
 } from "@/lib/general-types";
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
-  console.log("Content script received message:", msg.type);
+  console.log("[Scraper] Content script received message:", msg.type);
 
   if (msg.type === "RUN_SCRAPER") {
-    const table = document.querySelector("#coursework table.results");
-    if (!table) {
-      console.error("❌ Table not found!");
-      alert("ERROR: Table not found! Check selector.");
+    const auditId = msg.auditId;
+    console.log(`[Scraper] Starting scrape for audit: ${auditId || "unknown"}`);
+
+    // Check if we on a login page
+    const loginForm =
+      document.querySelector('form[action*="login"]') ||
+      document.querySelector('input[type="password"]');
+    if (loginForm) {
+      console.error("[Scraper] Authentication required - login page detected");
+      browser.runtime.sendMessage({
+        type: "AUDIT_SCRAPE_ERROR",
+        auditId,
+        error: "AUTH_REQUIRED",
+      });
       return;
     }
+
+    const table = document.querySelector("#coursework table.results");
+    if (!table) {
+      console.error("[Scraper] Table not found!");
+      browser.runtime.sendMessage({
+        type: "AUDIT_SCRAPE_ERROR",
+        auditId,
+        error: "TABLE_NOT_FOUND",
+      });
+      return;
+    }
+    console.log("[Scraper] Found coursework table");
     // Get all rows first to debug
     const allRows = table.querySelectorAll("tr");
     console.log("Total rows:", allRows.length);
@@ -345,15 +397,29 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
       if (rules.length > 0) {
         results.push({ rules });
       }
-      console.log(results);
     });
+
+    console.log(
+      `[Scraper] Parsed ${results.length} requirement sections for audit: ${
+        auditId || "unknown"
+      }`
+    );
+    console.log(
+      `[Scraper] Parsed ${courses.length} courses for audit: ${
+        auditId || "unknown"
+      }`
+    );
 
     // Send results back - background script will close this tab automatically
     browser.runtime.sendMessage({
       type: "AUDIT_RESULTS",
+      auditId,
       data: courses,
       requirements: results,
     });
+    console.log(
+      `[Scraper] Sent AUDIT_RESULTS for audit: ${auditId || "unknown"}`
+    );
   }
 });
 function getCSRFToken(): string | null {

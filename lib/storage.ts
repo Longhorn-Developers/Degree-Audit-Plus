@@ -60,9 +60,17 @@ export async function saveAuditData(
   data: CachedAuditData
 ): Promise<void> {
   try {
+    const key = `${AUDIT_DATA_PREFIX}${auditId}`;
+    console.log(`[Storage] Saving audit data for key: ${key}`);
+    console.log(`[Storage] Data to save: ${data.requirements?.length || 0} requirements, ${data.courses?.length || 0} courses`);
     await browser.storage.local.set({
-      [`${AUDIT_DATA_PREFIX}${auditId}`]: data,
+      [key]: data,
     });
+    console.log(`[Storage] Successfully saved audit data for: ${auditId}`);
+
+    // Verify it was saved
+    const verify = await browser.storage.local.get(key);
+    console.log(`[Storage] Verification - data exists: ${!!verify[key]}`);
   } catch (e) {
     console.error("Failed to save audit data to storage:", e);
   }
@@ -74,10 +82,23 @@ export async function getAuditData(
 ): Promise<CachedAuditData | null> {
   try {
     const key = `${AUDIT_DATA_PREFIX}${auditId}`;
+    console.log(`[Storage] Getting audit data for key: ${key}`);
     const result = await browser.storage.local.get(key);
-    return result[key] || null;
+    const data = result[key] || null;
+    console.log(`[Storage] Retrieved for ${key}:`, data ? `Found (${data.requirements?.length || 0} requirements, ${data.courses?.length || 0} courses)` : "NOT FOUND");
+    return data;
   } catch (e) {
     console.error("Failed to get audit data from storage:", e);
     return null;
   }
+}
+
+// Get list of audit IDs that are not yet cached
+export async function getUncachedAuditIds(auditIds: string[]): Promise<string[]> {
+  const uncached: string[] = [];
+  for (const id of auditIds) {
+    const cached = await getAuditData(id);
+    if (!cached) uncached.push(id);
+  }
+  return uncached;
 }

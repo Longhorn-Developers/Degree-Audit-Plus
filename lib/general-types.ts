@@ -64,6 +64,8 @@ export interface AuditHistoryData {
   timestamp: number;
   error?: string;
   auditNumber?: number;
+  // Track which audits have been scraped and cached
+  scrapedAuditIds?: string[];
 }
 
 export interface AuditData {

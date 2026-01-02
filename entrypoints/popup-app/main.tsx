@@ -13,12 +13,26 @@ import { SpinnerIcon } from "@phosphor-icons/react";
 //   type HypotheticalCourse,
 // } from "../components/hypothetical-course-modal";
 
+// Check if user is authenticated to UTDirect by fetching a page and checking for login form
+async function checkUTDirectAuth(): Promise<boolean> {
+  try {
+    const res = await fetch("https://utdirect.utexas.edu/apps/degree/audits/");
+    const html = await res.text();
+    // If page contains password input or login form, user is not authenticated
+    return !html.includes('type="password"') && !html.includes('action="/idp/');
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [showAll, setShowAll] = React.useState(false);
   const [runningAudit, setRunningAudit] = React.useState(false);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(true);
   // const [isModalOpen, setIsModalOpen] = React.useState(false);
   // const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
   //   HypotheticalCourse[]
@@ -57,6 +71,31 @@ export default function App() {
     }
 
     loadAudits();
+    checkUTDirectAuth().then(setIsAuthenticated);
+  }, []);
+
+  React.useEffect(() => {
+    // get sycn status for ui
+    browser.runtime
+      .sendMessage({ type: "GET_SYNC_STATUS" })
+      .then((response) => {
+        if (response?.isSyncing) {
+          setIsSyncing(true);
+        }
+      })
+      .catch(() => {});
+
+    const listener = (message: any) => {
+      if (message.type === "SCRAPE_ALL_STARTED") {
+        setIsSyncing(true);
+      }
+      if (message.type === "SCRAPE_ALL_COMPLETE") {
+        setIsSyncing(false);
+      }
+    };
+
+    browser.runtime.onMessage.addListener(listener);
+    return () => browser.runtime.onMessage.removeListener(listener);
   }, []);
 
   const handleOpenDegreeAuditPage = (auditId: string | undefined) => {
@@ -207,30 +246,47 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button className="rounded-md" onClick={handleRerunAudit}>
-            {runningAudit ? (
-              <div className="flex items-center space-x-2">
-                <SpinnerIcon size={24} className="animate-spin-slow" />
-                <p className="text-lg font-bold">Running Audit...</p>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <PlusIcon size={24} />
-                <p className="text-lg font-bold">Run New Audit</p>
-              </div>
-            )}
-          </Button>
+          {isAuthenticated ? (
+            <Button className="rounded-md" onClick={handleRerunAudit}>
+              {runningAudit ? (
+                <div className="flex items-center space-x-2">
+                  <SpinnerIcon size={24} className="animate-spin-slow" />
+                  <p className="text-lg font-bold">Running Audit...</p>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <PlusIcon size={24} />
+                  <p className="text-lg font-bold">Run New Audit</p>
+                </div>
+              )}
+            </Button>
+          ) : (
+            <Button
+              className="rounded-md"
+              onClick={() => browser.tabs.create({ url: "https://utdirect.utexas.edu/" })}
+            >
+              <p className="text-lg font-bold">Login to UTDirect</p>
+            </Button>
+          )}
         </div>
       </header>
 
       <main className="p-5 pt-4 overflow-y-auto flex-1">
         <div className="flex items-center justify-between mb-4">
-          <h1
-            style={{ fontFamily: "Roboto Flex" }}
-            className="text-[25.63px] font-bold text-[#1a2024]"
-          >
-            Current Audits
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1
+              style={{ fontFamily: "Roboto Flex" }}
+              className="text-[25.63px] font-bold text-[#1a2024]"
+            >
+              Current Audits
+            </h1>
+            {isSyncing && (
+              <div className="flex items-center gap-1.5 text-[#9cadb7]">
+                <SpinnerIcon size={14} className="animate-spin" />
+                <span className="text-xs">Syncing...</span>
+              </div>
+            )}
+          </div>
           {/* <Button
             size="small"
             color="orange"
