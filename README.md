@@ -1,5 +1,5 @@
 
-# UT Degree Audit Plus ✨
+# UT Degree Audit Plus 
 
 An unofficial Chrome extension designed to enhance and modernize the degree planning experience for students at the University of Texas at Austin.
 
