@@ -458,7 +458,7 @@ const DegreeCompletionPercentage = () => {
 			bars={bars}
 			tooltipContent={(bar) => (
 				<VStack
-					className="p-2 rounded-md border border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
+					className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
 					style={{ borderColor: bar.color, color: bar.color }}
 				>
 					<HStack
