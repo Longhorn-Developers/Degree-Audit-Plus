@@ -1,47 +1,84 @@
 import { createContext, forwardRef, useContext } from "react";
 import { cn } from "~/lib/utils";
 
+type Sizings =
+	| {
+			size?: "fill" | "fit" | "auto";
+			fit?: never;
+			auto?: never;
+			fill?: never;
+	  }
+	| {
+			size?: never;
+			fit?: true;
+			auto?: never;
+			fill?: never;
+	  }
+	| {
+			size?: never;
+			fit?: never;
+			auto?: true;
+			fill?: never;
+	  }
+	| {
+			size?: never;
+			fit?: never;
+			auto?: never;
+			fill?: true;
+	  };
+
 type HelperDivProps = React.HTMLAttributes<HTMLDivElement> & {
 	gap?: number;
 	centered?: boolean;
-	fill?: boolean;
 	x?: "left" | "center" | "right" | "between" | "around";
-	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
-};
+	y?: "top" | "middle" | "bottom" | "between" | "around";
+} & Sizings;
 
 type StackContextValue = {
 	type: "v" | "h";
 	gap: number;
 	centered: boolean;
-	fill: boolean;
+	size: "fill" | "fit" | "auto";
 	x?: "left" | "center" | "right" | "between" | "around";
-	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
-};
+	y?: "top" | "middle" | "bottom" | "between" | "around";
+} & Sizings;
 
 const StackContext = createContext<StackContextValue | null>(null);
+
+const DEFAULT_STACK_PROPS = {
+	gap: 4,
+	centered: false,
+	size: "auto",
+	x: "left",
+	y: "top",
+} satisfies Omit<StackContextValue, "type">;
 
 export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 	(
 		{
 			children,
 			className,
-			gap = 4,
-			centered = false,
+			gap = DEFAULT_STACK_PROPS.gap,
+			centered = DEFAULT_STACK_PROPS.centered,
+			size = DEFAULT_STACK_PROPS.size,
 			fill = false,
-			x,
-			y,
+			fit = false,
+			auto = false,
+			x = DEFAULT_STACK_PROPS.x,
+			y = DEFAULT_STACK_PROPS.y,
 			...props
 		},
 		ref
 	) => {
 		VStack.displayName = "VStack";
-		const _xSpacing = centered ? "center" : x ?? "left";
-		const _ySpacing = centered ? "middle" : y ?? "top";
+		const _xSpacing = centered ? "center" : x;
+		const _ySpacing = centered ? "middle" : y;
+		const _size = fill ? "fill" : fit ? "fit" : auto ? "auto" : size;
 		const contextValue: StackContextValue = {
 			type: "v",
 			gap,
 			centered,
-			fill,
+			size: _size,
 			x,
 			y,
 		};
@@ -50,7 +87,9 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 				<div
 					ref={ref}
 					className={cn("flex flex-col", className, {
-						"h-full": fill,
+						"h-full": _size === "fill",
+						"h-fit": _size === "fit",
+						"h-auto": _size === "auto",
 						"items-start": _xSpacing === "left",
 						"items-center": _xSpacing === "center",
 						"items-end": _xSpacing === "right",
@@ -59,8 +98,8 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 						"justify-start": _ySpacing === "top",
 						"justify-center": _ySpacing === "middle",
 						"justify-end": _ySpacing === "bottom",
-						"justify-between": _ySpacing === "stretch",
-						"justify-around": _ySpacing === "baseline",
+						"justify-between": _ySpacing === "between",
+						"justify-around": _ySpacing === "around",
 					})}
 					style={{ gap: `${gap / 4}rem` }}
 					{...props}
@@ -73,20 +112,38 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 );
 
 // Unified props type that accepts both VStack and HStack prop types
-type UnifiedSubstackProps = HelperDivProps & {
-	x?:
-		| "left"
-		| "center"
-		| "right"
-		| "space-between"
-		| "space-around"
-		| "between"
-		| "around";
-	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
-};
+type UnifiedSubstackProps = HelperDivProps &
+	(
+		| {
+				inherit?: true;
+				useDefault?: false;
+		  }
+		| {
+				inherit?: false;
+				useDefault?: true;
+		  }
+	);
 
+//TODO: implement the useDefault logic
 export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
-	({ children, className, gap, centered, fill, x, y, ...props }, ref) => {
+	(
+		{
+			children,
+			className,
+			gap,
+			centered,
+			size,
+			fill = false,
+			fit = false,
+			auto = false,
+			x,
+			y,
+			inherit = true,
+			useDefault = false,
+			...props
+		},
+		ref
+	) => {
 		Substack.displayName = "Substack";
 		const stackContext = useContext(StackContext);
 
@@ -94,88 +151,91 @@ export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
 		// Prioritize the most immediate parent (VStack takes precedence if both exist)
 		const isVStack = stackContext?.type === "v";
 		const isHStack = stackContext?.type === "h";
-
 		if (!isVStack && !isHStack) {
 			throw new Error(
 				"Substack must be used as a child of a VStack or HStack component"
 			);
 		}
 
-		const parentContext = stackContext;
-		if (!parentContext) {
+		const referenceContext = useDefault
+			? { ...DEFAULT_STACK_PROPS, type: stackContext?.type ?? "v" }
+			: stackContext;
+		if (!referenceContext) {
 			throw new Error("Invalid context");
 		}
 
-		// Inherit from parent, but allow overrides
-		const inheritedGap = gap ?? parentContext.gap;
-		const inheritedCentered = centered ?? parentContext.centered;
-		const inheritedFill = fill ?? parentContext.fill;
-		const inheritedX = x ?? parentContext.x;
-		const inheritedY = y ?? parentContext.y;
+		// Inherit from reference context, but allow overrides
+		const personalGap = gap ?? referenceContext.gap;
+		const personalCentered = centered ?? referenceContext.centered;
+		const personalSize = fill
+			? "fill"
+			: fit
+			? "fit"
+			: auto
+			? "auto"
+			: size ?? referenceContext.size;
+		const personalX = x ?? referenceContext.x;
+		const personalY = y ?? referenceContext.y;
 
-		if (isVStack) {
-			// VStack: x controls items, y controls justify, flex-col
-			const _xSpacing = inheritedCentered ? "center" : inheritedX ?? "left";
-			const _ySpacing = inheritedCentered ? "middle" : inheritedY ?? "top";
+		const contextValue: StackContextValue = {
+			type: isVStack ? "v" : "h",
+			gap: personalGap,
+			centered: personalCentered,
+			size: personalSize,
+			x: personalX,
+			y: personalY,
+		};
 
-			return (
+		const _xSpacing = personalCentered ? "center" : personalX;
+		const _ySpacing = personalCentered ? "middle" : personalY;
+		const classes = isVStack
+			? {
+					"h-full": personalSize === "fill",
+					"h-fit": personalSize === "fit",
+					"h-auto": personalSize === "auto",
+					"items-start": _xSpacing === "left",
+					"items-center": _xSpacing === "center",
+					"items-end": _xSpacing === "right",
+					"items-stretch": _xSpacing === "between",
+					"items-baseline": _xSpacing === "around",
+					"justify-start": _ySpacing === "top",
+					"justify-center": _ySpacing === "middle",
+					"justify-end": _ySpacing === "bottom",
+					"justify-between": _ySpacing === "between",
+					"justify-around": _ySpacing === "around",
+			  }
+			: {
+					"w-full": personalSize === "fill",
+					"w-fit": personalSize === "fit",
+					"w-auto": personalSize === "auto",
+					"justify-start": _xSpacing === "left",
+					"justify-center": _xSpacing === "center",
+					"justify-end": _xSpacing === "right",
+					"justify-between": _xSpacing === "between",
+					"justify-around": _xSpacing === "around",
+					"items-start": _ySpacing === "top",
+					"items-center": _ySpacing === "middle",
+					"items-end": _ySpacing === "bottom",
+					"items-stretch": _ySpacing === "between",
+					"items-baseline": _ySpacing === "around",
+			  };
+		return (
+			<StackContext.Provider value={contextValue}>
 				<div
 					ref={ref}
-					className={cn("flex flex-col", className, {
-						"h-full": inheritedFill,
-						"items-start": _xSpacing === "left",
-						"items-center": _xSpacing === "center",
-						"items-end": _xSpacing === "right",
-						"items-stretch": _xSpacing === "between",
-						"items-baseline": _xSpacing === "around",
-						"justify-start": _ySpacing === "top",
-						"justify-center": _ySpacing === "middle",
-						"justify-end": _ySpacing === "bottom",
-						"justify-between": _ySpacing === "stretch",
-						"justify-around": _ySpacing === "baseline",
-					})}
-					style={{ gap: `${inheritedGap / 4}rem` }}
+					className={cn(
+						"flex",
+						isVStack ? "flex-col" : "flex-row",
+						className,
+						classes
+					)}
+					style={{ gap: `${personalGap / 4}rem` }}
 					{...props}
 				>
 					{children}
 				</div>
-			);
-		} else {
-			// HStack: x controls justify, y controls items, flex-row
-			const _xSpacing = inheritedCentered ? "center" : inheritedX ?? "left";
-			const _ySpacing = inheritedCentered ? "middle" : inheritedY ?? "top";
-
-			// Map "space-between" and "space-around" to "between" and "around" for HStack
-			const normalizedX: "left" | "center" | "right" | "between" | "around" =
-				_xSpacing === "between"
-					? "between"
-					: _xSpacing === "around"
-					? "around"
-					: (_xSpacing as "left" | "center" | "right" | "between" | "around");
-
-			return (
-				<div
-					ref={ref}
-					className={cn("flex flex-row", className, {
-						"w-full": inheritedFill,
-						"justify-start": normalizedX === "left",
-						"justify-center": normalizedX === "center",
-						"justify-end": normalizedX === "right",
-						"justify-between": normalizedX === "between",
-						"justify-around": normalizedX === "around",
-						"items-start": _ySpacing === "top",
-						"items-center": _ySpacing === "middle",
-						"items-end": _ySpacing === "bottom",
-						"items-stretch": _ySpacing === "stretch",
-						"items-baseline": _ySpacing === "baseline",
-					})}
-					style={{ gap: `${inheritedGap / 4}rem` }}
-					{...props}
-				>
-					{children}
-				</div>
-			);
-		}
+			</StackContext.Provider>
+		);
 	}
 );
 
@@ -184,25 +244,29 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 		{
 			children,
 			className,
-			gap = 4,
+			gap = DEFAULT_STACK_PROPS.gap,
+			size = DEFAULT_STACK_PROPS.size,
+			centered = DEFAULT_STACK_PROPS.centered,
 			fill = false,
-			centered = false,
-			x: xSpacing,
-			y: ySpacing,
+			fit = false,
+			auto = false,
+			x,
+			y,
 			...props
 		},
 		ref
 	) => {
 		HStack.displayName = "HStack";
-		const _xSpacing = centered ? "center" : xSpacing ?? "left";
-		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+		const _xSpacing = centered ? "center" : x;
+		const _ySpacing = centered ? "middle" : y;
+		const _size = fill ? "fill" : fit ? "fit" : auto ? "auto" : size;
 		const contextValue: StackContextValue = {
 			type: "h",
 			gap,
 			centered,
-			fill,
-			x: xSpacing,
-			y: ySpacing,
+			size: _size,
+			x,
+			y,
 		};
 
 		return (
@@ -210,7 +274,9 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 				<div
 					ref={ref}
 					className={cn("flex flex-row", className, {
-						"w-full": fill,
+						"w-full": _size === "fill",
+						"w-fit": _size === "fit",
+						"w-auto": _size === "auto",
 						"justify-start": _xSpacing === "left",
 						"justify-center": _xSpacing === "center",
 						"justify-end": _xSpacing === "right",
@@ -219,8 +285,8 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 						"items-start": _ySpacing === "top",
 						"items-center": _ySpacing === "middle",
 						"items-end": _ySpacing === "bottom",
-						"items-stretch": _ySpacing === "stretch",
-						"items-baseline": _ySpacing === "baseline",
+						"items-stretch": _ySpacing === "between",
+						"items-baseline": _ySpacing === "around",
 					})}
 					style={{ gap: `${gap / 4}rem` }}
 					{...props}
@@ -240,24 +306,29 @@ export const Wrap = forwardRef<
 		{
 			children,
 			className,
-			gap = 4,
+			gap = DEFAULT_STACK_PROPS.gap,
 			centered = false,
+			size = DEFAULT_STACK_PROPS.size,
 			fill = false,
-			x: xSpacing,
-			y: ySpacing,
+			fit = false,
+			auto = false,
+			x = DEFAULT_STACK_PROPS.x,
+			y = DEFAULT_STACK_PROPS.y,
 			maxCols,
 			...props
 		},
 		ref
 	) => {
 		Wrap.displayName = "Wrap";
-		const _xSpacing = centered ? "center" : xSpacing ?? "left";
-		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+		const _xSpacing = centered ? "center" : x;
+		const _ySpacing = centered ? "middle" : y;
 		return (
 			<div
 				ref={ref}
 				className={cn("flex flex-row flex-wrap", className, {
-					"w-full": fill,
+					"w-full": size === "fill",
+					"w-fit": size === "fit",
+					"w-auto": size === "auto",
 					"flex-wrap": maxCols !== -1,
 					"justify-start": _xSpacing === "left",
 					"justify-center": _xSpacing === "center",
@@ -267,8 +338,8 @@ export const Wrap = forwardRef<
 					"items-start": _ySpacing === "top",
 					"items-center": _ySpacing === "middle",
 					"items-end": _ySpacing === "bottom",
-					"items-stretch": _ySpacing === "stretch",
-					"items-baseline": _ySpacing === "baseline",
+					"items-stretch": _ySpacing === "between",
+					"items-baseline": _ySpacing === "around",
 				})}
 				style={{ gap: `${gap / 4}rem` }}
 				{...props}
