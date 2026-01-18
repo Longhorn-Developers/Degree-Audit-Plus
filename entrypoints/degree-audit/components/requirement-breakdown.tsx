@@ -94,7 +94,7 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
 		<div className="border-b border-gray-100 last:border-b-0">
 			{/* Requirement header */}
 			<button
-				className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors"
+				className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors rounded-lg"
 				onClick={() => setIsExpanded(!isExpanded)}
 			>
 				<StatusIcon status={requirement.status} />
@@ -116,13 +116,23 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
 			</button>
 
 			{/* Expanded courses */}
-			{isExpanded && requirement.courses.length > 0 && (
-				<VStack gap={2} className="pl-11 pr-4 pb-3">
-					{requirement.courses.map((course, idx) => (
-						<CoursePill key={`${course.code}-${idx}`} course={course} />
-					))}
-				</VStack>
-			)}
+			<AnimatePresence>
+				{isExpanded && requirement.courses.length > 0 && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.35, ease: "easeInOut" }}
+						className="overflow-hidden"
+					>
+						<VStack gap={2} className="pl-11 pr-4 pb-3 pt-2">
+							{requirement.courses.map((course, idx) => (
+								<CoursePill key={`${course.code}-${idx}`} course={course} />
+							))}
+						</VStack>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };
