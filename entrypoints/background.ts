@@ -1,9 +1,14 @@
 import { saveAuditData } from "@/lib/storage";
+import {
+  getOrCreateScraperWindow,
+  closeScraperWindow,
+} from "@/lib/scraper-window";
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id });
 
-  // Listen for extension icon click - send message to toggle popup in content script
+  // extension clicking for rounded corners
+
   browser.action.onClicked.addListener(async (tab) => {
     if (tab.id) {
       try {
@@ -36,15 +41,18 @@ export default defineBackground(() => {
 
   const scraperTabs = new Map<number, NodeJS.Timeout>();
 
-  // Reusable function to scrape a single audit by ID
-  // Creates a hidden tab, waits for load, sends RUN_SCRAPER message
+  // Scrape a single audit by ID
+  // Creates a tab in the minimized scraper window, waits for load, sends RUN_SCRAPER message
   // Resolution happens via pendingScrapes map when AUDIT_RESULTS is received
-  function scrapeAuditById(auditId: string): Promise<void> {
+  async function scrapeAuditById(auditId: string): Promise<void> {
     const url = `https://utdirect.utexas.edu/apps/degree/audits/results/${auditId}/`;
     console.log(`[Batch Scraper] Starting scrape for audit: ${auditId}`);
 
+    // Get or create the minimized scraper window
+    const windowId = await getOrCreateScraperWindow();
+
     return new Promise((_resolve, reject) => {
-      browser.tabs.create({ url, active: false }, (tab) => {
+      browser.tabs.create({ url, active: false, windowId }, (tab) => {
         if (!tab?.id) {
           console.error(
             `[Batch Scraper] Failed to create tab for audit: ${auditId}`
@@ -138,10 +146,17 @@ export default defineBackground(() => {
       // Mark scraping as in progress
       isBatchScraping = true;
 
-      // Broadcast start to all extension pages (popup, etc.)
-      browser.runtime.sendMessage({ type: "SCRAPE_ALL_STARTED" }).catch(() => {
-        // Ignore errors if no listeners (popup might be closed)
+      // Broadcast to all tabs (content scripts) and extension pages
+      browser.tabs.query({}).then((tabs) => {
+        for (const tab of tabs) {
+          if (tab.id) {
+            browser.tabs
+              .sendMessage(tab.id, { type: "SCRAPE_ALL_STARTED" })
+              .catch(() => {});
+          }
+        }
       });
+      browser.runtime.sendMessage({ type: "SCRAPE_ALL_STARTED" }).catch(() => {});
 
       (async () => {
         const succeeded: string[] = [];
@@ -185,9 +200,22 @@ export default defineBackground(() => {
           `[Batch Scraper] Complete. Succeeded: ${succeeded.length}, Failed: ${failed.length}`
         );
 
+        // Close the minimized scraper window
+        await closeScraperWindow();
+
         // Mark scraping as done
         isBatchScraping = false;
 
+        // Broadcast to all tabs (content scripts) and extension pages
+        browser.tabs.query({}).then((tabs) => {
+          for (const tab of tabs) {
+            if (tab.id) {
+              browser.tabs
+                .sendMessage(tab.id, { type: "SCRAPE_ALL_COMPLETE" })
+                .catch(() => {});
+            }
+          }
+        });
         browser.runtime
           .sendMessage({ type: "SCRAPE_ALL_COMPLETE" })
           .catch(() => {});
@@ -199,53 +227,62 @@ export default defineBackground(() => {
 
     // Handle single audit scrape (backward compat)
     if (message.type === "SCRAPE_AUDIT") {
-      // Create a hidden tab to scrape the audit
-      browser.tabs.create({ url: message.url, active: false }, (tab) => {
-        if (!tab?.id) {
-          sendResponse({ status: "error", message: "Failed to create tab" });
-          return;
-        }
+      // Create a tab in the minimized scraper window
+      (async () => {
+        const windowId = await getOrCreateScraperWindow();
+        browser.tabs.create(
+          { url: message.url, active: false, windowId },
+          (tab) => {
+            if (!tab?.id) {
+              sendResponse({
+                status: "error",
+                message: "Failed to create tab",
+              });
+              return;
+            }
 
-        const tabId = tab.id;
-        const safetyTimeout = setTimeout(() => {
-          console.log("Safety timeout: closing scraper tab", tabId);
-          browser.tabs.remove(tabId).catch(() => {});
-          scraperTabs.delete(tabId);
-        }, 30000);
+            const tabId = tab.id;
+            const safetyTimeout = setTimeout(() => {
+              console.log("Safety timeout: closing scraper tab", tabId);
+              browser.tabs.remove(tabId).catch(() => {});
+              scraperTabs.delete(tabId);
+            }, 30000);
 
-        scraperTabs.set(tabId, safetyTimeout);
+            scraperTabs.set(tabId, safetyTimeout);
 
-        // Listen for when the tab finishes loading
-        const updateListener = (id: number, changeInfo: any) => {
-          if (id === tabId && changeInfo.status === "complete") {
-            // Clean up listeners
-            browser.tabs.onUpdated.removeListener(updateListener);
-            browser.tabs.onRemoved.removeListener(removeListener);
-            browser.tabs
-              .sendMessage(tabId, { type: "RUN_SCRAPER" })
-              .catch((err) => {
-                console.error("Failed to send scraper message:", err);
-                browser.tabs.remove(tabId);
+            // Listen for when the tab finishes loading
+            const updateListener = (id: number, changeInfo: any) => {
+              if (id === tabId && changeInfo.status === "complete") {
+                // Clean up listeners
+                browser.tabs.onUpdated.removeListener(updateListener);
+                browser.tabs.onRemoved.removeListener(removeListener);
+                browser.tabs
+                  .sendMessage(tabId, { type: "RUN_SCRAPER" })
+                  .catch((err) => {
+                    console.error("Failed to send scraper message:", err);
+                    browser.tabs.remove(tabId);
+                    const timeout = scraperTabs.get(tabId);
+                    if (timeout) clearTimeout(timeout);
+                    scraperTabs.delete(tabId);
+                  });
+              }
+            };
+            const removeListener = (closedTabId: number) => {
+              if (closedTabId === tabId) {
+                console.log("Scraper tab was closed before completion");
+                browser.tabs.onUpdated.removeListener(updateListener);
+                browser.tabs.onRemoved.removeListener(removeListener);
                 const timeout = scraperTabs.get(tabId);
                 if (timeout) clearTimeout(timeout);
                 scraperTabs.delete(tabId);
-              });
+              }
+            };
+            browser.tabs.onUpdated.addListener(updateListener);
+            browser.tabs.onRemoved.addListener(removeListener);
+            sendResponse({ status: "started", tabId });
           }
-        };
-        const removeListener = (closedTabId: number) => {
-          if (closedTabId === tabId) {
-            console.log("Scraper tab was closed before completion");
-            browser.tabs.onUpdated.removeListener(updateListener);
-            browser.tabs.onRemoved.removeListener(removeListener);
-            const timeout = scraperTabs.get(tabId);
-            if (timeout) clearTimeout(timeout);
-            scraperTabs.delete(tabId);
-          }
-        };
-        browser.tabs.onUpdated.addListener(updateListener);
-        browser.tabs.onRemoved.addListener(removeListener);
-        sendResponse({ status: "started", tabId });
-      });
+        );
+      })();
       // Keep message channel open for async response
       return true;
     }

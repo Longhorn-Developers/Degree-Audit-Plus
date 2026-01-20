@@ -1,5 +1,4 @@
 - Make the overview work
-- ensure background tabs open in a new tab or something so they are not seen
 - handle error case for unable to load audit for scraping + Think about when to scrape.
 - clean up code.
 
