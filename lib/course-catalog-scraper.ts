@@ -360,14 +360,14 @@ export async function fetchAndScrapeCourses(
 const semester = "20259"; // Fall 2025
 const department = "C S";
 
-console.log(`Scraping ${department} courses for semester ${semester}...\n`);
+// console.log(`Scraping ${department} courses for semester ${semester}...\n`);
 
-fetchAndScrapeCourses(semester, department)
-  .then((courses) => {
-    // console.log(`Found ${courses.length} courses:\n`);
-    // console.log(JSON.stringify(courses, null, 2));
-  })
-  .catch((err) => {
-    console.error("Error:", err.message);
-    console.log("\nNote: UT course catalog may require authentication.");
-  });
+// fetchAndScrapeCourses(semester, department)
+//   .then((courses) => {
+//     // console.log(`Found ${courses.length} courses:\n`);
+//     // console.log(JSON.stringify(courses, null, 2));
+//   })
+//   .catch((err) => {
+//     console.error("Error:", err.message);
+//     console.log("\nNote: UT course catalog may require authentication.");
+//   });

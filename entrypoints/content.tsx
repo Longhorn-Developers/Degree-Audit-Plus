@@ -27,6 +27,8 @@ function loadFonts() {
   console.log("Staatliches and Roboto Flex fonts loaded dynamically");
 }
 
+import { seedDatabase } from "@/lib/db-seeder";
+
 export default defineContentScript({
   // Runs on ALL UT Direct audit pages - fetches fresh data and watches for updates
   // Includes: /audits/, /audits/submissions/history/, /audits/requests/history/, etc.
@@ -34,6 +36,10 @@ export default defineContentScript({
   cssInjectionMode: "ui", // This should inject CSS into shadow DOM
   async main(ctx) {
     console.log("Content script loaded on UT Direct audits page.");
+    
+    // Seed the database from bundled JSON
+    await seedDatabase();
+
     // Load fonts dynamically
     loadFonts();
     defineUTDToppageHeight();
@@ -58,7 +64,10 @@ export default defineContentScript({
     // Fetch fresh audit history and update storage
     // This ONLY runs when user visits the UT Direct audits home page
     fetchAndStoreAuditHistory();
-    scrapeCourseCatalog();
+    // code to scrape course catalog and update db (make sure to update the department map before running this -> it will run AUTOMATICALLY EVERY TIME!!!)
+    // scrapeCourseCatalog();
+    // code to save scraped courses to csv. Run this ONLY WHEN ABOVE IS COMMENTED OUT.
+    // saveScrapedCourses();
   },
 });
 
@@ -112,28 +121,55 @@ async function fetchAndStoreAuditHistory() {
   }
 }
 
+//-----------------------------------------------------------------
+//-----------------------------------------------------------------
+// code to scrape course catalog
+import { DEPARTMENT_MAP } from "@/lib/examples/data/department-map";
 let scrapedCourses: ScrapedCourse[] = [];
 // logic for fetching data for course catalog scraping
 async function scrapeCourseCatalog() {
   console.log("starting scraping");
+  const departments = Object.keys(DEPARTMENT_MAP); // gets keys
   const semester = "20259"; // Fall 2025
-  const department = "C S";
 
-  console.log(`Scraping ${department} courses for semester ${semester}...\n`);
+  console.log(`Scraping ${departments} courses for semester ${semester}...\n`);
 
-  try {
-    scrapedCourses = await fetchAndScrapeCourses(semester, department);
-    // console.log(`Found ${scrapedCourses.length} courses:\n`);
+  // get data for each department.
+  for (let i = 0; i < departments.length; i++) {
+    const department = departments[i];
+    try {
+      scrapedCourses = await fetchAndScrapeCourses(semester, department);
+      console.log(`Found ${scrapedCourses.length} courses for ${department}\n`);
 
-    // Save to IndexedDB
-    await db.courses.bulkPut(scrapedCourses);
-    console.log(`Saved ${scrapedCourses.length} courses to database`);
-  } catch (err) {
-    console.error("Error:", err instanceof Error ? err.message : err);
+      // Save to IndexedDB
+      await db.courses.bulkPut(scrapedCourses);
+      console.log("Completed department; ", i);
+    } catch (err) {
+      console.error("Error:", err instanceof Error ? err.message : err);
+    }
   }
 }
 
-// Watch for changes to the audit history table
+const saveScrapedCourses = async () => {
+    const data = await db.courses.toArray();
+    if (data.length === 0) { console.error("Database is empty!"); return; }
+
+    // JSON Download
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ut-courses-export.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    console.log(`Exported ${data.length} courses to JSON.`);
+}
+
+
+
+//-----------------------------------------------------------------
+//-----------------------------------------------------------------
+// code to watch for changes to the audit history table
 function setupHistoryTableObserver() {
   let observerActive = false;
   let lastRowCount = 0;
@@ -197,6 +233,9 @@ function setupHistoryTableObserver() {
   setTimeout(checkForTable, 3000);
 }
 
+//-----------------------------------------------------------------
+//-----------------------------------------------------------------
+// code to define utd_toppage height
 function defineUTDToppageHeight() {
   const utdToppage = document.querySelector("#utd_toppage");
   if (utdToppage) {
@@ -259,6 +298,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     });
   }
 });
+
 //-----------------------------------------------------------------
 //----------------------------------------------------------------
 // code to scrape user audit data
