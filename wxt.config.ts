@@ -28,7 +28,7 @@ export default defineConfig({
 			"256": "icon/LHD Logo.png",
 		},
 
-		permissions: ["storage", "tabs", "scripting", "activeTab"],
+		permissions: ["storage", "tabs", "scripting", "activeTab", "windows"],
 		// Allow injecting scripts into UTDirect pages and all URLs for popup injection
 		host_permissions: ["https://utdirect.utexas.edu/*", "<all_urls>"],
 		optional_host_permissions: [],

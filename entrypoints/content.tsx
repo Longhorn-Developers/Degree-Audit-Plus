@@ -4,6 +4,7 @@ import TryDAPBanner from "./components/banner";
 import "./styles/content.css"; // Make sure this path is correct
 import { fetchAuditHistory } from "@/lib/audit-history-scraper";
 import { saveAuditHistory, getUncachedAuditIds } from "@/lib/storage";
+import { db } from "@/lib/db";
 
 function loadFonts() {
   const preconnect1 = document.createElement("link");
@@ -57,6 +58,7 @@ export default defineContentScript({
     // Fetch fresh audit history and update storage
     // This ONLY runs when user visits the UT Direct audits home page
     fetchAndStoreAuditHistory();
+    scrapeCourseCatalog();
   },
 });
 
@@ -76,20 +78,20 @@ async function fetchAndStoreAuditHistory() {
 
     console.log(
       `[Content] Found ${auditIds.length} audit IDs: that aren't cached yet`,
-      auditIds
+      auditIds,
     );
 
     if (auditIds.length > 0) {
       const uncachedIds = await getUncachedAuditIds(auditIds);
       console.log(
         `[Content] ${uncachedIds.length} audits need to be cached:`,
-        uncachedIds
+        uncachedIds,
       );
 
       if (uncachedIds.length > 0) {
         // Trigger batch scraping in background
         console.log(
-          "[Content] Sending SCRAPE_ALL_AUDITS to background script..."
+          "[Content] Sending SCRAPE_ALL_AUDITS to background script...",
         );
         browser.runtime.sendMessage({
           type: "SCRAPE_ALL_AUDITS",
@@ -107,6 +109,27 @@ async function fetchAndStoreAuditHistory() {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
     await saveAuditHistory([], errorMessage);
+  }
+}
+
+let scrapedCourses: ScrapedCourse[] = [];
+// logic for fetching data for course catalog scraping
+async function scrapeCourseCatalog() {
+  console.log("starting scraping");
+  const semester = "20259"; // Fall 2025
+  const department = "C S";
+
+  console.log(`Scraping ${department} courses for semester ${semester}...\n`);
+
+  try {
+    scrapedCourses = await fetchAndScrapeCourses(semester, department);
+    // console.log(`Found ${scrapedCourses.length} courses:\n`);
+
+    // Save to IndexedDB
+    await db.courses.bulkPut(scrapedCourses);
+    console.log(`Saved ${scrapedCourses.length} courses to database`);
+  } catch (err) {
+    console.error("Error:", err instanceof Error ? err.message : err);
   }
 }
 
@@ -141,7 +164,7 @@ function setupHistoryTableObserver() {
         const currentRowCount = tbody.querySelectorAll("tr").length;
         if (currentRowCount > lastRowCount) {
           console.log(
-            `New audit detected! Rows: ${lastRowCount} → ${currentRowCount}`
+            `New audit detected! Rows: ${lastRowCount} → ${currentRowCount}`,
           );
           if (debounceTimer) clearTimeout(debounceTimer);
 
@@ -181,9 +204,7 @@ function defineUTDToppageHeight() {
   }
 }
 
-//
-// --- Silent Background stuff ---
-//
+//TODO: Finish below logic to run background audits
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.action !== "run_audit_headless") return;
@@ -220,7 +241,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
         method: "POST",
         body: form,
         credentials: "include",
-      }
+      },
     );
 
     console.log("[Content] Audit POST finished. Status:", res.status);
@@ -246,6 +267,10 @@ import {
   scrapeCourseworkTable,
   scrapeRequirementSections,
 } from "@/lib/audit-scraper";
+import {
+  fetchAndScrapeCourses,
+  ScrapedCourse,
+} from "@/lib/course-catalog-scraper";
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.type !== "RUN_SCRAPER") return;
@@ -276,7 +301,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Find requirement sections
   const requirementSections = Array.from(
-    document.querySelectorAll("#requirements table.results tbody.section")
+    document.querySelectorAll("#requirements table.results tbody.section"),
   );
 
   // Scrape data using functions from audit-scraper
@@ -284,7 +309,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   const requirements = scrapeRequirementSections(requirementSections);
 
   console.log(
-    `[Scraper] Parsed ${requirements.length} sections, ${courses.length} courses`
+    `[Scraper] Parsed ${requirements.length} sections, ${courses.length} courses`,
   );
 
   // Send results back
@@ -297,7 +322,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 });
 function getCSRFToken(): string | null {
   const input = document.querySelector<HTMLInputElement>(
-    "input[name='csrfmiddlewaretoken']"
+    "input[name='csrfmiddlewaretoken']",
   );
   return input?.value ?? null;
 }

@@ -82,3 +82,43 @@ export type RequirementBreakdownComponentProps = {
   requirements: RequirementRule[];
   onAddCourse?: () => void;
 };
+
+// Course catalog types - for scraped course data from UT course schedule
+export type Instructor = {
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  middleInitial?: string;
+};
+
+export type ScheduleItem = {
+  days: string;
+  hours: string;
+  location: string;
+};
+
+export type Semester = {
+  year: number;
+  season: string;
+  code: string;
+};
+
+export type CatalogCourse = {
+  uniqueId: number;
+  fullName: string;
+  courseName: string;
+  department: string;
+  number: string;
+  creditHours: number;
+  status: string;
+  isReserved: boolean;
+  instructionMode: string;
+  instructors: Instructor[];
+  schedule: ScheduleItem[];
+  flags: string[];
+  core: string[];
+  url: string;
+  description: string[];
+  semester?: Semester;
+  scrapedAt: number;
+};

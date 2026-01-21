@@ -1,7 +1,8 @@
 import { saveAuditData } from "@/lib/storage";
 import {
-  getOrCreateScraperWindow,
   closeScraperWindow,
+  createScraperTab,
+  closeScraperTab,
 } from "@/lib/scraper-window";
 
 export default defineBackground(() => {
@@ -19,11 +20,11 @@ export default defineBackground(() => {
     }
   });
 
-  // Listen for messages from content scripts
+  // Open degree audit page.
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "openDegreeAudit") {
       const url = browser.runtime.getURL(
-        `/degree-audit.html?auditId=${message.auditId}`
+        `/degree-audit.html?auditId=${message.auditId}`,
       );
       browser.tabs
         .create({ url })
@@ -39,8 +40,6 @@ export default defineBackground(() => {
 
   // scrape audit data
 
-  const scraperTabs = new Map<number, NodeJS.Timeout>();
-
   // Scrape a single audit by ID
   // Creates a tab in the minimized scraper window, waits for load, sends RUN_SCRAPER message
   // Resolution happens via pendingScrapes map when AUDIT_RESULTS is received
@@ -48,78 +47,20 @@ export default defineBackground(() => {
     const url = `https://utdirect.utexas.edu/apps/degree/audits/results/${auditId}/`;
     console.log(`[Batch Scraper] Starting scrape for audit: ${auditId}`);
 
-    // Get or create the minimized scraper window
-    const windowId = await getOrCreateScraperWindow();
-
-    return new Promise((_resolve, reject) => {
-      browser.tabs.create({ url, active: false, windowId }, (tab) => {
-        if (!tab?.id) {
-          console.error(
-            `[Batch Scraper] Failed to create tab for audit: ${auditId}`
-          );
-          reject(new Error("Failed to create tab"));
-          return;
-        }
-
-        const tabId = tab.id;
-        console.log(
-          `[Batch Scraper] Created hidden tab ${tabId} for audit: ${auditId}`
-        );
-
-        // Safety timeout: auto-close tab after 30 seconds
-        const safetyTimeout = setTimeout(() => {
-          console.log(
-            `[Batch Scraper] Timeout for audit ${auditId}, closing tab ${tabId}`
-          );
-          cleanup();
-          browser.tabs.remove(tabId).catch(() => {});
-          reject(new Error("Timeout: Page did not load within 30 seconds"));
-        }, 30000);
-
-        scraperTabs.set(tabId, safetyTimeout);
-
-        const cleanup = () => {
-          browser.tabs.onUpdated.removeListener(updateListener);
-          browser.tabs.onRemoved.removeListener(removeListener);
-          const timeout = scraperTabs.get(tabId);
-          if (timeout) clearTimeout(timeout);
-          scraperTabs.delete(tabId);
-        };
-
-        // Listen for when the tab finishes loading
-        const updateListener = (id: number, changeInfo: any) => {
-          if (id === tabId && changeInfo.status === "complete") {
-            console.log(
-              `[Batch Scraper] Tab ${tabId} loaded, sending RUN_SCRAPER for audit: ${auditId}`
-            );
-            cleanup();
-            browser.tabs
-              .sendMessage(tabId, { type: "RUN_SCRAPER", auditId })
-              .catch((err) => {
-                console.error(
-                  `[Batch Scraper] Failed to send scraper message for ${auditId}:`,
-                  err
-                );
-                browser.tabs.remove(tabId).catch(() => {});
-                reject(err);
-              });
-          }
-        };
-
-        const removeListener = (closedTabId: number) => {
-          if (closedTabId === tabId) {
-            console.log(
-              `[Batch Scraper] Tab ${tabId} closed before completion for audit ${auditId}`
-            );
-            cleanup();
-            reject(new Error("Tab closed before scraping completed"));
-          }
-        };
-
-        browser.tabs.onUpdated.addListener(updateListener);
-        browser.tabs.onRemoved.addListener(removeListener);
+    try {
+      const { tabId } = await createScraperTab({
+        url,
+        mode: "background",
+        timeout: 30000,
+        messageOnLoad: { type: "RUN_SCRAPER", auditId },
       });
-    });
+      console.log(
+        `[Batch Scraper] Tab ${tabId} loaded, message sent for audit: ${auditId}`,
+      );
+    } catch (err) {
+      console.error(`[Batch Scraper] Failed for ${auditId}:`, err);
+      throw err;
+    }
   }
 
   const pendingScrapes = new Map<
@@ -140,7 +81,7 @@ export default defineBackground(() => {
       const auditIds = message.auditIds as string[];
       console.log(
         `[Batch Scraper] Starting batch scrape for ${auditIds.length} audits:`,
-        auditIds
+        auditIds,
       );
 
       // Mark scraping as in progress
@@ -156,7 +97,9 @@ export default defineBackground(() => {
           }
         }
       });
-      browser.runtime.sendMessage({ type: "SCRAPE_ALL_STARTED" }).catch(() => {});
+      browser.runtime
+        .sendMessage({ type: "SCRAPE_ALL_STARTED" })
+        .catch(() => {});
 
       (async () => {
         const succeeded: string[] = [];
@@ -175,29 +118,29 @@ export default defineBackground(() => {
             await Promise.race([
               scrapePromise,
               new Promise<void>((_, reject) =>
-                setTimeout(() => reject(new Error("Scrape timeout")), 35000)
+                setTimeout(() => reject(new Error("Scrape timeout")), 35000),
               ),
             ]);
 
             console.log(
-              `[Batch Scraper] Successfully scraped audit: ${auditId}`
+              `[Batch Scraper] Successfully scraped audit: ${auditId}`,
             );
             succeeded.push(auditId);
           } catch (e) {
             console.error(
               `[Batch Scraper] Failed to scrape audit ${auditId}:`,
-              e
+              e,
             );
             failed.push(auditId);
           } finally {
             pendingScrapes.delete(auditId);
           }
           // delay to nto overhwelm serv
-          await new Promise((r) => setTimeout(r, 500));
+          await new Promise((r) => setTimeout(r, 150));
         }
 
         console.log(
-          `[Batch Scraper] Complete. Succeeded: ${succeeded.length}, Failed: ${failed.length}`
+          `[Batch Scraper] Complete. Succeeded: ${succeeded.length}, Failed: ${failed.length}`,
         );
 
         // Close the minimized scraper window
@@ -227,63 +170,22 @@ export default defineBackground(() => {
 
     // Handle single audit scrape (backward compat)
     if (message.type === "SCRAPE_AUDIT") {
-      // Create a tab in the minimized scraper window
       (async () => {
-        const windowId = await getOrCreateScraperWindow();
-        browser.tabs.create(
-          { url: message.url, active: false, windowId },
-          (tab) => {
-            if (!tab?.id) {
-              sendResponse({
-                status: "error",
-                message: "Failed to create tab",
-              });
-              return;
-            }
-
-            const tabId = tab.id;
-            const safetyTimeout = setTimeout(() => {
-              console.log("Safety timeout: closing scraper tab", tabId);
-              browser.tabs.remove(tabId).catch(() => {});
-              scraperTabs.delete(tabId);
-            }, 30000);
-
-            scraperTabs.set(tabId, safetyTimeout);
-
-            // Listen for when the tab finishes loading
-            const updateListener = (id: number, changeInfo: any) => {
-              if (id === tabId && changeInfo.status === "complete") {
-                // Clean up listeners
-                browser.tabs.onUpdated.removeListener(updateListener);
-                browser.tabs.onRemoved.removeListener(removeListener);
-                browser.tabs
-                  .sendMessage(tabId, { type: "RUN_SCRAPER" })
-                  .catch((err) => {
-                    console.error("Failed to send scraper message:", err);
-                    browser.tabs.remove(tabId);
-                    const timeout = scraperTabs.get(tabId);
-                    if (timeout) clearTimeout(timeout);
-                    scraperTabs.delete(tabId);
-                  });
-              }
-            };
-            const removeListener = (closedTabId: number) => {
-              if (closedTabId === tabId) {
-                console.log("Scraper tab was closed before completion");
-                browser.tabs.onUpdated.removeListener(updateListener);
-                browser.tabs.onRemoved.removeListener(removeListener);
-                const timeout = scraperTabs.get(tabId);
-                if (timeout) clearTimeout(timeout);
-                scraperTabs.delete(tabId);
-              }
-            };
-            browser.tabs.onUpdated.addListener(updateListener);
-            browser.tabs.onRemoved.addListener(removeListener);
-            sendResponse({ status: "started", tabId });
-          }
-        );
+        try {
+          const { tabId } = await createScraperTab({
+            url: message.url,
+            mode: "background",
+            timeout: 30000,
+            messageOnLoad: { type: "RUN_SCRAPER" },
+          });
+          sendResponse({ status: "started", tabId });
+        } catch (err) {
+          sendResponse({
+            status: "error",
+            message: err instanceof Error ? err.message : "Unknown error",
+          });
+        }
       })();
-      // Keep message channel open for async response
       return true;
     }
 
@@ -293,14 +195,14 @@ export default defineBackground(() => {
       const auditId = message.auditId;
 
       console.log(
-        `[Background] Received AUDIT_RESULTS for audit: ${auditId || "unknown"}`
+        `[Background] Received AUDIT_RESULTS for audit: ${auditId || "unknown"}`,
       );
       console.log(`[Background] Message keys:`, Object.keys(message));
       console.log(
-        `[Background] Has requirements: ${!!message.requirements}, Has data: ${!!message.data}`
+        `[Background] Has requirements: ${!!message.requirements}, Has data: ${!!message.data}`,
       );
       console.log(
-        `[Background] Requirements length: ${message.requirements?.length}, Data length: ${message.data?.length}`
+        `[Background] Requirements length: ${message.requirements?.length}, Data length: ${message.data?.length}`,
       );
 
       // Save the scraped data to storage
@@ -312,31 +214,24 @@ export default defineBackground(() => {
         })
           .then(() => {
             console.log(
-              `[Background] Successfully saved audit data for: ${auditId}`
+              `[Background] Successfully saved audit data for: ${auditId}`,
             );
           })
           .catch((err) => {
             console.error(
               `[Background] Failed to save audit data for ${auditId}:`,
-              err
+              err,
             );
           });
       } else {
         console.error(
-          `[Background] CANNOT SAVE - missing data! auditId: ${auditId}, requirements: ${!!message.requirements}, data: ${!!message.data}`
+          `[Background] CANNOT SAVE - missing data! auditId: ${auditId}, requirements: ${!!message.requirements}, data: ${!!message.data}`,
         );
       }
 
       if (tabId) {
         console.log(`[Background] Closing scraper tab: ${tabId}`);
-
-        // Clear safety timeout
-        const timeout = scraperTabs.get(tabId);
-        if (timeout) clearTimeout(timeout);
-        scraperTabs.delete(tabId);
-
-        // Close the scraper tab
-        browser.tabs.remove(tabId).catch((err) => {
+        closeScraperTab(tabId).catch((err) => {
           console.error("[Background] Failed to close scraper tab:", err);
         });
       }
@@ -344,7 +239,7 @@ export default defineBackground(() => {
       // Resolve pending batch scrape promise if exists
       if (auditId && pendingScrapes.has(auditId)) {
         console.log(
-          `[Background] Resolving pending scrape for audit: ${auditId}`
+          `[Background] Resolving pending scrape for audit: ${auditId}`,
         );
         pendingScrapes.get(auditId)!.resolve();
       }
@@ -363,20 +258,13 @@ export default defineBackground(() => {
 
       if (tabId) {
         console.log(`[Background] Closing failed scraper tab: ${tabId}`);
-
-        // Clear safety timeout
-        const timeout = scraperTabs.get(tabId);
-        if (timeout) clearTimeout(timeout);
-        scraperTabs.delete(tabId);
-
-        // Close the scraper tab
-        browser.tabs.remove(tabId).catch(() => {});
+        closeScraperTab(tabId).catch(() => {});
       }
 
       // Reject pending batch scrape promise if exists
       if (auditId && pendingScrapes.has(auditId)) {
         console.log(
-          `[Background] Rejecting pending scrape for audit: ${auditId}`
+          `[Background] Rejecting pending scrape for audit: ${auditId}`,
         );
         pendingScrapes.get(auditId)!.reject(new Error(error));
       }
