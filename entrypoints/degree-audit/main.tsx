@@ -1,35 +1,31 @@
 import {
   Course,
-  RequirementSection,
   DegreeAuditCardProps,
+  RequirementSection,
 } from "@/lib/general-types";
-import { getAuditHistory, getAuditData } from "@/lib/storage";
-import React, { useState, createContext, useContext } from "react";
-import ReactDOM from "react-dom/client";
-import clsx from "clsx";
-import Button from "../components/common/button";
-import { HStack, VStack } from "../components/common/helperdivs";
-import { Title } from "../components/common/text";
-import Modal from "../components/common/modal";
-import DegreeProgressOverviewCard from "../components/degree-progress-overview-card";
-import { PreferencesProvider, usePreferences } from "../providers/main-page";
-import "../styles/content.css";
-import devImage from "../../public/developer_image.png";
-import logoImage from "../../public/logo_image.png";
-import lhdLogo from "../../public/icon/LHD Logo.png";
-import dapLogo from "../../public/dap-logo.png";
-import DegreeAuditCard from "../components/audit-card";
+import { getAuditData, getAuditHistory } from "@/lib/storage";
 import {
-  Sidebar as SidebarIcon,
+  ArrowSquareOut,
   DiscordLogo,
+  Gear,
   GithubLogo,
   InstagramLogo,
   LinkedinLogo,
   Moon,
   Plus,
-  ArrowSquareOut,
-  Gear,
+  Sidebar as SidebarIcon,
 } from "@phosphor-icons/react";
+import clsx from "clsx";
+import React, { createContext, useContext, useState } from "react";
+import ReactDOM from "react-dom/client";
+import dapLogo from "../../public/dap-logo.png";
+import lhdLogo from "../../public/icon/LHD Logo.png";
+import DegreeAuditCard from "../components/audit-card";
+import { HStack, VStack } from "../components/common/helperdivs";
+import Modal from "../components/common/modal";
+import { Title } from "../components/common/text";
+import { PreferencesProvider, usePreferences } from "../providers/main-page";
+import "../styles/content.css";
 import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
 import RequirementBreakdown from "./components/requirement-breakdown";
@@ -453,7 +449,7 @@ const DegreeCompletionPercentage = () => {
       bars={bars}
       tooltipContent={(bar) => (
         <VStack
-          className="p-2 rounded-md border border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
+          className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
           style={{ borderColor: bar.color, color: bar.color }}
         >
           <HStack

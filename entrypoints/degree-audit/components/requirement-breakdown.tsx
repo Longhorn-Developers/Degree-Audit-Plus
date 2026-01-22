@@ -1,30 +1,34 @@
 import Button from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
-import { cn } from "@/lib/utils";
 import {
-  CaretDown,
-  CaretUp,
-  CheckCircle,
-  MinusCircle,
-  PencilSimpleLine,
-  PlusCircle,
-} from "@phosphor-icons/react";
-import { useState } from "react";
-import {
-  RequirementRule,
   CourseRowData,
   RequirementBreakdownComponentProps,
+  RequirementRule,
 } from "@/lib/general-types";
+import { cn } from "@/lib/utils";
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  CheckCircleIcon,
+  HourglassIcon,
+  MinusCircleIcon,
+  PlusCircleIcon,
+  QuestionMarkIcon
+} from "@phosphor-icons/react";
+import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
+import { CheckIcon } from "lucide-react";
+import { useState } from "react";
+
 
 // Status icon component for requirements
 const StatusIcon = ({ status }: { status: RequirementRule["status"] }) => {
   if (status === "fulfilled") {
-    return <CheckCircle weight="fill" className="w-6 h-6 text-green-600" />;
+    return <CheckCircleIcon weight="fill" className="w-6 h-6 text-green-600" />;
   }
   if (status === "unfulfilled") {
-    return <MinusCircle weight="fill" className="w-6 h-6 text-red-500" />;
+    return <MinusCircleIcon weight="fill" className="w-6 h-6 text-red-500" />;
   }
-  return <MinusCircle weight="fill" className="w-6 h-6 text-yellow-500" />;
+  return <MinusCircleIcon weight="fill" className="w-6 h-6 text-yellow-500" />;
 };
 
 // Hours badge component
@@ -37,23 +41,37 @@ const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   );
 };
 
+const statusIcons = {
+  "Applied": {
+    icon: <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />, // Icon for the course status
+    color: "bg-[#B8C5A3]",                                                                      // Background color for the whole course pill when applied
+  },
+  "Planned": {
+    icon: <CalendarBlankIcon className="-ml-1 text-white w-5 h-5 bg-blue-500 rounded-full p-1" />,
+    color: "bg-[#B8C5A3]",
+  },
+  "In Progress": {
+    icon: <HourglassIcon weight="fill" className="-ml-1 text-white w-5 h-5 bg-yellow-500 rounded-full p-1" />,
+    color: "bg-[#F5F0DC]",
+  },
+  "Unknown": {
+    icon: <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />,
+    color: "bg-[#E5E7EB]",
+  },
+} as const satisfies Record<CourseRowData["status"], { icon: React.ReactNode; color: string }>;
+
 // Course pill component matching Figma design
 const CoursePill = ({ course }: { course: CourseRowData }) => {
   const isApplied = course.status === "Applied";
-  const isInProgress = course.status === "In Progress";
 
   return (
     <div
       className={cn(
         "flex items-center gap-6 px-4 py-3 rounded-lg text-sm",
-        isApplied && "bg-[#B8C5A3]",
-        isInProgress && "bg-[#F5F0DC]",
-        !isApplied && !isInProgress && "bg-gray-100"
+        statusIcons[course.status].color,
       )}
     >
-      {isInProgress && (
-        <PencilSimpleLine className="w-5 h-5 text-gray-600 flex-shrink-0" />
-      )}
+      {statusIcons[course.status].icon /* Chip specifying status of course */} 
       <span className="font-semibold min-w-[80px]">{course.code}</span>
       <span className="flex-1">
         {course.name}
@@ -107,9 +125,9 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
             total={requirement.requiredHours}
           />
           {isExpanded ? (
-            <CaretUp className="w-5 h-5 text-gray-400" />
+            <CaretUpIcon className="w-5 h-5 text-gray-400" />
           ) : (
-            <CaretDown className="w-5 h-5 text-gray-400" />
+            <CaretDownIcon className="w-5 h-5 text-gray-400" />
           )}
         </HStack>
       </button>
@@ -192,9 +210,9 @@ const RequirementBreakdown = (
             {hours.current.toString().padStart(2, "0")} / {hours.total} hours
           </span>
           {isOpen ? (
-            <CaretUp className="w-5 h-5 text-gray-400" />
+            <CaretUpIcon className="w-5 h-5 text-gray-400" />
           ) : (
-            <CaretDown className="w-5 h-5 text-gray-400" />
+            <CaretDownIcon className="w-5 h-5 text-gray-400" />
           )}
         </HStack>
       </button>
@@ -220,7 +238,7 @@ const RequirementBreakdown = (
               className="w-full text-base font-semibold py-3 px-6"
               onClick={onAddCourse}
             >
-              <PlusCircle className="w-5 h-5" />
+              <PlusCircleIcon className="w-5 h-5" />
               Add Hypothetical Course
             </Button>
           </div>
