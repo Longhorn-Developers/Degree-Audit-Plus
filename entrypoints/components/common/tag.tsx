@@ -5,35 +5,36 @@ interface TagProps {
   major: string;
   type: string;
 }
+// Uses CSS variables from content.css @theme
 const getBackgroundColor = (index: number, type: String): string => {
   if (type == "minor") {
-    return "#CFFAFE";
+    return "var(--color-dap-minor-bg)";
   }
   switch (index) {
     case 0:
-      return "#059669";
+      return "var(--color-dap-green)";
     case 1:
-      return "#4F46E5";
+      return "var(--color-dap-purple)";
     case 2:
-      return "#f97316";
+      return "var(--color-dap-orange-accent)";
     default:
-      return "#ef4444";
+      return "var(--color-dap-red)";
   }
 };
 
 const getColor = (index: number, type: String): string => {
   if (type == "minor") {
-    return "#0369A1";
+    return "var(--color-dap-minor-text)";
   } else {
     switch (index) {
       case 0:
-        return "#d1fae5";
+        return "var(--color-dap-green-bg)";
       case 1:
-        return "#e0e7ff";
+        return "var(--color-dap-purple-bg)";
       case 2:
-        return "#ffedd5";
+        return "var(--color-dap-orange-accent-bg)";
       default:
-        return "#fee2e2";
+        return "var(--color-dap-red-bg)";
     }
   }
 };

@@ -9,9 +9,51 @@
 
 /* Colors and fonts */
 @theme {
+  /* Primary brand colors */
   --color-dap-primary: #bf5700;
+  --color-dap-orange: #bf5700;
+  --color-dap-teal: #00a9b7;
+  --color-dap-yellow: #ffd600;
+  --color-dap-indigo: #6366f1;
+  --color-dap-pink: #ec4899;
+  --color-dap-green: #059669;
+  --color-dap-purple: #4f46e5;
+  --color-dap-red: #ef4444;
+  --color-dap-orange-accent: #f97316;
+  --color-dap-orange-light: #f8971f;
+  --color-dap-gray: #9ca3af;
+  
+  /* Background variants (lighter shades) */
+  --color-dap-green-bg: #d1fae5;
+  --color-dap-purple-bg: #e0e7ff;
+  --color-dap-orange-accent-bg: #ffedd5;
+  --color-dap-red-bg: #fee2e2;
+  --color-dap-minor-bg: #cffafe;
+  --color-dap-selected-bg: rgba(248, 151, 31, 0.25);
+  
+  /* Course status colors */
+  --color-course-applied: #b8c5a3;
+  --color-course-in-progress: #f5f0dc;
+  --color-course-unknown: #e5e7eb;
+  
+  /* Gray scale */
+  --color-dap-gray-light: #9cadb7;
+  --color-dap-gray-slate: #f1f5f9;
+  --color-dap-gray-slate-hover: #e2e8f0;
+  
+  /* Text colors */
+  --color-dap-minor-text: #0369a1;
+  --color-dap-dark: #1a2024;
+  --color-dap-dark-alt: #0f1215;
+  --color-dap-dark-heading: #040506;
+  --color-dap-link: #0066cc;
+  
+  /* Border/UI colors */
+  --color-dap-border: #eae8e1;
   --color-ut-charcoal: #333f48;
   --color-ut-off-white: #d6d2c4;
+  
+  /* Fonts */
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
 }
