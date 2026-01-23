@@ -35,6 +35,12 @@ type PreferencesContext = {
 	sidebarIsOpen: boolean;
 	setSidebarIsOpen: (value: boolean) => void;
 	toggleSidebar: () => void;
+	sidebarSize: number;
+	isDraggingSidebar: boolean;
+	setIsDraggingSidebar: (value: boolean) => void;
+	ephemeralSetSidebarSize: (size: number) => void;
+	setAndSaveSidebarSize: (size: number) => Promise<void>;
+	saveSidebarSize: () => Promise<void>;
 };
 
 type AdditionalValues<T extends Record<string, { value: unknown }>> = {
@@ -109,8 +115,14 @@ const PreferencesProviderContext = createContext<PreferencesContext>(
 	)
 );
 
+function getPrefersDarkMode() {
+	return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export function PreferencesProvider(props: { children: React.ReactNode }) {
 	const [isMounted, setIsMounted] = useState(false);
+	const [sidebarSize, setSidebarSize] = useState(400);
+	const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
 	const [sidebarIsOpen, setSidebarIsOpen] = useState(
 		DEFAULT_PREFERENCES.sidebarIsOpen.value
 	);
@@ -118,11 +130,6 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
 		DEFAULT_PREFERENCES.luminosity.value
 	);
 	const isInitialMountRef = useRef(true);
-
-	function getPrefersDarkMode() {
-		const a = window.matchMedia("(prefers-color-scheme: dark)").matches;
-		return a;
-	}
 
 	const darkOrLightLuminosity = useCallback(() => {
 		return luminosity === "system"
@@ -133,57 +140,71 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
 	}, [luminosity]);
 
 	useEffect(() => {
-		OptionsStore.get("showSidebar").then((value) => {
-			setSidebarIsOpen(value);
+		OptionsStore.all().then((values) => {
+			setSidebarIsOpen(values.showSidebar);
+			setLuminosity(values.luminosity);
+			console.log("sidebar size", values.sidebarSize);
+			setSidebarSize(values.sidebarSize);
 		});
-		OptionsStore.get("luminosity").then((value) => {
-			setLuminosity(value);
-		});
+
 		setIsMounted(true);
 		isInitialMountRef.current = false;
 	}, [darkOrLightLuminosity]);
 
-	const value: PreferencesContext = {
-		isMounted: isMounted,
-		luminosity,
-		setLuminosity: async (value: PREFERENCE_PreferredLuminosity) => {
-			setLuminosity(value);
-			await OptionsStore.set("luminosity", value);
-		},
-		toggleDarkMode: async () => {
-			const oppositeLuminosity =
-				darkOrLightLuminosity() === "dark" ? "light" : "dark";
-			setLuminosity(oppositeLuminosity);
-			await OptionsStore.set("luminosity", oppositeLuminosity);
-		},
-		isDarkMode: () => darkOrLightLuminosity() === "dark",
-		sidebarIsOpen,
-		setSidebarIsOpen: async (value: boolean) => {
-			setSidebarIsOpen(value);
-			await OptionsStore.set("showSidebar", value);
-		},
-		toggleSidebar: async () => {
-			setSidebarIsOpen(!sidebarIsOpen);
-			await OptionsStore.set("showSidebar", !sidebarIsOpen);
-		},
-	};
+	const value: PreferencesContext = useMemo(() => {
+		return {
+			isMounted: isMounted,
+			luminosity,
+			setLuminosity: async (value: PREFERENCE_PreferredLuminosity) => {
+				setLuminosity(value);
+				await OptionsStore.set("luminosity", value);
+			},
+			toggleDarkMode: async () => {
+				const oppositeLuminosity =
+					darkOrLightLuminosity() === "dark" ? "light" : "dark";
+				setLuminosity(oppositeLuminosity);
+				await OptionsStore.set("luminosity", oppositeLuminosity);
+			},
+			isDarkMode: () => darkOrLightLuminosity() === "dark",
+			sidebarIsOpen,
+			setSidebarIsOpen: async (value: boolean) => {
+				setSidebarIsOpen(value);
+				await OptionsStore.set("showSidebar", value);
+			},
+			toggleSidebar: async () => {
+				setSidebarIsOpen(!sidebarIsOpen);
+				await OptionsStore.set("showSidebar", !sidebarIsOpen);
+			},
+			sidebarSize,
+			isDraggingSidebar,
+			setIsDraggingSidebar,
+			ephemeralSetSidebarSize: (size: number) => {
+				setSidebarSize(size);
+			},
+			saveSidebarSize: async () => {
+				console.log("saving sidebar size", sidebarSize);
+				await OptionsStore.set("sidebarSize", sidebarSize);
+			},
+			setAndSaveSidebarSize: async (size: number) => {
+				setSidebarSize(size);
+				await OptionsStore.set("sidebarSize", size);
+			},
+		};
+	}, [isMounted, luminosity, sidebarIsOpen, sidebarSize]);
 
 	if (!isMounted) {
 		return null;
 	}
-
-	console.log("value", value);
 
 	return (
 		<PreferencesProviderContext.Provider {...props} value={value}>
 			<script
 				dangerouslySetInnerHTML={{
 					__html: `
-          const storedTheme = localStorage.getItem("${DEFAULT_PREFERENCES.luminosity.key}");
-          if (storedTheme) {
-            document.documentElement.classList.add(storedTheme);
-          }
-        `,
+					const storedTheme = localStorage.getItem("${DEFAULT_PREFERENCES.luminosity.key}");
+					if (storedTheme) {
+						document.documentElement.classList.add(storedTheme);
+					}`,
 				}}
 			/>
 			{props.children}

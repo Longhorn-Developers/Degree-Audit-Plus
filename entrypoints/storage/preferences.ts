@@ -7,11 +7,13 @@ import { PREFERENCE_PreferredLuminosity } from "../providers/main-page";
 export interface IOptionsStore {
 	showSidebar: boolean;
 	luminosity: PREFERENCE_PreferredLuminosity;
+	sidebarSize: number;
 }
 
 export const OptionsStore = createSyncStore<IOptionsStore>({
 	showSidebar: true,
 	luminosity: "system",
+	sidebarSize: 300,
 });
 
 /**
@@ -23,6 +25,7 @@ export const initSettings = async () =>
 	({
 		showSidebar: await OptionsStore.get("showSidebar"),
 		luminosity: await OptionsStore.get("luminosity"),
+		sidebarSize: await OptionsStore.get("sidebarSize"),
 	} satisfies IOptionsStore);
 
 // Clothing retailer right
