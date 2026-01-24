@@ -276,12 +276,12 @@ export default function App() {
           <div className="flex items-center gap-3">
             <h1
               style={{ fontFamily: "Roboto Flex" }}
-              className="text-[25.63px] font-bold text-[#1a2024]"
+              className="text-[25.63px] font-bold text-[var(--color-dap-dark)]"
             >
               Current Audits
             </h1>
             {isSyncing && (
-              <div className="flex items-center gap-1.5 text-[#9cadb7]">
+              <div className="flex items-center gap-1.5 text-[var(--color-dap-gray-light)]">
                 <SpinnerIcon size={14} className="animate-spin" />
                 <span className="text-xs">Syncing...</span>
               </div>
@@ -301,23 +301,23 @@ export default function App() {
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-[#9cadb7]">Loading audit history...</p>
+            <p className="text-base text-[var(--color-dap-gray-light)]">Loading audit history...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-red-600 max-w-[250px]">
               Error loading audits: {error}
             </p>
-            <p className="text-sm text-[#9cadb7]">
+            <p className="text-sm text-[var(--color-dap-gray-light)]">
               Please visit the UT Direct degree audits page to refresh.
             </p>
           </div>
         ) : audits.length === 0 ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-[#9cadb7] tracking-[0.32px] max-w-[250px]">
+            <p className="text-base text-[var(--color-dap-gray-light)] tracking-[0.32px] max-w-[250px]">
               Alas! Your future is veiled. I do not know what is to come.
             </p>
-            <p className="text-[14.22px] font-medium text-[#333f48]">
+            <p className="text-[14.22px] font-medium text-[var(--color-ut-charcoal)]">
               (No current audits)
             </p>
           </div>
@@ -344,7 +344,7 @@ export default function App() {
             {hasMoreAudits && (
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="w-full text-center text-[#0066cc] font-medium text-sm mb-1 hover:underline hover:cursor-pointer"
+                className="w-full text-center text-[var(--color-dap-link)] font-medium text-sm mb-1 hover:underline hover:cursor-pointer"
               >
                 {showAll ? "Show Less" : `Show ${audits.length - 3} More`}
               </button>

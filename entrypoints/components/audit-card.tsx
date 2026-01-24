@@ -20,8 +20,8 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     <div
       className={`!rounded-lg px-4 py-3 w-full transition-all duration-200 cursor-pointer ${
         isSelected
-          ? "bg-[rgba(248,151,31,0.25)]"
-          : "bg-white border border-[#eae8e1]"
+          ? "bg-[var(--color-dap-selected-bg)]"
+          : "bg-white border border-[var(--color-dap-border)]"
       }`}
       onClick={onToggle}
     >
@@ -30,11 +30,11 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isExpanded ? (
-              <CaretUp size={16} weight="bold" className="text-[#1a2024]" />
+              <CaretUp size={16} weight="bold" className="text-[var(--color-dap-dark)]" />
             ) : (
-              <CaretDown size={16} weight="bold" className="text-[#1a2024]" />
+              <CaretDown size={16} weight="bold" className="text-[var(--color-dap-dark)]" />
             )}
-            <span className="font-bold text-[13px] leading-[18px] text-[#1a2024] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="font-bold text-[13px] leading-[18px] text-[var(--color-dap-dark)] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
               {title}
             </span>
           </div>
@@ -46,9 +46,9 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
               }}
               className="p-1 hover:bg-black/5 rounded"
             >
-              <DotsThree size={20} weight="bold" className="text-[#1a2024]" />
+              <DotsThree size={20} weight="bold" className="text-[var(--color-dap-dark)]" />
             </button>
-            <div className="bg-[#bf5700] px-2 py-1 rounded h-[26px] flex items-center justify-center">
+            <div className="bg-[var(--color-dap-orange)] px-2 py-1 rounded h-[26px] flex items-center justify-center">
               <span className="text-white text-sm font-bold leading-[18px]">
                 {percentage}%
               </span>
@@ -93,10 +93,10 @@ export const DegreeAuditCardPopup: React.FC<DegreeAuditCardProps> = ({
   percentage = 90,
 }) => {
   return (
-    <div className="bg-[#f1f5f9] rounded-sm px-4 py-3 w-full transition-all duration-200 hover:bg-[#e2e8f0] cursor-pointer">
+    <div className="bg-[var(--color-dap-gray-slate)] rounded-sm px-4 py-3 w-full transition-all duration-200 hover:bg-[var(--color-dap-gray-slate-hover)] cursor-pointer">
       <div className="flex flex-col gap-3">
         {/* Title */}
-        <div className="font-bold text-[13px] leading-[18px] text-[#1a2024] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
+        <div className="font-bold text-[13px] leading-[18px] text-[var(--color-dap-dark)] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
           {title}
         </div>
         <div className="flex items-start justify-between">
@@ -131,7 +131,7 @@ export const DegreeAuditCardPopup: React.FC<DegreeAuditCardProps> = ({
           </div>
 
           {/* Percentage */}
-          <div className="bg-[#bf5700] rounded-md px-2 py-1 h-[30px] flex items-center justify-center">
+          <div className="bg-[var(--color-dap-orange)] rounded-md px-2 py-1 h-[30px] flex items-center justify-center">
             <span className="text-white text-base font-bold leading-[22px]">
               {percentage}%
             </span>

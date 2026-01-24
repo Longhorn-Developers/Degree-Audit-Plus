@@ -70,9 +70,9 @@ const TryDAPBanner = () => {
             </button>
           </div>
 
-          <div className="w-full h-[12px] bg-[#F8971F]" />
+          <div className="w-full h-[12px] bg-[var(--color-dap-orange-light)]" />
 
-          <div className="w-full h-[6px] bg-[#FFD600]" />
+          <div className="w-full h-[6px] bg-[var(--color-dap-yellow)]" />
         </div>
       )}
     </div>
