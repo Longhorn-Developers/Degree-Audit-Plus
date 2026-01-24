@@ -43,20 +43,20 @@ const HoursBadge = ({ current, total }: { current: number; total: number }) => {
 
 const statusIcons = {
   "Applied": {
-    icon: <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />, // Icon for the course status
-    color: "bg-[#B8C5A3]",                                                                      // Background color for the whole course pill when applied
+    icon: <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />,
+    color: "bg-[var(--color-course-applied)]",
   },
   "Planned": {
     icon: <CalendarBlankIcon className="-ml-1 text-white w-5 h-5 bg-blue-500 rounded-full p-1" />,
-    color: "bg-[#B8C5A3]",
+    color: "bg-[var(--color-course-applied)]",
   },
   "In Progress": {
     icon: <HourglassIcon weight="fill" className="-ml-1 text-white w-5 h-5 bg-yellow-500 rounded-full p-1" />,
-    color: "bg-[#F5F0DC]",
+    color: "bg-[var(--color-course-in-progress)]",
   },
   "Unknown": {
     icon: <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />,
-    color: "bg-[#E5E7EB]",
+    color: "bg-[var(--color-course-unknown)]",
   },
 } as const satisfies Record<CourseRowData["status"], { icon: React.ReactNode; color: string }>;
 
@@ -144,14 +144,14 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   );
 };
 
-// Color palette for requirement categories
+// Color palette using CSS variables from content.css @theme
 const CATEGORY_COLORS = [
-  "#BF5700", // burnt orange
-  "#00A9B7", // teal
-  "#FFD600", // yellow
-  "#6366F1", // indigo
-  "#EC4899", // pink
-  "#10B981", // green
+  "var(--color-dap-orange)",
+  "var(--color-dap-teal)",
+  "var(--color-dap-yellow)",
+  "var(--color-dap-indigo)",
+  "var(--color-dap-pink)",
+  "var(--color-dap-green)",
 ];
 
 // Progress bar for the header showing hours

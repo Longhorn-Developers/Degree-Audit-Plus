@@ -193,7 +193,7 @@ const Sidebar = () => {
   return (
     <div
       className={clsx(
-        "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[#eae8e1] overflow-hidden whitespace-nowrap transition-[max-width] duration-300 ease-out",
+        "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[var(--color-dap-border)] overflow-hidden whitespace-nowrap transition-[max-width] duration-300 ease-out",
         {
           "max-w-[325px]": sidebarIsOpen,
           "max-w-0 pointer-events-none": !sidebarIsOpen,
@@ -214,7 +214,7 @@ const Sidebar = () => {
           className="p-1 hover:bg-black/5 rounded"
           onClick={toggleSidebar}
         >
-          <SidebarIcon size={24} className="text-[#0f1215]" />
+          <SidebarIcon size={24} className="text-[var(--color-dap-dark-alt)]" />
         </button>
       </div>
 
@@ -222,11 +222,11 @@ const Sidebar = () => {
       <div className="flex-1 overflow-y-auto px-8">
         {/* MY AUDITS Section */}
         <div className="flex items-center justify-between">
-          <span className="text-[19px] font-bold text-[#040506] tracking-[-0.19px]">
+          <span className="text-[19px] font-bold text-[var(--color-dap-dark-heading)] tracking-[-0.19px]">
             MY AUDITS
           </span>
           <button className="p-1 hover:bg-black/5 rounded">
-            <Plus size={24} className="text-[#0f1215]" />
+            <Plus size={24} className="text-[var(--color-dap-dark-alt)]" />
           </button>
         </div>
 
@@ -262,16 +262,16 @@ const Sidebar = () => {
         </div>
 
         {/* Divider */}
-        <hr className="my-5 border-[#eae8e1]" />
+        <hr className="my-5 border-[var(--color-dap-border)]" />
 
         {/* RESOURCES Section */}
-        <div className="text-[25px] font-bold text-[#040506] tracking-[-0.19px]">
+        <div className="text-[25px] font-bold text-[var(--color-dap-dark-heading)] tracking-[-0.19px]">
           RESOURCES
         </div>
         <div className="mt-3 flex flex-col gap-2 ">
           <a
             href="#"
-            className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
+            className="text-[var(--color-dap-orange)] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
             UT Core Requirements <ArrowSquareOut size={14} />
           </a>
@@ -296,12 +296,12 @@ const Sidebar = () => {
         </div>
 
         {/* Divider */}
-        <hr className="my-5 border-[#eae8e1]" />
+        <hr className="my-5 border-[var(--color-dap-border)]" />
 
         {/* Feedback Link */}
         <a
           href="#"
-          className="text-[#bf5700] font-semibold hover:underline flex items-center gap-1"
+          className="text-[var(--color-dap-orange)] font-semibold hover:underline flex items-center gap-1"
         >
           Send us Feedback! <ArrowSquareOut size={14} />
         </a>
@@ -312,16 +312,16 @@ const Sidebar = () => {
         <div className="flex items-center gap-2 mb-4">
           <img src={lhdLogo} alt="Longhorn Developers" className="w-6 h-6" />
           <div className="text-sm">
-            <span className="text-[#bf5700] font-semibold">
+            <span className="text-[var(--color-dap-orange)] font-semibold">
               MADE WITH LOVE, BY
             </span>
             <br />
-            <span className="text-[#bf5700] font-semibold">
+            <span className="text-[var(--color-dap-orange)] font-semibold">
               LONGHORN DEVELOPERS
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-start gap-4 text-[#1a2024]">
+        <div className="flex items-center justify-start gap-4 text-[var(--color-dap-dark)]">
           <a href="#" aria-label="Discord">
             <DiscordLogo size={24} />
           </a>

@@ -61,7 +61,7 @@ export default function Modal({
         {/* Header */}
         {showHeader && (
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-[#1a2024]">{title}</h2>
+            <h2 className="text-xl font-bold text-[var(--color-dap-dark)]">{title}</h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
