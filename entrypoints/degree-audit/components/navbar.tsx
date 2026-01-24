@@ -31,7 +31,7 @@ const Navbar = () => {
       y="middle"
       className="border-b-2 border-gray-100 px-10 py-2"
       style={{
-        height: "75px", 
+        height: "75px",
       }}
     >
       <HStack centered>
