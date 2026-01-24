@@ -84,6 +84,18 @@ export function scrapeRequirementSections(
   const results: RequirementSection[] = [];
 
   for (const section of sections) {
+    // Extract section title from the preceding thead
+    let title = "Unknown Section";
+    const parentTable = section.closest("table.results");
+    if (parentTable) {
+      const titleTh = parentTable.querySelector("thead th.section_title");
+      if (titleTh) {
+        // Try to get title from <a> tag first, fall back to direct th text
+        const titleLink = titleTh.querySelector("a");
+        title = (titleLink?.textContent || titleTh.textContent)?.trim() || "Unknown Section";
+      }
+    }
+
     const rules: RequirementRule[] = [];
     const rows = Array.from(section.querySelectorAll("tr"));
 
@@ -135,7 +147,7 @@ export function scrapeRequirementSections(
     }
 
     if (rules.length > 0) {
-      results.push({ rules });
+      results.push({ title, rules });
     }
   }
 

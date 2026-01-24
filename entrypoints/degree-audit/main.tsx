@@ -22,8 +22,8 @@ import dapLogo from "../../public/dap-logo.png";
 import lhdLogo from "../../public/icon/LHD Logo.png";
 import DegreeAuditCard from "../components/audit-card";
 import { HStack, VStack } from "../components/common/helperdivs";
-import Modal from "../components/common/modal";
 import { Title } from "../components/common/text";
+import CourseAddModal from "../components/course-add-modal";
 import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import "../styles/content.css";
 import MultiDonutGraph, { Bar } from "./components/graph";
@@ -127,7 +127,7 @@ const DUMMY_DATA = {
 const App = () => {
   const [sections, setSections] = useState<RequirementSection[]>([]);
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
-    new URLSearchParams(window.location.search).get("auditId") // look at broswer
+    new URLSearchParams(window.location.search).get("auditId"), // look at broswer
   );
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
@@ -150,7 +150,7 @@ const App = () => {
 
       // Not cached - log warning
       console.warn(
-        `[Main] Audit ${currentAuditId} not in cache. User needs to visit UT Direct.`
+        `[Main] Audit ${currentAuditId} not in cache. User needs to visit UT Direct.`,
       );
     }
 
@@ -193,17 +193,17 @@ const Sidebar = () => {
   return (
     <div
       className={clsx(
-        "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[var(--color-dap-border)] overflow-hidden whitespace-nowrap transition-[max-width] duration-300 ease-out",
+        "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[var(--color-dap-border)] overflow-hidden whitespace-nowrap transition-[width] duration-300 ease-out",
         {
-          "max-w-[325px]": sidebarIsOpen,
-          "max-w-0 pointer-events-none": !sidebarIsOpen,
-        }
+          "w-[375px]": sidebarIsOpen,
+          "w-0 pointer-events-none": !sidebarIsOpen,
+        },
       )}
       aria-hidden={!sidebarIsOpen}
       {...(!sidebarIsOpen ? { inert: true } : {})}
     >
       {/* Header */}
-      <div className="px-8 pb-4 flex items-center justify-between gap-4">
+      <div className="px-8 pb-4 flex items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-2">
           <img src={dapLogo} alt="DAP Logo" className="w-12 h-12" />
           <span className="text-dap-orange font-semibold text-xl">
@@ -354,7 +354,7 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
       fill
       x="center"
       className={clsx("w-full transition-[margin-left] duration-300 ease-out", {
-        "ml-[325px]": sidebarIsOpen,
+        "ml-[375px]": sidebarIsOpen,
         "ml-0": !sidebarIsOpen,
       })}
     >
@@ -372,16 +372,6 @@ const calcSectionHours = (section?: RequirementSection) => {
     total: rules.reduce((sum, r) => sum + r.requiredHours, 0),
   };
 };
-
-// Section titles by index
-const SECTION_TITLES = [
-  "Core Curriculum",
-  "General Education",
-  "Major(s)",
-  "Minor(s) + Certificate(s)",
-  "GPA Totals",
-  "Credit Hour Totals",
-];
 
 const DegreeAuditPage = () => {
   const dummyData = DUMMY_DATA["courseBreakdown"];
@@ -412,12 +402,12 @@ const DegreeAuditPage = () => {
             creditsCompleted={dummyData.creditsCompleted}
             creditsRequired={dummyData.creditsRequired}
           /> */}
-          {SECTION_TITLES.map((title, idx) => (
+          {sections.map((section, idx) => (
             <RequirementBreakdown
-              key={title}
-              title={title}
-              hours={calcSectionHours(sections[idx])}
-              requirements={sections[idx]?.rules ?? []}
+              key={section.title || `section-${idx}`}
+              title={section.title}
+              hours={calcSectionHours(section)}
+              requirements={section.rules ?? []}
               onAddCourse={handleOpenModal}
               colorIndex={idx}
             />
@@ -425,18 +415,16 @@ const DegreeAuditPage = () => {
         </VStack>
       </MainContent>
 
-      {/* Blank Modal for Adding Hypothetical Course */}
-      <Modal
+      {/* Course Search Modal */}
+      <CourseAddModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title="Add Hypothetical Course"
-        size="lg"
-        position="center"
-      >
-        <div className="min-h-[200px] flex items-center justify-center text-gray-500">
-          Modal content will go here
-        </div>
-      </Modal>
+        onSearch={(searchData) => {
+          console.log("Search data:", searchData);
+          // TODO: Implement course search functionality
+          handleCloseModal();
+        }}
+      />
     </HStack>
   );
 };
@@ -461,7 +449,7 @@ const DegreeCompletionPercentage = () => {
             <p>{bar.title}</p>
             <p>
               {Math.round(
-                (bar.percentage.current / bar.percentage.total) * 100
+                (bar.percentage.current / bar.percentage.total) * 100,
               )}
               %
             </p>
@@ -484,5 +472,5 @@ const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
