@@ -13,12 +13,11 @@ import {
   HourglassIcon,
   MinusCircleIcon,
   PlusCircleIcon,
-  QuestionMarkIcon
+  QuestionMarkIcon,
 } from "@phosphor-icons/react";
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
-
 
 // Status icon component for requirements
 const StatusIcon = ({ status }: { status: RequirementRule["status"] }) => {
@@ -42,23 +41,37 @@ const HoursBadge = ({ current, total }: { current: number; total: number }) => {
 };
 
 const statusIcons = {
-  "Applied": {
-    icon: <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />,
+  Applied: {
+    icon: (
+      <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />
+    ),
     color: "bg-[var(--color-course-applied)]",
   },
-  "Planned": {
-    icon: <CalendarBlankIcon className="-ml-1 text-white w-5 h-5 bg-blue-500 rounded-full p-1" />,
+  Planned: {
+    icon: (
+      <CalendarBlankIcon className="-ml-1 text-white w-5 h-5 bg-blue-500 rounded-full p-1" />
+    ),
     color: "bg-[var(--color-course-applied)]",
   },
   "In Progress": {
-    icon: <HourglassIcon weight="fill" className="-ml-1 text-white w-5 h-5 bg-yellow-500 rounded-full p-1" />,
+    icon: (
+      <HourglassIcon
+        weight="fill"
+        className="-ml-1 text-white w-5 h-5 bg-yellow-500 rounded-full p-1"
+      />
+    ),
     color: "bg-[var(--color-course-in-progress)]",
   },
-  "Unknown": {
-    icon: <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />,
+  Unknown: {
+    icon: (
+      <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />
+    ),
     color: "bg-[var(--color-course-unknown)]",
   },
-} as const satisfies Record<CourseRowData["status"], { icon: React.ReactNode; color: string }>;
+} as const satisfies Record<
+  CourseRowData["status"],
+  { icon: React.ReactNode; color: string }
+>;
 
 // Course pill component matching Figma design
 const CoursePill = ({ course }: { course: CourseRowData }) => {
@@ -67,11 +80,11 @@ const CoursePill = ({ course }: { course: CourseRowData }) => {
   return (
     <div
       className={cn(
-        "flex items-center gap-6 px-4 py-3 rounded-lg text-sm",
+        "flex items-center gap-6 px-4 py-3 rounded-lg text-sm w-[80%]",
         statusIcons[course.status].color,
       )}
     >
-      {statusIcons[course.status].icon /* Chip specifying status of course */} 
+      {statusIcons[course.status].icon /* Chip specifying status of course */}
       <span className="font-semibold min-w-[80px]">{course.code}</span>
       <span className="flex-1">
         {course.name}
@@ -87,7 +100,7 @@ const CoursePill = ({ course }: { course: CourseRowData }) => {
 
 // Parse code from requirement text (e.g., "CORE (010): description" -> "CORE (010)")
 const parseRequirementCode = (
-  text: string
+  text: string,
 ): { code: string; description: string } => {
   const colonIndex = text.indexOf(":");
   if (colonIndex > 0) {
@@ -104,7 +117,7 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(
     requirement.status === "partial" ||
-      requirement.courses.some((c) => c.status === "In Progress")
+      requirement.courses.some((c) => c.status === "In Progress"),
   );
 
   return (
@@ -178,7 +191,7 @@ const ProgressBar = ({
 };
 
 const RequirementBreakdown = (
-  props: RequirementBreakdownComponentProps & { colorIndex?: number }
+  props: RequirementBreakdownComponentProps & { colorIndex?: number },
 ) => {
   const { title, hours, requirements, onAddCourse, colorIndex = 0 } = props;
   const [isOpen, setIsOpen] = useState(false);
@@ -186,14 +199,14 @@ const RequirementBreakdown = (
 
   return (
     <div
-      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-8"
+      className="w-full bg-gray-50 rounded-md border border-gray-200 overflow-hidden border-l-8"
       style={{ borderLeftColor: borderColor }}
     >
       {/* Main header */}
       <button
         className={cn(
           "w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors",
-          isOpen && "bg-gray-50"
+          isOpen && "bg-gray-50",
         )}
         onClick={() => setIsOpen(!isOpen)}
       >

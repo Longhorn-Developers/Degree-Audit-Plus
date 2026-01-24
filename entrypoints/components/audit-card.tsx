@@ -20,8 +20,8 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     <div
       className={`!rounded-lg px-4 py-3 w-full transition-all duration-200 cursor-pointer ${
         isSelected
-          ? "bg-[var(--color-dap-selected-bg)]"
-          : "bg-white border border-[var(--color-dap-border)]"
+          ? "bg-[#FFF7ED] border-2 border-[#F9E7D5]"
+          : "bg-[var(--color-dap-stone-50)] border-2 border-[var(--color-dap-border)]"
       }`}
       onClick={onToggle}
     >
@@ -30,11 +30,19 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isExpanded ? (
-              <CaretUp size={16} weight="bold" className="text-[var(--color-dap-dark)]" />
+              <CaretUp
+                size={16}
+                weight="bold"
+                className="text-[var(--color-dap-dark)]"
+              />
             ) : (
-              <CaretDown size={16} weight="bold" className="text-[var(--color-dap-dark)]" />
+              <CaretDown
+                size={16}
+                weight="bold"
+                className="text-[var(--color-dap-dark)]"
+              />
             )}
-            <span className="font-bold text-[13px] leading-[18px] text-[var(--color-dap-dark)] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="font-bold text-[18px] leading-[20px] text-[var(--color-dap-primary)]   tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
               {title}
             </span>
           </div>
@@ -46,7 +54,11 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
               }}
               className="p-1 hover:bg-black/5 rounded"
             >
-              <DotsThree size={20} weight="bold" className="text-[var(--color-dap-dark)]" />
+              <DotsThree
+                size={20}
+                weight="bold"
+                className="text-[var(--color-dap-dark)]"
+              />
             </button>
             <div className="bg-[var(--color-dap-orange)] px-2 py-1 rounded h-[26px] flex items-center justify-center">
               <span className="text-white text-sm font-bold leading-[18px]">
@@ -93,10 +105,10 @@ export const DegreeAuditCardPopup: React.FC<DegreeAuditCardProps> = ({
   percentage = 90,
 }) => {
   return (
-    <div className="bg-[var(--color-dap-gray-slate)] rounded-sm px-4 py-3 w-full transition-all duration-200 hover:bg-[var(--color-dap-gray-slate-hover)] cursor-pointer">
+    <div className="bg-[var(--color-dap-stone-50)] rounded-sm border-2 border-[var(--color-dap-border)] px-4 py-3 w-full transition-all duration-200 hover:bg-[#FFF7ED] hover:border-2 hover:border-[#F9E7D5] cursor-pointer">
       <div className="flex flex-col gap-3">
         {/* Title */}
-        <div className="font-bold text-[13px] leading-[18px] text-[var(--color-dap-dark)] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
+        <div className="font-bold text-[18px] leading-[20px] text-[var(--color-dap-primary)] tracking-[0.13px] overflow-hidden text-ellipsis whitespace-nowrap">
           {title}
         </div>
         <div className="flex items-start justify-between">

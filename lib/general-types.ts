@@ -26,6 +26,7 @@ export type RequirementRule = {
 };
 
 export type RequirementSection = {
+  title: string;
   rules: RequirementRule[];
 };
 

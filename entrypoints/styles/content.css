@@ -40,6 +40,10 @@
   --color-dap-gray-light: #9cadb7;
   --color-dap-gray-slate: #f1f5f9;
   --color-dap-gray-slate-hover: #e2e8f0;
+
+  /* Stone scale (Tailwind stone/50 = #fafaf9) */
+  --color-dap-stone-50: #fafaf9;
+  --color-dap-stone-100: #f5f5f4;
   
   /* Text colors */
   --color-dap-minor-text: #0369a1;
