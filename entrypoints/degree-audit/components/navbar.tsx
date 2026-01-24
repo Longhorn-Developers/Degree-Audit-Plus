@@ -1,13 +1,10 @@
 import Button, { IconButton } from "@/entrypoints/components/common/button";
 import {
   HStack,
-  Substack,
-  VStack,
+  VStack
 } from "@/entrypoints/components/common/helperdivs";
-import { Subtitle } from "@/entrypoints/components/common/text";
 import { usePreferences } from "@/entrypoints/providers/main-page";
 import { ExportIcon, GearIcon, ListIcon } from "@phosphor-icons/react";
-import { Title } from "../../components/common/text";
 
 const Logo = ({ size }: { size: number }) => {
   return (
@@ -34,7 +31,7 @@ const Navbar = () => {
       y="middle"
       className="border-b-2 border-gray-100 px-10 py-2"
       style={{
-        height: "75px",
+        height: "75px", 
       }}
     >
       <HStack centered>
