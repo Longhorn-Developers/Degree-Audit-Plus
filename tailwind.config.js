@@ -36,6 +36,7 @@ export default {
           yellow: "#FFD600",
           indigo: "#6366F1",
           pink: "#EC4899",
+          border: "#EAE8E1",
         },
       },
     },
