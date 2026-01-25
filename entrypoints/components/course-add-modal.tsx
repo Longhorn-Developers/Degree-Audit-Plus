@@ -1,24 +1,20 @@
 import React, { useState } from "react";
-import {
-  X,
-  GraduationCap,
-  CalendarBlank,
-  IdentificationCard,
-} from "@phosphor-icons/react";
+import { CaretLeft, GraduationCap } from "@phosphor-icons/react";
 import Button from "./common/button";
+import SelectDropdown from "./common/select-dropdown";
+import CourseCard from "./course-card";
 import { cn } from "~/lib/utils";
+import type { CatalogCourse } from "~/lib/general-types";
 
-// Props for CourseAddModal component - called from DegreeAuditPage in main.tsx
 interface CourseAddModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSearch: (searchData: CourseSearchData) => void;
-  isLoading?: boolean; // Shows spinner on Search button, disables form
-  hasSearched?: boolean; // Used with resultsCount to show empty state
-  resultsCount?: number; // Number of results from search, 0 shows empty state
+  isLoading?: boolean;
+  hasSearched?: boolean;
+  resultsCount?: number;
 }
 
-// Data returned to parent via onSearch callback
 export interface CourseSearchData {
   searchQuery: string;
   requirement: string;
@@ -27,22 +23,6 @@ export interface CourseSearchData {
   lowerDivision: boolean;
   upperDivision: boolean;
 }
-
-const REQUIREMENTS = [
-  "Major Requirements",
-  "Core Curriculum",
-  "General Education",
-  "Electives",
-  "Minor Requirements",
-];
-
-const CATALOG_YEARS = [
-  "2024-2025",
-  "2023-2024",
-  "2022-2023",
-  "2021-2022",
-  "2020-2021",
-];
 
 const DEPARTMENTS = [
   "Computer Science",
@@ -55,14 +35,28 @@ const DEPARTMENTS = [
   "History",
 ];
 
-// Modal for searching courses - displays over DegreeAuditPage with search filters
+const RECOMMENDED_COURSES = [
+  {
+    fullName: "HIS 315K - Fourmy",
+    courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
+    color: "orange" as const,
+  },
+  {
+    fullName: "DES 374 - Garmon",
+    courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
+    color: "indigo" as const,
+  },
+];
+
+function SearchCourses(searchData: CourseSearchData) {
+  // TODO: Implement course search logic
+}
+
 export default function CourseAddModal({
   isOpen,
   onClose,
   onSearch,
   isLoading = false,
-  hasSearched = false,
-  resultsCount = 0,
 }: CourseAddModalProps) {
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
@@ -73,7 +67,81 @@ export default function CourseAddModal({
     upperDivision: true,
   });
   const [validationError, setValidationError] = useState<string>("");
-
+  const [view, setView] = useState<boolean>(false); // false = search, true = results.
+  const [courses, setCourses] = useState<CatalogCourse[]>([
+    {
+      uniqueId: 1,
+      fullName: "HIS 314K",
+      courseName: "HISTORY OF MEXICAN AMERS IN US",
+      department: "HIS",
+      number: "314K",
+      creditHours: 3,
+      status: "Open",
+      isReserved: false,
+      instructionMode: "Face to Face",
+      instructors: [],
+      schedule: [],
+      flags: [],
+      core: [],
+      url: "",
+      description: [],
+      scrapedAt: 0,
+    },
+    {
+      uniqueId: 2,
+      fullName: "HIS 315G",
+      courseName: "INTRO TO AMERICAN STUDIES",
+      department: "HIS",
+      number: "315G",
+      creditHours: 3,
+      status: "Open",
+      isReserved: false,
+      instructionMode: "Face to Face",
+      instructors: [],
+      schedule: [],
+      flags: [],
+      core: [],
+      url: "",
+      description: [],
+      scrapedAt: 0,
+    },
+    {
+      uniqueId: 3,
+      fullName: "HIS 315K",
+      courseName: "THE UNITED STATES, 1492-1865",
+      department: "HIS",
+      number: "315K",
+      creditHours: 3,
+      status: "Open",
+      isReserved: false,
+      instructionMode: "Face to Face",
+      instructors: [],
+      schedule: [],
+      flags: [],
+      core: [],
+      url: "",
+      description: [],
+      scrapedAt: 0,
+    },
+    {
+      uniqueId: 4,
+      fullName: "HIS 315L",
+      courseName: "THE UNITED STATES SINCE 1865",
+      department: "HIS",
+      number: "315L",
+      creditHours: 3,
+      status: "Open",
+      isReserved: false,
+      instructionMode: "Face to Face",
+      instructors: [],
+      schedule: [],
+      flags: [],
+      core: [],
+      url: "",
+      description: [],
+      scrapedAt: 0,
+    },
+  ]);
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -85,7 +153,7 @@ export default function CourseAddModal({
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.lowerDivision && !formData.upperDivision) {
       setValidationError(
@@ -93,13 +161,13 @@ export default function CourseAddModal({
       );
       return;
     }
+    setView(true);
     setValidationError("");
-    onSearch(formData);
+    // onSearch(formData);
   };
 
   const isSearchDisabled =
     (!formData.lowerDivision && !formData.upperDivision) || isLoading;
-  const showEmptyState = hasSearched && resultsCount === 0 && !isLoading;
 
   if (!isOpen) return null;
 
@@ -113,252 +181,205 @@ export default function CourseAddModal({
     >
       <div
         className={cn(
-          "bg-white rounded-3xl shadow-2xl w-full max-w-[500px] mx-4 transform transition-all duration-200",
+          "bg-white rounded-md border-2 border-dap-border shadow-2xl w-full max-w-[400px] mx-4 transform transition-all duration-200",
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0",
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-[32px] font-bold text-[var(--color-dap-dark)] leading-tight">
-            Search for courses
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={28} className="text-gray-600" />
-          </button>
-        </div>
+        <div className="px-6 pt-6 pb-6">
+          {/* Header */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Add courses</h2>
+          {/* Search for Courses view */}
+          {!view && (
+            <div>
+              {/* Recommended Section */}
+              <div className="mb-6">
+                <p className="text-dap-orange font-semibold text-sm uppercase tracking-wide mb-3">
+                  Recommended
+                </p>
+                <div className="space-y-2">
+                  {RECOMMENDED_COURSES.map((course, index) => (
+                    <CourseCard
+                      key={index}
+                      fullName={course.fullName}
+                      courseName={course.courseName}
+                      color={course.color}
+                    />
+                  ))}
+                </div>
+              </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
-          {/* Search Input */}
-          <div>
-            <input
-              type="text"
-              name="searchQuery"
-              value={formData.searchQuery}
-              onChange={handleInputChange}
-              placeholder="Search for a specific course"
-              disabled={isLoading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-dap-primary)] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
+              {/* Search Section */}
+              <form onSubmit={handleSearch}>
+                <p className="text-dap-orange font-semibold text-sm uppercase tracking-wide mb-3">
+                  Search
+                </p>
 
-          {/* Requirement Dropdown */}
-          <div className="flex items-center gap-3">
-            <GraduationCap size={28} className="text-[var(--color-dap-dark)]" />
-            <select
-              name="requirement"
-              value={formData.requirement}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-base text-gray-500 bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-dap-primary)] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 1.5rem center",
-                backgroundSize: "20px",
-              }}
-            >
-              <option value="">Requirement</option>
-              {REQUIREMENTS.map((req) => (
-                <option key={req} value={req}>
-                  {req}
-                </option>
-              ))}
-            </select>
-          </div>
+                {/* Search Input */}
+                <input
+                  type="text"
+                  name="searchQuery"
+                  value={formData.searchQuery}
+                  onChange={handleInputChange}
+                  placeholder="Search with name or unique"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                />
 
-          {/* Catalog Year Dropdown */}
-          <div className="flex items-center gap-3">
-            <CalendarBlank size={28} className="text-[var(--color-dap-dark)]" />
-            <select
-              name="catalogYear"
-              value={formData.catalogYear}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-base text-gray-500 bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-dap-primary)] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 1.5rem center",
-                backgroundSize: "20px",
-              }}
-            >
-              <option value="">Catalog Year</option>
-              {CATALOG_YEARS.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
+                {/* Or Divider */}
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-dap-border" />
+                  <span className="text-gray-400 text-sm">or</span>
+                  <div className="flex-1 h-px bg-dap-border" />
+                </div>
 
-          {/* Department Dropdown */}
-          <div className="flex items-center gap-3">
-            <IdentificationCard
-              size={28}
-              className="text-[var(--color-dap-dark)]"
-            />
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-base text-gray-500 bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-dap-primary)] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 1.5rem center",
-                backgroundSize: "20px",
-              }}
-            >
-              <option value="">Department</option>
-              {DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+                {/* Department Dropdown */}
+                <div className="mb-4">
+                  <SelectDropdown
+                    icon={<GraduationCap size={28} />}
+                    placeholder="Department"
+                    options={DEPARTMENTS}
+                    value={formData.department}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, department: value }))
+                    }
+                    disabled={isLoading}
+                  />
+                </div>
 
-          {/* Toggle Switches */}
-          <div className="space-y-3 pt-1">
-            {/* Lower Division Toggle */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleToggle("lowerDivision")}
-                disabled={isLoading}
-                className={cn(
-                  "w-14 h-8 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                  formData.lowerDivision ? "bg-[#6B8E23]" : "bg-gray-300",
+                {/* Toggle Switches */}
+                <div className="space-y-3 mb-6">
+                  {/* Lower Division Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggle("lowerDivision")}
+                      disabled={isLoading}
+                      className={cn(
+                        "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
+                        formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+                          formData.lowerDivision
+                            ? "translate-x-[24px]"
+                            : "translate-x-1",
+                        )}
+                      />
+                    </button>
+                    <span className="text-base text-gray-900">
+                      Lower Division Courses
+                    </span>
+                  </div>
+
+                  {/* Upper Division Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggle("upperDivision")}
+                      disabled={isLoading}
+                      className={cn(
+                        "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
+                        formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+                          formData.upperDivision
+                            ? "translate-x-[24px]"
+                            : "translate-x-1",
+                        )}
+                      />
+                    </button>
+                    <span className="text-base text-gray-900">
+                      Upper Division Courses
+                    </span>
+                  </div>
+                </div>
+
+                {/* Validation Error */}
+                {validationError && (
+                  <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl mb-4">
+                    <svg
+                      className="w-5 h-5 text-red-600 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <p className="text-sm text-red-700">{validationError}</p>
+                  </div>
                 )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-200 absolute top-1",
-                    formData.lowerDivision ? "translate-x-7" : "translate-x-1",
-                  )}
-                />
-              </button>
-              <span className="text-[18px] text-[var(--color-dap-dark)]">
-                Lower Division Courses
-              </span>
-            </div>
 
-            {/* Upper Division Toggle */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleToggle("upperDivision")}
-                disabled={isLoading}
-                className={cn(
-                  "w-14 h-8 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                  formData.upperDivision ? "bg-[#6B8E23]" : "bg-gray-300",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-200 absolute top-1",
-                    formData.upperDivision ? "translate-x-7" : "translate-x-1",
+                {/* Search Button */}
+                <Button
+                  type="submit"
+                  color="orange"
+                  fill="solid"
+                  disabled={isSearchDisabled}
+                  className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>Searching...</span>
+                    </div>
+                  ) : (
+                    "Search"
                   )}
-                />
-              </button>
-              <span className="text-[18px] text-[var(--color-dap-dark)]">
-                Upper Division Courses
-              </span>
-            </div>
-          </div>
-
-          {/* Validation Error */}
-          {validationError && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl">
-              <svg
-                className="w-6 h-6 text-red-600 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <p className="text-base text-red-700">{validationError}</p>
+                </Button>
+              </form>
             </div>
           )}
-
-          {/* Empty State */}
-          {showEmptyState && (
-            <div className="flex flex-col items-center gap-3 px-6 py-8 bg-gray-50 border border-gray-200 rounded-2xl">
-              <svg
-                className="w-12 h-12 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {/* Search Results View */}
+          {view && (
+            <div>
+              <button
+                onClick={() => setView(false)}
+                className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-gray-700 mb-1">
-                  No courses found
-                </p>
-                <p className="text-base text-gray-500">
-                  Try adjusting your search criteria or filters
-                </p>
+                <CaretLeft size={16} weight="bold" />
+                Search Results
+              </button>
+              <div className="space-y-2">
+                {courses.map((course) => (
+                  <CourseCard
+                    key={course.uniqueId}
+                    fullName={course.fullName}
+                    courseName={course.courseName}
+                  />
+                ))}
               </div>
             </div>
           )}
-
-          {/* Search Button */}
-          <div className="flex justify-end pt-4">
-            <Button
-              type="submit"
-              color="orange"
-              fill="solid"
-              disabled={isSearchDisabled}
-              className="px-10 py-2.5 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  <span>Searching...</span>
-                </div>
-              ) : (
-                "Search"
-              )}
-            </Button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
