@@ -192,8 +192,6 @@ const MultiDonutGraph = ({
 								{(() => {
 									// Parameters used in donut placement
 									const svgSize = typeof size === "number" ? size : 200;
-									const tooltipBoxX = svgSize; // tooltip is placed at right edge
-									const tooltipBoxY = 0; // tooltip box is at top
 
 									// Find the hovered bar index and its geometry
 									const index = bars.findIndex((bar) => bar === hoveredBar);

@@ -1,7 +1,8 @@
+import { calculateWeightedDegreeCompletion, CurrentAuditProgress } from "@/lib/audit-calculations";
 import {
   Course,
   DegreeAuditCardProps,
-  RequirementSection,
+  RequirementSection
 } from "@/lib/general-types";
 import { getAuditData, getAuditHistory } from "@/lib/storage";
 import {
@@ -28,107 +29,35 @@ import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import "../styles/content.css";
 import MultiDonutGraph, { Bar } from "./components/graph";
 import Navbar from "./components/navbar";
-import RequirementBreakdown from "./components/requirement-breakdown";
+import RequirementBreakdown, { CATEGORY_COLORS } from "./components/requirement-breakdown";
 
 // Context for sharing audit data betw sidebar and main
 interface AuditContextType {
   sections: RequirementSection[];
   currentAuditId: string | null;
   setCurrentAuditId: (id: string | null) => void;
+  progresses: CurrentAuditProgress;
 }
+
 const AuditContext = createContext<AuditContextType>({
   sections: [],
   currentAuditId: null,
   setCurrentAuditId: () => {},
+  progresses: {
+    total: { current: 0, total: 0 },
+    sections: [],
+  },
 });
 const useAuditContext = () => useContext(AuditContext);
-
-const DUMMY_DATA = {
-  donutGraph: [
-    {
-      title: "Major(s)",
-      color: "rgb(99, 102, 241)", // soft indigo-500
-      percentage: {
-        current: 5,
-        total: 20,
-      },
-    },
-    {
-      title: "Minor(s) + Certificate(s)",
-      color: "rgb(52, 211, 153)", // teal-400
-      percentage: {
-        current: 100,
-        total: 200,
-      },
-    },
-    {
-      title: "Core",
-      color: "rgb(251, 191, 36)", // yellow-400
-      percentage: {
-        current: 5,
-        total: 20,
-      },
-    },
-    {
-      title: "Free Electives",
-      color: "rgb(237, 137, 212)", // pink-300
-      percentage: {
-        current: 20,
-        total: 20,
-      },
-    },
-    {
-      title: "Electives",
-      color: "rgb(156, 163, 175)",
-      percentage: {
-        current: 25,
-        total: 30,
-      },
-    },
-  ] satisfies Bar[],
-  courseBreakdown: {
-    hoursCompleted: 10,
-    hoursInProgress: 4,
-    hoursRequired: 20,
-    creditsCompleted: 10,
-    creditsRequired: 20,
-    courses: [
-      {
-        name: "Course 1",
-        hours: 3,
-        credits: 3,
-        semester: "spring 2025",
-        status: "Completed",
-        grade: "A",
-        code: "CS 101",
-      },
-      {
-        name: "Course 2",
-        hours: 3,
-        credits: 3,
-        semester: "spring 2025",
-        status: "In Progress",
-        grade: "B",
-        code: "CS 102",
-      },
-      {
-        name: "Course 3",
-        hours: 3,
-        credits: 3,
-        semester: "spring 2025",
-        status: "Not Started",
-        grade: "C",
-        code: "CS 101",
-      },
-    ] satisfies Course[],
-  },
-};
 
 const App = () => {
   const [sections, setSections] = useState<RequirementSection[]>([]);
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
     new URLSearchParams(window.location.search).get("auditId"), // look at broswer
   );
+
+  const progresses = calculateWeightedDegreeCompletion(sections ?? []);
+  
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   React.useEffect(() => {
@@ -160,7 +89,7 @@ const App = () => {
   return (
     <PreferencesProvider>
       <AuditContext.Provider
-        value={{ sections, currentAuditId, setCurrentAuditId }}
+        value={{ sections, currentAuditId, setCurrentAuditId, progresses }}
       >
         <DegreeAuditPage />
       </AuditContext.Provider>
@@ -170,10 +99,10 @@ const App = () => {
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const { currentAuditId, setCurrentAuditId } = useAuditContext();
+  const { currentAuditId, setCurrentAuditId, progresses } = useAuditContext();
   const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]); //history
   const [loading, setLoading] = useState(true);
-
+  
   React.useEffect(() => {
     async function loadAudits() {
       try {
@@ -363,19 +292,8 @@ const MainContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Helper to calculate total hours for a section
-const calcSectionHours = (section?: RequirementSection) => {
-  if (!section) return { current: 0, total: 0 };
-  const rules = section.rules;
-  return {
-    current: rules.reduce((sum, r) => sum + r.appliedHours, 0),
-    total: rules.reduce((sum, r) => sum + r.requiredHours, 0),
-  };
-};
-
 const DegreeAuditPage = () => {
-  const dummyData = DUMMY_DATA["courseBreakdown"];
-  const { sections } = useAuditContext();
+  const { sections, progresses } = useAuditContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
@@ -393,20 +311,14 @@ const DegreeAuditPage = () => {
         <Navbar />
         <VStack x="center" className="w-[80%] max-w-7xl mx-auto mb-[30px]">
           <Title text="Degree Progress Overview" />
+          {progresses.total.current}/{progresses.total.total} hours completed
           <DegreeCompletionPercentage />
           <Title text="Degree Checklist" />
-          {/* <DegreeProgressOverviewCard
-            hoursCompleted={dummyData.hoursCompleted}
-            hoursInProgress={dummyData.hoursInProgress}
-            hoursRequired={dummyData.hoursRequired}
-            creditsCompleted={dummyData.creditsCompleted}
-            creditsRequired={dummyData.creditsRequired}
-          /> */}
           {sections.map((section, idx) => (
             <RequirementBreakdown
               key={section.title || `section-${idx}`}
               title={section.title}
-              hours={calcSectionHours(section)}
+              hours={progresses.sections[idx].progress}
               requirements={section.rules ?? []}
               onAddCourse={handleOpenModal}
               colorIndex={idx}
@@ -429,9 +341,102 @@ const DegreeAuditPage = () => {
   );
 };
 
-const DegreeCompletionPercentage = () => {
-  const [bars, setBars] = useState<Bar[]>(DUMMY_DATA["donutGraph"]);
+const DUMMY_DATA = {
+  donutGraph: [
+    {
+      title: "Major(s)",
+      color: "rgb(99, 102, 241)", // soft indigo-500
+      percentage: {
+        current: 5,
+        total: 20,
+      },
+    },
+    {
+      title: "Minor(s) + Certificate(s)",
+      color: "rgb(52, 211, 153)", // teal-400
+      percentage: {
+        current: 100,
+        total: 200,
+      },
+    },
+    {
+      title: "Core",
+      color: "rgb(251, 191, 36)", // yellow-400
+      percentage: {
+        current: 5,
+        total: 20,
+      },
+    },
+    {
+      title: "Free Electives",
+      color: "rgb(237, 137, 212)", // pink-300
+      percentage: {
+        current: 20,
+        total: 20,
+      },
+    },
+    {
+      title: "Electives",
+      color: "rgb(156, 163, 175)",
+      percentage: {
+        current: 25,
+        total: 30,
+      },
+    },
+  ] satisfies Bar[],
+  courseBreakdown: {
+    hoursCompleted: 10,
+    hoursInProgress: 4,
+    hoursRequired: 20,
+    creditsCompleted: 10,
+    creditsRequired: 20,
+    courses: [
+      {
+        name: "Course 1",
+        hours: 3,
+        credits: 3,
+        semester: "spring 2025",
+        status: "Completed",
+        grade: "A",
+        code: "CS 101",
+      },
+      {
+        name: "Course 2",
+        hours: 3,
+        credits: 3,
+        semester: "spring 2025",
+        status: "In Progress",
+        grade: "B",
+        code: "CS 102",
+      },
+      {
+        name: "Course 3",
+        hours: 3,
+        credits: 3,
+        semester: "spring 2025",
+        status: "Not Started",
+        grade: "C",
+        code: "CS 101",
+      },
+    ] satisfies Course[],
+  },
+};
 
+const DegreeCompletionPercentage = () => {
+  const { progresses } = useAuditContext();
+  const bars = progresses.sections.sort((a, b) => b.progress.total - a.progress.total).map((section, index) => ({
+    title: section.title,
+    color: CATEGORY_COLORS[index % CATEGORY_COLORS.length].rgb,
+    percentage: section.progress,
+  })) satisfies Bar[];
+
+  const overallPercentage = Math.round((progresses.total.current / progresses.total.total) * 100);
+
+  // The average of each section's completion percentage
+  // const averageCompletionPercentage = Math.round(progresses.sections.reduce(
+  //   (acc, section) => acc + Math.min(100, 100 * (section.progress.current / section.progress.total)), 0
+  // ) / progresses.sections.length);
+  
   return (
     <MultiDonutGraph
       bars={bars}
@@ -461,8 +466,8 @@ const DegreeCompletionPercentage = () => {
       )}
     >
       <VStack centered gap={0}>
-        <div className="text-2xl font-bold">XX%</div>
-        <div className="text-lg w-min text-center">Degree Completion</div>
+        <div className="text-2xl font-bold">{overallPercentage}%</div>
+        <div className="text-lg w-min text-center">Overall</div>
       </VStack>
     </MultiDonutGraph>
   );
