@@ -65,7 +65,7 @@ export default defineContentScript({
     // This ONLY runs when user visits the UT Direct audits home page
     fetchAndStoreAuditHistory();
     // code to scrape course catalog and update db (make sure to update the department map before running this -> it will run AUTOMATICALLY EVERY TIME!!!)
-    scrapeCourseCatalog();
+    // scrapeCourseCatalog();
     // code to save scraped courses to csv. Run this ONLY WHEN ABOVE IS COMMENTED OUT.
     // saveScrapedCourses();
   },
