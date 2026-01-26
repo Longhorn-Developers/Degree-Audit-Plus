@@ -36,7 +36,7 @@ export default defineContentScript({
   cssInjectionMode: "ui", // This should inject CSS into shadow DOM
   async main(ctx) {
     console.log("Content script loaded on UT Direct audits page.");
-    
+
     // Seed the database from bundled JSON
     await seedDatabase();
 
@@ -130,15 +130,25 @@ let scrapedCourses: ScrapedCourse[] = [];
 async function scrapeCourseCatalog() {
   console.log("starting scraping");
   const departments = Object.keys(DEPARTMENT_MAP); // gets keys
-  const semester = "20259"; // Fall 2025
+  const semester = "20262"; // Fall 2025
 
   console.log(`Scraping ${departments} courses for semester ${semester}...\n`);
 
-  // get data for each department.
+  // get data for each department (both upper and lower division)
   for (let i = 0; i < departments.length; i++) {
     const department = departments[i];
     try {
-      scrapedCourses = await fetchAndScrapeCourses(semester, department);
+      const upperCourses = await fetchAndScrapeCourses(
+        semester,
+        department,
+        "U",
+      );
+      const lowerCourses = await fetchAndScrapeCourses(
+        semester,
+        department,
+        "L",
+      );
+      scrapedCourses = [...upperCourses, ...lowerCourses];
       console.log(`Found ${scrapedCourses.length} courses for ${department}\n`);
 
       // Save to IndexedDB
@@ -151,21 +161,24 @@ async function scrapeCourseCatalog() {
 }
 
 const saveScrapedCourses = async () => {
-    const data = await db.courses.toArray();
-    if (data.length === 0) { console.error("Database is empty!"); return; }
+  const data = await db.courses.toArray();
+  if (data.length === 0) {
+    console.error("Database is empty!");
+    return;
+  }
 
-    // JSON Download
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ut-courses-export.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    console.log(`Exported ${data.length} courses to JSON.`);
-}
-
-
+  // JSON Download
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ut-courses-export.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  console.log(`Exported ${data.length} courses to JSON.`);
+};
 
 //-----------------------------------------------------------------
 //-----------------------------------------------------------------

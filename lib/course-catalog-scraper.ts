@@ -277,10 +277,7 @@ export class CourseCatalogScraper {
   private getCore(row: Element): string[] {
     const items = row.querySelectorAll(TableDataSelector.CORE_CURRICULUM);
     return Array.from(items)
-      .filter(
-        (el) => el.getAttribute("title") !== " core curriculum requirement",
-      )
-      .map((el) => el.textContent || "")
+      .map((el) => (el.textContent || "").trim())
       .filter(Boolean);
   }
 
@@ -319,16 +316,44 @@ export class CourseCatalogScraper {
 
 // --- Fetch & Scrape ---
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Fetch course description from detail page
+ */
+async function fetchCourseDescription(
+  semester: string,
+  uniqueId: number,
+): Promise<string[]> {
+  const paddedId = String(uniqueId).padStart(5, "0");
+  const url = `https://utdirect.utexas.edu/apps/registrar/course_schedule/${semester}/${paddedId}/`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const paragraphs = doc.querySelectorAll("#details p");
+    return Array.from(paragraphs)
+      .map((p) => (p.textContent || "").replace(/\s\s+/g, " ").trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Fetch HTML from UT course catalog and scrape courses
  * @param semester - Semester code like "20259" (Fall 2025)
  * @param department - Department code like "C S"
- * @param level - "U" for undergraduate, "G" for graduate
+ * @param level - "U" for undergraduate, "L" for lower division
  */
 export async function fetchAndScrapeCourses(
   semester: string,
   department: string,
-  level: "U" | "G" = "U",
+  level: "U" | "L" = "U",
 ): Promise<ScrapedCourse[]> {
   const url = `https://utdirect.utexas.edu/apps/registrar/course_schedule/${semester}/results/?fos_fl=${encodeURIComponent(department)}&level=${level}&search_type_main=FIELD`;
 
@@ -350,9 +375,19 @@ export async function fetchAndScrapeCourses(
   const rows = Array.from(doc.querySelectorAll("table tbody tr")) as Element[];
   const results = scraper.scrape(rows);
 
-  return results
+  const courses = results
     .filter((r) => r.course !== null)
     .map((r) => r.course as ScrapedCourse);
+
+  // Fetch descriptions from detail pages (skip cancelled courses)
+  for (const course of courses) {
+    if (course.uniqueId > 0 && course.status !== "CANCELLED") {
+      course.description = await fetchCourseDescription(semester, course.uniqueId);
+      await delay(100);
+    }
+  }
+
+  return courses;
 }
 
 // --- CLI Runner ---
