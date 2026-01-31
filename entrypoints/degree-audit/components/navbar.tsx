@@ -1,13 +1,10 @@
 import Button, { IconButton } from "@/entrypoints/components/common/button";
 import {
   HStack,
-  Substack,
-  VStack,
+  VStack
 } from "@/entrypoints/components/common/helperdivs";
-import { Subtitle } from "@/entrypoints/components/common/text";
 import { usePreferences } from "@/entrypoints/providers/main-page";
 import { ExportIcon, GearIcon, ListIcon } from "@phosphor-icons/react";
-import { Title } from "../../components/common/text";
 
 const Logo = ({ size }: { size: number }) => {
   return (
