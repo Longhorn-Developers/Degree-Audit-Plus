@@ -157,22 +157,29 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   );
 };
 
-// Color palette using CSS variables from content.css @theme
-// export const CATEGORY_COLORS = {
-//   orange: {var: "var(--color-dap-orange)", color: "rgb(255, 159, 67)"},
-//   teal: {var: "var(--color-dap-teal)", color: "rgb(52, 211, 153)"},
-//   yellow: {var: "var(--color-dap-yellow)", color: "rgb(251, 191, 36)"},
-//   indigo: {var: "var(--color-dap-indigo)", color: "rgb(99, 102, 241)"},
-//   pink: {var: "var(--color-dap-pink)", color: "rgb(237, 137, 212)"},
-//   green: {var: "var(--color-dap-green)", color: "rgb(34, 197, 94)"},
-// } as const satisfies Record<string, { var: string; color: string }>;
 export const CATEGORY_COLORS = [
-  {name: "orange", tailwind: "var(--color-dap-orange)", rgb: "rgb(191, 87, 0)"},
-  {name: "teal", tailwind: "var(--color-dap-teal)", rgb: "rgb(0, 169, 183)"},
-  {name: "yellow", tailwind: "var(--color-dap-yellow)", rgb: "rgb(255, 214, 0)"},
-  {name: "indigo", tailwind: "var(--color-dap-indigo)", rgb: "rgb(99, 102, 241)"},
-  {name: "pink", tailwind: "var(--color-dap-pink)", rgb: "rgb(236, 72, 153)"},
-  {name: "green", tailwind: "var(--color-dap-green)", rgb: "rgb(5, 150, 105)"},
+  {
+    name: "orange",
+    tailwind: "var(--color-dap-orange)",
+    rgb: "rgb(191, 87, 0)",
+  },
+  { name: "teal", tailwind: "var(--color-dap-teal)", rgb: "rgb(0, 169, 183)" },
+  {
+    name: "yellow",
+    tailwind: "var(--color-dap-yellow)",
+    rgb: "rgb(255, 214, 0)",
+  },
+  {
+    name: "indigo",
+    tailwind: "var(--color-dap-indigo)",
+    rgb: "rgb(99, 102, 241)",
+  },
+  { name: "pink", tailwind: "var(--color-dap-pink)", rgb: "rgb(236, 72, 153)" },
+  {
+    name: "green",
+    tailwind: "var(--color-dap-green)",
+    rgb: "rgb(5, 150, 105)",
+  },
 ] as const satisfies { name: string; tailwind: string; rgb: string }[];
 
 // Progress bar for the header showing hours
