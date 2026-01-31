@@ -13,17 +13,6 @@ import { SpinnerIcon } from "@phosphor-icons/react";
 //   type HypotheticalCourse,
 // } from "../components/hypothetical-course-modal";
 
-// Check if user is authenticated to UTDirect by fetching a page and checking for login form
-async function checkUTDirectAuth(): Promise<boolean> {
-  try {
-    const res = await fetch("https://utdirect.utexas.edu/apps/degree/audits/");
-    const html = await res.text();
-    // If page contains password input or login form, user is not authenticated
-    return !html.includes('type="password"') && !html.includes('action="/idp/');
-  } catch {
-    return false;
-  }
-}
 
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
@@ -32,7 +21,7 @@ export default function App() {
   const [showAll, setShowAll] = React.useState(false);
   const [runningAudit, setRunningAudit] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(true);
+  // const [isAuthenticated, setIsAuthenticated] = React.useState(true);
   // const [isModalOpen, setIsModalOpen] = React.useState(false);
   // const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
   //   HypotheticalCourse[]
@@ -40,8 +29,6 @@ export default function App() {
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
-  const UT_AUDIT_URL =
-    "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
   React.useEffect(() => {
     async function loadAudits() {
       try {
@@ -71,7 +58,6 @@ export default function App() {
     }
 
     loadAudits();
-    checkUTDirectAuth().then(setIsAuthenticated);
   }, []);
 
   React.useEffect(() => {
@@ -94,8 +80,34 @@ export default function App() {
       }
     };
 
+    // Listen for storage changes to detect when audit completes and reload data
+    const storageListener = async (changes: { [key: string]: any }) => {
+      if (changes.auditHistory) {
+        console.log("Popup: Audit history updated, reloading...");
+        setRunningAudit(false);
+        try {
+          const data = await getAuditHistory();
+          if (data) {
+            if (data.error) {
+              setError(data.error);
+              setAudits([]);
+            } else {
+              setAudits(data.audits);
+              setError(null);
+            }
+          }
+        } catch (e) {
+          console.error("Error reloading audit history:", e);
+        }
+      }
+    };
+
     browser.runtime.onMessage.addListener(listener);
-    return () => browser.runtime.onMessage.removeListener(listener);
+    browser.storage.onChanged.addListener(storageListener);
+    return () => {
+      browser.runtime.onMessage.removeListener(listener);
+      browser.storage.onChanged.removeListener(storageListener);
+    };
   }, []);
 
   const handleOpenDegreeAuditPage = (auditId: string | undefined) => {
@@ -105,122 +117,11 @@ export default function App() {
     });
   };
 
-  const injectClicker = async (tabId: number) => {
-    await browser.scripting.executeScript({
-      target: { tabId },
-      func: () => {
-        const clickWhenReady = () => {
-          const click = () => {
-            const btn =
-              document.querySelector<HTMLButtonElement>(".run_button");
-            if (btn) {
-              btn.click();
-              return true;
-            }
-            return false;
-          };
-
-          if (click()) return;
-
-          let tries = 0;
-          const maxTries = 120;
-          const iv = setInterval(() => {
-            if (click() || ++tries >= maxTries) clearInterval(iv);
-          }, 500);
-
-          const mo = new MutationObserver(() => {
-            if (click()) mo.disconnect();
-          });
-          mo.observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-          });
-
-          setTimeout(() => {
-            const isLogin =
-              document.querySelector('input[type="password"]') ||
-              document.querySelector(
-                'form[action*="logon"], form[action*="login"]'
-              );
-            if (isLogin) {
-              console.warn(
-                "UTDirect login detected. Please sign in; the audit will run afterward."
-              );
-            }
-          }, 1500);
-        };
-
-        if (document.readyState === "complete") clickWhenReady();
-        else window.addEventListener("load", clickWhenReady, { once: true });
-      },
-    });
-  };
-
+  // Send message to background script to run audit (background has access to tabs/scripting APIs)
   const handleRerunAudit = async () => {
     console.log("Popup: Rerun audit button clicked");
     setRunningAudit(true);
-
-    const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
-    const exactAuditTab = tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL));
-    if (exactAuditTab?.id) {
-      await injectClicker(exactAuditTab.id);
-      setRunningAudit(false);
-      return;
-    }
-    const newTab = await browser.tabs.create({
-      url: UT_AUDIT_URL,
-      active: false,
-    });
-
-    // Safety timeout - close tab after 30 seconds if nothing happens
-    const safetyTimeout = setTimeout(() => {
-      if (newTab.id) browser.tabs.remove(newTab.id);
-      setRunningAudit(false);
-    }, 30000);
-
-    const listener = async (tabId: number, info: any) => {
-      if (tabId === newTab.id && info.status === "complete") {
-        browser.tabs.onUpdated.removeListener(listener);
-        await injectClicker(tabId);
-      }
-    };
-
-    browser.tabs.onUpdated.addListener(listener);
-
-    // Listen for storage changes - when audit completes, storage will update
-    const storageListener = (changes: any) => {
-      if (changes.auditHistory) {
-        console.log("Popup: Audit complete! Storage updated.");
-        // Clear safety timeout
-        clearTimeout(safetyTimeout);
-        // Close the background tab
-        if (newTab.id) browser.tabs.remove(newTab.id);
-        // Reload audit history
-        async function reload() {
-          try {
-            const data = await getAuditHistory();
-            if (data) {
-              if (data.error) {
-                setError(data.error);
-                setAudits([]);
-              } else {
-                setAudits(data.audits);
-                setError(null);
-              }
-            }
-          } catch (e) {
-            console.error("Error reloading audit history:", e);
-          } finally {
-            setRunningAudit(false);
-          }
-        }
-        reload();
-        // Remove this listener
-        browser.storage.onChanged.removeListener(storageListener);
-      }
-    };
-
-    browser.storage.onChanged.addListener(storageListener);
+    browser.runtime.sendMessage({ type: "RUN_NEW_AUDIT" });
   };
 
   // Determine which audits to display
@@ -246,28 +147,19 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          {isAuthenticated ? (
-            <Button className="rounded-md" onClick={handleRerunAudit}>
-              {runningAudit ? (
-                <div className="flex items-center space-x-2">
-                  <SpinnerIcon size={24} className="animate-spin-slow" />
-                  <p className="text-lg font-bold">Running Audit...</p>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <PlusIcon size={24} />
-                  <p className="text-lg font-bold">Run New Audit</p>
-                </div>
-              )}
-            </Button>
-          ) : (
-            <Button
-              className="rounded-md"
-              onClick={() => browser.tabs.create({ url: "https://utdirect.utexas.edu/" })}
-            >
-              <p className="text-lg font-bold">Login to UTDirect</p>
-            </Button>
-          )}
+          <Button className="rounded-md" onClick={handleRerunAudit}>
+            {runningAudit ? (
+              <div className="flex items-center space-x-2">
+                <SpinnerIcon size={24} className="animate-spin-slow" />
+                <p className="text-lg font-bold">Running Audit...</p>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <PlusIcon size={24} />
+                <p className="text-lg font-bold">Run New Audit</p>
+              </div>
+            )}
+          </Button>
         </div>
       </header>
 
