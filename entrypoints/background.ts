@@ -36,6 +36,89 @@ export default defineBackground(() => {
         });
       return true; // Keep the message channel open for async response
     }
+
+    // Handle "Run New Audit" from popup
+    if (message.type === "RUN_NEW_AUDIT") {
+      const UT_AUDIT_URL =
+        "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
+
+      (async () => {
+        try {
+          // Check if there's already a tab open to the audit page
+          const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
+          const exactAuditTab = tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL));
+
+          if (exactAuditTab?.id) {
+            // Tab already exists, inject clicker
+            await browser.scripting.executeScript({
+              target: { tabId: exactAuditTab.id },
+              func: () => {
+                const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                if (btn) btn.click();
+              },
+            });
+            sendResponse({ success: true, existing: true });
+          } else {
+            // Create new tab
+            const newTab = await browser.tabs.create({
+              url: UT_AUDIT_URL,
+              active: false,
+            });
+
+            // Wait for tab to load, then inject clicker
+            const listener = async (tabId: number, info: any) => {
+              if (tabId === newTab.id && info.status === "complete") {
+                browser.tabs.onUpdated.removeListener(listener);
+                
+                await browser.scripting.executeScript({
+                  target: { tabId },
+                  func: () => {
+                    const clickWhenReady = () => {
+                      const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                      if (btn) {
+                        btn.click();
+                        return;
+                      }
+                      
+                      // If button not found, wait for it
+                      let tries = 0;
+                      const iv = setInterval(() => {
+                        const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                        if (btn) {
+                          btn.click();
+                          clearInterval(iv);
+                        } else if (++tries >= 120) {
+                          clearInterval(iv);
+                        }
+                      }, 500);
+                    };
+                    
+                    if (document.readyState === "complete") {
+                      clickWhenReady();
+                    } else {
+                      window.addEventListener("load", clickWhenReady, { once: true });
+                    }
+                  },
+                });
+                
+                // Close tab after 30 seconds
+                setTimeout(() => {
+                  if (newTab.id) browser.tabs.remove(newTab.id).catch(() => {});
+                }, 30000);
+              }
+            };
+
+            browser.tabs.onUpdated.addListener(listener);
+            sendResponse({ success: true, existing: false });
+          }
+        } catch (error) {
+          sendResponse({ success: false, error: (error as Error).message });
+        }
+      })();
+
+      return true; // Keep message channel open
+    }
+
   });
 
   // scrape audit data

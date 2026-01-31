@@ -5,9 +5,33 @@ export default defineConfig({
 	modules: ["@wxt-dev/module-react"],
 
 	dev: {
-		// Disable auto-opening browser
 		server: {
 			open: false,
+		},
+	},
+
+	// Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
+	hooks: {
+		"build:done": async (wxt) => {
+			const fs = await import("fs");
+			const path = await import("path");
+			const outDir = wxt.config.outDir;
+
+			function fixEncoding(dir: string) {
+				if (!fs.existsSync(dir)) return;
+				for (const file of fs.readdirSync(dir)) {
+					const fullPath = path.join(dir, file);
+					if (fs.statSync(fullPath).isDirectory()) {
+						fixEncoding(fullPath);
+					} else if (/\.(js|json|html|css)$/.test(file)) {
+						let content = fs.readFileSync(fullPath, "utf8");
+						// Remove Unicode noncharacters (U+FFFE, U+FFFF) that Chrome rejects
+						content = content.replace(/[\uFFFE\uFFFF]/g, "");
+						fs.writeFileSync(fullPath, content, "utf8");
+					}
+				}
+			}
+			fixEncoding(outDir);
 		},
 	},
 

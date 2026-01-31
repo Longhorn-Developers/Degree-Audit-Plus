@@ -37,7 +37,7 @@ export type Course = {
   credits: number;
   semester: string;
   grade: string;
-  status: "Completed" | "In Progress" | "Not Started";
+  status: "Completed" | "In Progress" | "Not Started" | "Hyp";
 };
 
 export type RequirementBreakdownProps = {
