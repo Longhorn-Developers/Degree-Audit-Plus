@@ -1,4 +1,7 @@
-import Button, { IconButton } from "@/entrypoints/components/common/button";
+import Button, {
+	IconButton,
+	ToggleSwitch,
+} from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { usePreferences } from "@/entrypoints/providers/main-page";
 import { ExportIcon, GearIcon, ListIcon } from "@phosphor-icons/react";
@@ -55,12 +58,9 @@ const Navbar = () => {
 				<label htmlFor="wipe-all-planned-courses">
 					{viewMode === "audit" ? "Planner View" : "Audit View"}
 				</label>
-				<input
-					type="checkbox"
-					id="view-mode"
-					className="toggle toggle-primary mx-2"
+				<ToggleSwitch
 					onChange={async () => await toggleViewMode()}
-					checked={viewMode === "planner"}
+					checked={viewMode === "audit"}
 				/>
 				<IconButton icon={<ExportIcon className="w-6 h-6" />} label="Share" />
 				<IconButton icon={<GearIcon className="w-6 h-6" />} label="Settings" />
