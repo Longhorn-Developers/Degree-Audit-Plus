@@ -35,6 +35,10 @@ type PreferencesContext = {
 	sidebarIsOpen: boolean;
 	setSidebarIsOpen: (value: boolean) => void;
 	toggleSidebar: () => void;
+
+	viewMode: PREFERENCE_ViewMode;
+	setViewMode: (value: PREFERENCE_ViewMode) => void;
+	toggleViewMode: () => void;
 };
 
 type AdditionalValues<T extends Record<string, { value: unknown }>> = {
@@ -48,7 +52,7 @@ type FlattenedAndExpandedValues<T extends Shape> = ExpandOut<
 		[K in keyof T]: T[K]["value"];
 	} & {
 		[K in keyof T as `set${Capitalize<K & string>}`]: (
-			value: T[K]["value"]
+			value: T[K]["value"],
 		) => void;
 	} & {
 			[K in keyof AdditionalValues<T>]: AdditionalValues<T>[K] extends object
@@ -66,6 +70,7 @@ type FlattenedAndExpandedValues<T extends Shape> = ExpandOut<
 /** ---------------------------------------------------------------------------------------------------- **/
 
 export type PREFERENCE_PreferredLuminosity = "system" | "dark" | "light";
+export type PREFERENCE_ViewMode = "audit" | "planner";
 
 export type StoredPreferences = {
 	sidebarIsOpen: StoredPreferenceValue<boolean> & {
@@ -74,6 +79,9 @@ export type StoredPreferences = {
 	luminosity: StoredPreferenceValue<PREFERENCE_PreferredLuminosity> & {
 		toggleDarkMode: () => void;
 		isDarkMode: () => boolean;
+	};
+	viewMode: StoredPreferenceValue<PREFERENCE_ViewMode> & {
+		toggleViewMode: () => void;
 	};
 };
 
@@ -93,6 +101,11 @@ export const DEFAULT_PREFERENCES: ExpandOut<
 		key: "sidebar-is-open",
 		toggleSidebar: () => null,
 	},
+	viewMode: {
+		value: "audit",
+		key: "view-mode",
+		toggleViewMode: () => null,
+	},
 };
 
 const PreferencesProviderContext = createContext<PreferencesContext>(
@@ -105,17 +118,20 @@ const PreferencesProviderContext = createContext<PreferencesContext>(
 		},
 		{
 			isMounted: false,
-		} as PreferencesContext
-	)
+		} as PreferencesContext,
+	),
 );
 
 export function PreferencesProvider(props: { children: React.ReactNode }) {
 	const [isMounted, setIsMounted] = useState(false);
+	const [viewMode, setViewMode] = useState<PREFERENCE_ViewMode>(
+		DEFAULT_PREFERENCES.viewMode.value,
+	);
 	const [sidebarIsOpen, setSidebarIsOpen] = useState(
-		DEFAULT_PREFERENCES.sidebarIsOpen.value
+		DEFAULT_PREFERENCES.sidebarIsOpen.value,
 	);
 	const [luminosity, setLuminosity] = useState<PREFERENCE_PreferredLuminosity>(
-		DEFAULT_PREFERENCES.luminosity.value
+		DEFAULT_PREFERENCES.luminosity.value,
 	);
 	const isInitialMountRef = useRef(true);
 
@@ -138,6 +154,9 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
 		});
 		OptionsStore.get("luminosity").then((value) => {
 			setLuminosity(value);
+		});
+		OptionsStore.get("viewMode").then((value) => {
+			setViewMode(value);
 		});
 		setIsMounted(true);
 		isInitialMountRef.current = false;
@@ -165,6 +184,18 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
 		toggleSidebar: async () => {
 			setSidebarIsOpen(!sidebarIsOpen);
 			await OptionsStore.set("showSidebar", !sidebarIsOpen);
+		},
+		viewMode,
+		setViewMode: async (value: PREFERENCE_ViewMode) => {
+			setViewMode(value);
+			await OptionsStore.set("viewMode", value);
+		},
+		toggleViewMode: async () => {
+			setViewMode(viewMode === "audit" ? "planner" : "audit");
+			await OptionsStore.set(
+				"viewMode",
+				viewMode === "audit" ? "planner" : "audit",
+			);
 		},
 	};
 

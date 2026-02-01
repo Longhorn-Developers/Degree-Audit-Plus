@@ -1,5 +1,8 @@
 import { createSyncStore, debugStore } from "chrome-extension-toolkit";
-import { PREFERENCE_PreferredLuminosity } from "../providers/main-page";
+import {
+	PREFERENCE_PreferredLuminosity,
+	PREFERENCE_ViewMode,
+} from "../providers/main-page";
 
 /**
  * A store that is used for storing user options
@@ -7,11 +10,13 @@ import { PREFERENCE_PreferredLuminosity } from "../providers/main-page";
 export interface IOptionsStore {
 	showSidebar: boolean;
 	luminosity: PREFERENCE_PreferredLuminosity;
+	viewMode: PREFERENCE_ViewMode;
 }
 
 export const OptionsStore = createSyncStore<IOptionsStore>({
 	showSidebar: true,
 	luminosity: "system",
+	viewMode: "audit",
 });
 
 /**
@@ -23,7 +28,8 @@ export const initSettings = async () =>
 	({
 		showSidebar: await OptionsStore.get("showSidebar"),
 		luminosity: await OptionsStore.get("luminosity"),
-	} satisfies IOptionsStore);
+		viewMode: await OptionsStore.get("viewMode"),
+	}) satisfies IOptionsStore;
 
 // Clothing retailer right
 
