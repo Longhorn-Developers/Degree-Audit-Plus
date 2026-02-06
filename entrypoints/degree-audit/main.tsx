@@ -7,7 +7,7 @@ import { PreferencesProvider, usePreferences } from "../providers/main-page";
 import AuditContextProvider from "./components/audit-provider";
 import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";
-import DegreePlannerPage from "./components/degree-planner-page copy.tsx";
+import DegreePlannerPage from "./components/degree-planner-page.tsx";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar.tsx";
 
@@ -39,7 +39,7 @@ const MainContent = () => {
 			})}
 		>
 			<Navbar />
-			<VStack x="center" className="w-[90%] max-w-7xl mx-auto mb-[30px]">
+			<VStack x="center" className="px-10 mx-auto mb-[30px]">
 				{viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
 			</VStack>
 		</VStack>

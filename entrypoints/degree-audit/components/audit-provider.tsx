@@ -2,13 +2,15 @@ import {
 	calculateWeightedDegreeCompletion,
 	CurrentAuditProgress,
 } from "@/lib/audit-calculations";
-import { RequirementSection } from "@/lib/general-types";
+import { Course, RequirementSection } from "@/lib/general-types";
 import { getAuditData, getAuditHistory } from "@/lib/storage";
 import { createContext, useContext, useEffect, useState } from "react";
 
 // Context for sharing audit data betw sidebar and main
+
 interface AuditContextType {
 	sections: RequirementSection[];
+	allCourses: Course[];
 	currentAuditId: string | null;
 	setCurrentAuditId: (id: string | null) => void;
 	progresses: CurrentAuditProgress;
@@ -29,6 +31,19 @@ export const AuditContextProvider = ({
 	);
 
 	const progresses = calculateWeightedDegreeCompletion(sections ?? []);
+
+	// A simpler way to get all courses from the sections that comes prefiltered
+	const allCourses = useMemo(
+		() =>
+			Array.from(
+				new Map(
+					sections
+						.flatMap((section) => section.rules.flatMap((rule) => rule.courses))
+						.map((course) => [course.code + "|" + course.semester, course])
+				).values()
+			) as Course[],
+		[sections]
+	);
 
 	// Load audit data from cache (scraped upfront when user visits UT Direct)
 	useEffect(() => {
@@ -60,6 +75,7 @@ export const AuditContextProvider = ({
 		<AuditContext.Provider
 			value={{
 				sections,
+				allCourses,
 				currentAuditId,
 				setCurrentAuditId,
 				progresses,

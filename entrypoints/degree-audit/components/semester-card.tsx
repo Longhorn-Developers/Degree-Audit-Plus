@@ -2,12 +2,12 @@ import Dropdown, {
 	DropdownContent,
 	DropdownHeader,
 } from "@/entrypoints/components/common/dropdown";
-import { HStack } from "@/entrypoints/components/common/helperdivs";
+import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import CourseCard from "@/entrypoints/components/course-card";
-import { Course, Semester } from "@/lib/general-types";
+import { Course } from "@/lib/general-types";
 
-interface SemesterCardProps {
-	semester: Semester;
+export interface SemesterCardProps {
+	semester: string;
 	courses: Course[];
 }
 
@@ -21,19 +21,22 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
 		>
 			<DropdownHeader>
 				<HStack y="middle" x="between" fill>
-					<h2 className="text-lg text-dap-orange font-bold">{`${semester.season} ${semester.year}`}</h2>
+					<h2 className="text-lg text-dap-orange font-bold">{semester}</h2>
 					<h2 className="text-sm">{`${totalHours} hours`}</h2>
 				</HStack>
 			</DropdownHeader>
 			<DropdownContent className="w-full pb-6">
-				{courses.map((course) => (
-					<CourseCard
-						key={course.code}
-						fullName={course.name}
-						courseName={course.code}
-						color="orange"
-					/>
-				))}
+				<VStack fill className="w-full" gap={4}>
+					{courses.map((course) => (
+						<CourseCard
+							className="w-full"
+							key={course.code}
+							fullName={course.name}
+							courseName={course.code}
+							color="orange"
+						/>
+					))}
+				</VStack>
 			</DropdownContent>
 		</Dropdown>
 	);
