@@ -16,7 +16,7 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
 
 	return (
 		<Dropdown
-			className="w-lg p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]"
+			className="w-sm p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]"
 			gap={6}
 		>
 			<DropdownHeader>

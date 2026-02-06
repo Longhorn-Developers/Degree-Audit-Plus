@@ -8,12 +8,19 @@ export type Bar = {
 	percentage: Progress;
 };
 
-interface GraphProps {
+export type GraphStyleProps = {
+	size?: number;
+	strokeWidth?: number;
+	gap?: number;
+	startRadius?: number;
+	animationDuration?: number;
+};
+export type GraphProps = GraphStyleProps & {
 	innerContent?: React.ReactNode;
 	children?: React.ReactNode;
 	bars: Bar[];
 	tooltipContent?: (bar: Bar) => React.ReactNode;
-}
+} & GraphStyleProps;
 
 const InnerDonutGraph = ({
 	bar,
@@ -103,14 +110,14 @@ const MultiDonutGraph = ({
 	innerContent,
 	children,
 	tooltipContent,
+	size = 362,
+	strokeWidth = 10,
+	gap = 1,
+	startRadius = 95,
+	animationDuration = 750,
 }: GraphProps) => {
 	const [hoveredBar, setHoveredBar] = useState<Bar | null>(bars[0] || null);
 	const ref = useRef<HTMLDivElement>(null);
-	const size = 362;
-	const strokeWidth = 10;
-	const gap = 1;
-	const startRadius = 95;
-	const animationDuration = 750;
 
 	// State to track animated progress for each bar
 	const [animatedProgress, setAnimatedProgress] = useState<number[]>(
@@ -179,51 +186,53 @@ const MultiDonutGraph = ({
 							}}
 						>
 							{/* Dashed line from tooltip box to highlighted circle */}
-							<svg
-								className="pointer-events-none absolute top-0 right-0"
-								width="100%"
-								height="100%"
-								style={{
-									overflow: "visible",
-									pointerEvents: "none",
-									zIndex: 800,
-								}}
-							>
-								{(() => {
-									// Parameters used in donut placement
-									const svgSize = typeof size === "number" ? size : 200;
+							{tooltipContent && (
+								<svg
+									className="pointer-events-none absolute top-0 right-0"
+									width="100%"
+									height="100%"
+									style={{
+										overflow: "visible",
+										pointerEvents: "none",
+										zIndex: 800,
+									}}
+								>
+									{(() => {
+										// Parameters used in donut placement
+										const svgSize = typeof size === "number" ? size : 200;
 
-									// Find the hovered bar index and its geometry
-									const index = bars.findIndex((bar) => bar === hoveredBar);
+										// Find the hovered bar index and its geometry
+										const index = bars.findIndex((bar) => bar === hoveredBar);
 
-									// const radius =
-									// 	size / 2 - Math.sqrt(2) * (strokeWidth + gap) * index;
-									// const displacement = radius / Math.sqrt(2);
-									const displacement =
-										size / 2 - (strokeWidth + gap) * 2 * index;
+										// const radius =
+										// 	size / 2 - Math.sqrt(2) * (strokeWidth + gap) * index;
+										// const displacement = radius / Math.sqrt(2);
+										const displacement =
+											size / 2 - (strokeWidth + gap) * 2 * index;
 
-									// The center of the circle
-									const cx = svgSize / 2;
-									const cy = svgSize / 2;
+										// The center of the circle
+										const cx = svgSize / 2;
+										const cy = svgSize / 2;
 
-									return (
-										<line
-											x1={cx + size / 2}
-											y1={cy - size / 2}
-											x2={cx + displacement / Math.sqrt(2)}
-											y2={cy - displacement / Math.sqrt(2)}
-											stroke={hoveredBar?.color || "#000"}
-											strokeWidth={4}
-											strokeLinecap="round"
-											strokeDasharray="5,5"
-											style={{
-												zIndex: 800,
-												pointerEvents: "none",
-											}}
-										/>
-									);
-								})()}
-							</svg>
+										return (
+											<line
+												x1={cx + size / 2}
+												y1={cy - size / 2}
+												x2={cx + displacement / Math.sqrt(2)}
+												y2={cy - displacement / Math.sqrt(2)}
+												stroke={hoveredBar?.color || "#000"}
+												strokeWidth={4}
+												strokeLinecap="round"
+												strokeDasharray="5,5"
+												style={{
+													zIndex: 800,
+													pointerEvents: "none",
+												}}
+											/>
+										);
+									})()}
+								</svg>
+							)}
 						</motion.div>
 					</>
 				)}
