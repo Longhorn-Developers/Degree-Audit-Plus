@@ -39,7 +39,7 @@ const MainContent = () => {
 			})}
 		>
 			<Navbar />
-			<VStack x="center" className="w-[80%] max-w-7xl mx-auto mb-[30px]">
+			<VStack x="center" className="w-[90%] max-w-7xl mx-auto mb-[30px]">
 				{viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
 			</VStack>
 		</VStack>

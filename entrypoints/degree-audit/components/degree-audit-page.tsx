@@ -5,12 +5,10 @@ import MultiDonutGraph, {
 } from "@/entrypoints/degree-audit/components/graph";
 import "@/entrypoints/styles/content.css";
 import { useAuditContext } from "./audit-provider";
-import { useCourseModalContext } from "./course-modal-provider";
 import RequirementBreakdown, { CATEGORY_COLORS } from "./requirement-breakdown";
 
 const DegreeAuditPage = () => {
 	const { progresses, sections } = useAuditContext();
-	const { openModal } = useCourseModalContext();
 	return (
 		<>
 			<Title text="Degree Progress Overview" />
@@ -25,7 +23,6 @@ const DegreeAuditPage = () => {
 							title={section.title}
 							hours={progresses.sections[idx].progress}
 							requirements={section.rules ?? []}
-							onAddCourse={openModal}
 							colorIndex={idx}
 						/>
 					)

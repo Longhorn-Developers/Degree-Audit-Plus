@@ -18,36 +18,24 @@ export const CourseModalContextProvider = ({
 }) => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 
-	const toggleModal = () => {
-		setIsOpen(!isOpen);
-	};
-
-	const openModal = () => {
-		setIsOpen(true);
-	};
-
-	const closeModal = () => {
-		setIsOpen(false);
-	};
-
 	return (
 		<CourseModalContext.Provider
 			value={{
 				isOpen,
-				toggleModal,
-				openModal,
-				closeModal,
+				toggleModal: () => setIsOpen(!isOpen),
+				openModal: () => setIsOpen(true),
+				closeModal: () => setIsOpen(false),
 			}}
 		>
 			{children}
 
 			<CourseAddModal
 				isOpen={isOpen}
-				onClose={closeModal}
+				onClose={() => setIsOpen(false)}
+				// TODO: Implement course search functionality
 				onSearch={(searchData) => {
 					console.log("Search data:", searchData);
-					// TODO: Implement course search functionality
-					closeModal();
+					setIsOpen(false);
 				}}
 			/>
 		</CourseModalContext.Provider>
