@@ -5,6 +5,7 @@ import Button from "../components/common/button";
 import { DegreeAuditCardPopup } from "../components/audit-card";
 import "./style.css";
 import DAPLogo from "@/assets/svgs/dap-circle-logo";
+import logo from "../../public/logo.png";
 import { PlusIcon } from "@phosphor-icons/react";
 import { getAuditHistory } from "@/lib/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
@@ -133,13 +134,121 @@ export default function App() {
   //   setHypotheticalCourses((prev) => [...prev, course]);
   //   // TODO: Store in browser storage and send to degree audit page
   // };
+  const Pill = ({ text }: { text: string }) => (
+    <span className="inline-flex items-center rounded-full bg-[var(--color-dap-primary)] px-2.5 py-[2px] text-[12px] font-extrabold leading-none text-white">
+      {text}
+    </span>
+  );
+
+  const AuditCardDetailed = ({ audit }: { audit: DegreeAuditCardProps }) => (
+      <div
+        className="
+          group
+          w-full
+          rounded-[12px]
+          border
+          border-gray-200
+          bg-white
+          px-5
+          py-4
+          hover:cursor-pointer
+          hover:bg-[var(--color-dap-primary)]
+          transition-colors
+        "
+        onClick={(e) => {
+          e.stopPropagation();
+          handleOpenDegreeAuditPage(audit?.auditId);
+        }}
+      >
+      <div className="flex items-start justify-between gap-4">
+        {/* Left */}
+        <div className="min-w-0 flex-1">
+          <div
+            className="
+              text-[20px]
+              font-extrabold
+              text-[var(--color-dap-primary)]
+              leading-tight
+              transition-colors
+              group-hover:text-white
+            "
+          >
+            {audit.title}
+          </div>
+
+          <div className="mt-3 flex items-center gap-3">
+          <span
+            className="
+              text-[13px]
+              font-medium
+              tracking-wide
+              text-black
+              transition-colors
+              hover:text-white
+            "
+          >
+            MAJOR
+          </span>
+
+            {(audit.majors ?? []).map((m, i) => (
+              <span
+                key={`${m}-${i}`}
+                className="
+                  inline-flex items-center
+                  rounded-[6px]
+                  bg-[#068b5e]
+                  px-3 py-[3px]
+                  text-[12px]
+                  leading-none
+                  text-white
+                "
+              >
+                {m}
+              </span>
+            ))}
+          </div>
+
+          {/* Optional MINOR/CERT row if you want parity with the detailed card */}
+          {(audit.minors ?? []).length > 0 && (
+            <div className="mt-2 flex items-center gap-4">
+              <div className="text-[13px] font-extrabold tracking-wide text-[var(--color-ut-charcoal)]">
+                MINOR/CERT
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(audit.minors ?? []).map((m, i) => (
+                  <span
+                    key={`${m}-${i}`}
+                    className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-[2px] text-[12px] font-bold leading-none text-[var(--color-ut-charcoal)]"
+                  >
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right badge */}
+        <div className="relative top-6">
+          <div className="rounded-[10px] bg-[var(--color-dap-primary)] px-3.5 py-2 text-white text-[16px] font-extrabold leading-none">
+            {audit.percentage}%
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white font-sans overflow-hidden flex flex-col border border-gray-100">
       <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <DAPLogo />
-          <span className="font-bold text-lg text-dap-primary leading-tight">
+        <img
+          src={logo}
+          alt="Logo"
+          style={{ width: "70px", height: "auto" }}
+        />
+        <span className="font-bold text-lg text-dap-primary leading-tight">
             Degree Audit
             <br />
             Plus
@@ -170,7 +279,7 @@ export default function App() {
               style={{ fontFamily: "Roboto Flex" }}
               className="text-[25.63px] font-bold text-[var(--color-dap-dark)]"
             >
-              Current Audits
+              {audits.length} AUDITS
             </h1>
             {isSyncing && (
               <div className="flex items-center gap-1.5 text-[var(--color-dap-gray-light)]">
@@ -230,6 +339,7 @@ export default function App() {
                     minors={audit.minors}
                     percentage={audit.percentage}
                   />
+
                 </div>
               ))}
             </div>
