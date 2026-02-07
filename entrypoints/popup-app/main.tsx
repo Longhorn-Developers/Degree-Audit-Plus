@@ -333,7 +333,12 @@ export default function App() {
                     handleOpenDegreeAuditPage(audit?.auditId);
                   }}
                 >
-                  <AuditCardDetailed audit={audit} />
+                  <DegreeAuditCardPopup
+                    title={audit.title}
+                    majors={audit.majors}
+                    minors={audit.minors}
+                    percentage={audit.percentage}
+                  />
 
                 </div>
               ))}
