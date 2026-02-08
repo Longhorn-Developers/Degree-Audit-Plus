@@ -54,19 +54,19 @@ const Navbar = () => {
         </VStack>
       </HStack>
 
-      <HStack centered>
-        <label htmlFor="wipe-all-planned-courses">
-          {viewMode === "audit" ? "Planner View" : "Audit View"}
-        </label>
-        <ToggleSwitch
-          onChange={async () => await toggleViewMode()}
-          checked={viewMode === "audit"}
-        />
-        <IconButton icon={<ExportIcon className="w-6 h-6" />} label="Share" />
-        <IconButton icon={<GearIcon className="w-6 h-6" />} label="Settings" />
-      </HStack>
-    </HStack>
-  );
+			<HStack centered>
+				<label htmlFor="wipe-all-planned-courses">
+					{viewMode === "audit" ? "Audit View" : "Planner View"}
+				</label>
+				<ToggleSwitch
+					onChange={async () => await toggleViewMode()}
+					checked={viewMode === "planner"}
+				/>
+				<IconButton icon={<ExportIcon className="w-6 h-6" />} label="Share" />
+				<IconButton icon={<GearIcon className="w-6 h-6" />} label="Settings" />
+			</HStack>
+		</HStack>
+	);
 };
 
 export default Navbar;
