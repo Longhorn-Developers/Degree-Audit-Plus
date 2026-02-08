@@ -14,7 +14,7 @@ jobs:
       - name: Check types
         run: |
           bun install
-          bun run compile
+          bun run eslint
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +26,7 @@ jobs:
         run: |
           bun install
           bun format
- 
+
   format:
     runs-on: ubuntu-latest
     steps:
@@ -37,8 +37,8 @@ jobs:
       - name: Format
         run: |
           bun install
-          bun format
-  
+          bun prettier . --check
+
   create-artifact:
     runs-on: ubuntu-latest
     steps:
@@ -47,4 +47,13 @@ jobs:
       - name: Install bun
         uses: oven-sh/setup-bun@v1
       - name: Build extension
-        run: bun install
+        run: |
+          bun install
+          bun run build
+          cd .output/chrome-mv3
+          zip -r ../extension.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: .output/extension.zip
