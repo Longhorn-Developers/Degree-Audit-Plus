@@ -31,6 +31,7 @@ export const AuditContextProvider = ({
 	);
 
 	const progresses = calculateWeightedDegreeCompletion(sections ?? []);
+	console.log("progresses", progresses);
 
 	// A simpler way to get all courses from the sections that comes prefiltered
 	const allCourses = useMemo(

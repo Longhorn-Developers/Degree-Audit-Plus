@@ -1,11 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Progress } from "../../../lib/general-types";
+import { PlanableProgress } from "../../../lib/general-types";
 
 export type Bar = {
 	title: string;
 	color: `rgb(${number}, ${number}, ${number})`;
-	percentage: Progress;
+	percentage: PlanableProgress;
 };
 
 export type GraphStyleProps = {
@@ -27,6 +27,7 @@ const InnerDonutGraph = ({
 	radius,
 	color,
 	animatedProgress,
+	animatedPlannedProgress,
 	strokeWidth,
 	...other
 }: {
@@ -35,6 +36,7 @@ const InnerDonutGraph = ({
 	radius: number;
 	color: `rgb(${number}, ${number}, ${number})`;
 	animatedProgress: number;
+	animatedPlannedProgress: number;
 	strokeWidth: number;
 	onMouseEnter: () => void;
 	onMouseLeave: () => void;
@@ -86,6 +88,22 @@ const InnerDonutGraph = ({
 				onMouseLeave={other.onMouseLeave}
 			/>
 
+			{/* Planned circle */}
+			<circle
+				cx="100"
+				cy="100"
+				r={radius}
+				fill="none"
+				stroke={"#000"}
+				strokeWidth={strokeWidth}
+				strokeLinecap="round"
+				strokeDasharray={dashArray}
+				transform="rotate(-90 100 100)"
+				style={{
+					pointerEvents: "none", // Essential to allow mouse events to pass through to the background circle
+				}}
+			/>
+
 			{/* Progress circle */}
 			<circle
 				cx="100"
@@ -120,9 +138,9 @@ const MultiDonutGraph = ({
 	const ref = useRef<HTMLDivElement>(null);
 
 	// State to track animated progress for each bar
-	const [animatedProgress, setAnimatedProgress] = useState<number[]>(
-		bars.map(() => 0)
-	);
+	const [animatedProgress, setAnimatedProgress] = useState<
+		{ current: number; planned: number }[]
+	>(bars.map(() => ({ current: 0, planned: 0 })));
 
 	useEffect(() => {
 		// Animate each bar from 0 to its target value
@@ -136,7 +154,10 @@ const MultiDonutGraph = ({
 			const easedProgress = 1 - Math.pow(1 - progress, 3);
 
 			setAnimatedProgress(
-				bars.map((bar) => bar.percentage.current * easedProgress)
+				bars.map((bar) => ({
+					current: bar.percentage.current * easedProgress,
+					planned: bar.percentage.planned * easedProgress,
+				}))
 			);
 
 			if (progress < 1) {
@@ -245,7 +266,8 @@ const MultiDonutGraph = ({
 						index={index}
 						radius={startRadius - index * (strokeWidth + gap)}
 						color={bar.color}
-						animatedProgress={animatedProgress[index]}
+						animatedProgress={animatedProgress[index]?.current || 0}
+						animatedPlannedProgress={animatedProgress[index]?.planned || 0}
 						onMouseEnter={() => setHoveredBar(bar)}
 						onMouseLeave={() => setHoveredBar(null)}
 						strokeWidth={strokeWidth}
