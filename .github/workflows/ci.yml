@@ -11,10 +11,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Install bun
         uses: oven-sh/setup-bun@v1
+      - name: Install dependencies
+        run: bun install
       - name: Check types
-        run: |
-          bun install
-          bun run compile
+        run: bun run compile
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -22,10 +22,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Install bun
         uses: oven-sh/setup-bun@v1
+      - name: Install dependencies
+        run: bun install
       - name: Lint
-        run: |
-          bun install
-          bun run eslint
+        run: bun run eslint
 
   format:
     runs-on: ubuntu-latest
@@ -34,10 +34,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Install bun
         uses: oven-sh/setup-bun@v1
+      - name: Install dependencies
+        run: bun install
       - name: Format
-        run: |
-          bun install
-          bun prettier . --check
+        run: bun prettier . --check
 
   create-artifact:
     runs-on: ubuntu-latest
