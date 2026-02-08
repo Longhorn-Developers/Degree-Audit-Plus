@@ -39,11 +39,7 @@ export const DropdownHeader = forwardRef<
 			fill
 			x="between"
 			y="middle"
-			className={cn(
-				"p-3 rounded-lg cursor-pointer",
-				context.isOpen ? "bg-gray-100" : "bg-white",
-				className
-			)}
+			className={cn("cursor-pointer", className)}
 			onClick={toggleDropdown}
 			{...rest}
 		>
@@ -84,7 +80,7 @@ export const DropdownContent = forwardRef<
 	}
 
 	return (
-		<div ref={ref} className={cn("mt-2 p-3", className)} {...rest}>
+		<div ref={ref} className={className} {...rest}>
 			{children}
 		</div>
 	);
@@ -95,9 +91,11 @@ DropdownContent.displayName = "DropdownContent";
 // Main Dropdown Component
 const Dropdown = forwardRef<
 	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement>
+	React.HTMLAttributes<HTMLDivElement> & {
+		gap?: number;
+	}
 >((props, ref) => {
-	const { children, ...rest } = props;
+	const { children, gap, ...rest } = props;
 	const [isOpen, setIsOpen] = useState(false);
 
 	const toggleDropdown = () => {
@@ -121,7 +119,7 @@ const Dropdown = forwardRef<
 	return (
 		<DropdownContext.Provider value={{ isOpen, toggleDropdown }}>
 			<Container ref={ref} {...rest}>
-				<VStack fill>
+				<VStack fill gap={gap}>
 					{headerChild}
 					{contentChild}
 				</VStack>

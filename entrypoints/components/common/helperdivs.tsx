@@ -5,6 +5,8 @@ type HelperDivProps = React.HTMLAttributes<HTMLDivElement> & {
 	gap?: number;
 	centered?: boolean;
 	fill?: boolean;
+	fillHeight?: boolean;
+	fillWidth?: boolean;
 	x?: "left" | "center" | "right" | "between" | "around";
 	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
 };
@@ -14,6 +16,8 @@ type StackContextValue = {
 	gap: number;
 	centered: boolean;
 	fill: boolean;
+	fillHeight: boolean;
+	fillWidth: boolean;
 	x?: "left" | "center" | "right" | "between" | "around";
 	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
 };
@@ -27,6 +31,8 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 			className,
 			gap = 4,
 			centered = false,
+			fillHeight = false,
+			fillWidth: fillWidth = false,
 			fill = false,
 			x,
 			y,
@@ -35,12 +41,14 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 		ref
 	) => {
 		VStack.displayName = "VStack";
-		const _xSpacing = centered ? "center" : x ?? "left";
-		const _ySpacing = centered ? "middle" : y ?? "top";
+		const _xSpacing = centered ? "center" : (x ?? "left");
+		const _ySpacing = centered ? "middle" : (y ?? "top");
 		const contextValue: StackContextValue = {
 			type: "v",
 			gap,
 			centered,
+			fillHeight,
+			fillWidth,
 			fill,
 			x,
 			y,
@@ -50,7 +58,8 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 				<div
 					ref={ref}
 					className={cn("flex flex-col", className, {
-						"h-full": fill,
+						"h-full": fill || fillHeight,
+						"w-full": fillWidth,
 						"items-start": _xSpacing === "left",
 						"items-center": _xSpacing === "center",
 						"items-end": _xSpacing === "right",
@@ -86,7 +95,21 @@ type UnifiedSubstackProps = HelperDivProps & {
 };
 
 export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
-	({ children, className, gap, centered, fill, x, y, ...props }, ref) => {
+	(
+		{
+			children,
+			className,
+			gap,
+			centered,
+			fillHeight,
+			fillWidth: fillWidth,
+			fill,
+			x,
+			y,
+			...props
+		},
+		ref
+	) => {
 		Substack.displayName = "Substack";
 		const stackContext = useContext(StackContext);
 
@@ -110,19 +133,22 @@ export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
 		const inheritedGap = gap ?? parentContext.gap;
 		const inheritedCentered = centered ?? parentContext.centered;
 		const inheritedFill = fill ?? parentContext.fill;
+		const inheritedFillY = fillHeight ?? parentContext.fillHeight;
+		const inheritedFillX = fillWidth ?? parentContext.fillWidth;
 		const inheritedX = x ?? parentContext.x;
 		const inheritedY = y ?? parentContext.y;
 
 		if (isVStack) {
 			// VStack: x controls items, y controls justify, flex-col
-			const _xSpacing = inheritedCentered ? "center" : inheritedX ?? "left";
-			const _ySpacing = inheritedCentered ? "middle" : inheritedY ?? "top";
+			const _xSpacing = inheritedCentered ? "center" : (inheritedX ?? "left");
+			const _ySpacing = inheritedCentered ? "middle" : (inheritedY ?? "top");
 
 			return (
 				<div
 					ref={ref}
 					className={cn("flex flex-col", className, {
-						"h-full": inheritedFill,
+						"h-full": inheritedFill || inheritedFillY,
+						"w-full": inheritedFillX,
 						"items-start": _xSpacing === "left",
 						"items-center": _xSpacing === "center",
 						"items-end": _xSpacing === "right",
@@ -142,22 +168,23 @@ export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
 			);
 		} else {
 			// HStack: x controls justify, y controls items, flex-row
-			const _xSpacing = inheritedCentered ? "center" : inheritedX ?? "left";
-			const _ySpacing = inheritedCentered ? "middle" : inheritedY ?? "top";
+			const _xSpacing = inheritedCentered ? "center" : (inheritedX ?? "left");
+			const _ySpacing = inheritedCentered ? "middle" : (inheritedY ?? "top");
 
 			// Map "space-between" and "space-around" to "between" and "around" for HStack
 			const normalizedX: "left" | "center" | "right" | "between" | "around" =
 				_xSpacing === "between"
 					? "between"
 					: _xSpacing === "around"
-					? "around"
-					: (_xSpacing as "left" | "center" | "right" | "between" | "around");
+						? "around"
+						: (_xSpacing as "left" | "center" | "right" | "between" | "around");
 
 			return (
 				<div
 					ref={ref}
 					className={cn("flex flex-row", className, {
-						"w-full": inheritedFill,
+						"w-full": inheritedFill || inheritedFillX,
+						"h-full": inheritedFillY,
 						"justify-start": normalizedX === "left",
 						"justify-center": normalizedX === "center",
 						"justify-end": normalizedX === "right",
@@ -185,6 +212,8 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 			children,
 			className,
 			gap = 4,
+			fillHeight = false,
+			fillWidth: fillWidth = false,
 			fill = false,
 			centered = false,
 			x: xSpacing,
@@ -194,12 +223,14 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 		ref
 	) => {
 		HStack.displayName = "HStack";
-		const _xSpacing = centered ? "center" : xSpacing ?? "left";
-		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+		const _xSpacing = centered ? "center" : (xSpacing ?? "left");
+		const _ySpacing = centered ? "middle" : (ySpacing ?? "top");
 		const contextValue: StackContextValue = {
 			type: "h",
 			gap,
 			centered,
+			fillHeight,
+			fillWidth,
 			fill,
 			x: xSpacing,
 			y: ySpacing,
@@ -210,7 +241,8 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 				<div
 					ref={ref}
 					className={cn("flex flex-row", className, {
-						"w-full": fill,
+						"w-full": fill || fillWidth,
+						"h-full": fillHeight,
 						"justify-start": _xSpacing === "left",
 						"justify-center": _xSpacing === "center",
 						"justify-end": _xSpacing === "right",
@@ -242,6 +274,8 @@ export const Wrap = forwardRef<
 			className,
 			gap = 4,
 			centered = false,
+			fillHeight = false,
+			fillWidth = false,
 			fill = false,
 			x: xSpacing,
 			y: ySpacing,
@@ -251,13 +285,14 @@ export const Wrap = forwardRef<
 		ref
 	) => {
 		Wrap.displayName = "Wrap";
-		const _xSpacing = centered ? "center" : xSpacing ?? "left";
-		const _ySpacing = centered ? "middle" : ySpacing ?? "top";
+		const _xSpacing = centered ? "center" : (xSpacing ?? "left");
+		const _ySpacing = centered ? "middle" : (ySpacing ?? "top");
 		return (
 			<div
 				ref={ref}
 				className={cn("flex flex-row flex-wrap", className, {
-					"w-full": fill,
+					"w-full": fill || fillWidth,
+					"h-full": fillHeight,
 					"flex-wrap": maxCols !== -1,
 					"justify-start": _xSpacing === "left",
 					"justify-center": _xSpacing === "center",

@@ -56,11 +56,11 @@ const Navbar = () => {
 
 			<HStack centered>
 				<label htmlFor="wipe-all-planned-courses">
-					{viewMode === "audit" ? "Planner View" : "Audit View"}
+					{viewMode === "audit" ? "Audit View" : "Planner View"}
 				</label>
 				<ToggleSwitch
 					onChange={async () => await toggleViewMode()}
-					checked={viewMode === "audit"}
+					checked={viewMode === "planner"}
 				/>
 				<IconButton icon={<ExportIcon className="w-6 h-6" />} label="Share" />
 				<IconButton icon={<GearIcon className="w-6 h-6" />} label="Settings" />

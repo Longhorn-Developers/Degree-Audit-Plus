@@ -1,25 +1,33 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Progress } from "../../../lib/general-types";
+import { PlanableProgress } from "../../../lib/general-types";
 
 export type Bar = {
 	title: string;
 	color: `rgb(${number}, ${number}, ${number})`;
-	percentage: Progress;
+	percentage: PlanableProgress;
 };
 
-interface GraphProps {
+export type GraphStyleProps = {
+	size?: number;
+	strokeWidth?: number;
+	gap?: number;
+	startRadius?: number;
+	animationDuration?: number;
+};
+export type GraphProps = GraphStyleProps & {
 	innerContent?: React.ReactNode;
 	children?: React.ReactNode;
 	bars: Bar[];
 	tooltipContent?: (bar: Bar) => React.ReactNode;
-}
+} & GraphStyleProps;
 
 const InnerDonutGraph = ({
 	bar,
 	radius,
 	color,
 	animatedProgress,
+	animatedPlannedProgress,
 	strokeWidth,
 	...other
 }: {
@@ -28,6 +36,7 @@ const InnerDonutGraph = ({
 	radius: number;
 	color: `rgb(${number}, ${number}, ${number})`;
 	animatedProgress: number;
+	animatedPlannedProgress: number;
 	strokeWidth: number;
 	onMouseEnter: () => void;
 	onMouseLeave: () => void;
@@ -79,6 +88,22 @@ const InnerDonutGraph = ({
 				onMouseLeave={other.onMouseLeave}
 			/>
 
+			{/* Planned circle */}
+			<circle
+				cx="100"
+				cy="100"
+				r={radius}
+				fill="none"
+				stroke={"#000"}
+				strokeWidth={strokeWidth}
+				strokeLinecap="round"
+				strokeDasharray={dashArray}
+				transform="rotate(-90 100 100)"
+				style={{
+					pointerEvents: "none", // Essential to allow mouse events to pass through to the background circle
+				}}
+			/>
+
 			{/* Progress circle */}
 			<circle
 				cx="100"
@@ -103,19 +128,19 @@ const MultiDonutGraph = ({
 	innerContent,
 	children,
 	tooltipContent,
+	size = 362,
+	strokeWidth = 10,
+	gap = 1,
+	startRadius = 95,
+	animationDuration = 750,
 }: GraphProps) => {
 	const [hoveredBar, setHoveredBar] = useState<Bar | null>(bars[0] || null);
 	const ref = useRef<HTMLDivElement>(null);
-	const size = 362;
-	const strokeWidth = 10;
-	const gap = 1;
-	const startRadius = 95;
-	const animationDuration = 750;
 
 	// State to track animated progress for each bar
-	const [animatedProgress, setAnimatedProgress] = useState<number[]>(
-		bars.map(() => 0)
-	);
+	const [animatedProgress, setAnimatedProgress] = useState<
+		{ current: number; planned: number }[]
+	>(bars.map(() => ({ current: 0, planned: 0 })));
 
 	useEffect(() => {
 		// Animate each bar from 0 to its target value
@@ -129,7 +154,10 @@ const MultiDonutGraph = ({
 			const easedProgress = 1 - Math.pow(1 - progress, 3);
 
 			setAnimatedProgress(
-				bars.map((bar) => bar.percentage.current * easedProgress)
+				bars.map((bar) => ({
+					current: bar.percentage.current * easedProgress,
+					planned: bar.percentage.planned * easedProgress,
+				}))
 			);
 
 			if (progress < 1) {
@@ -179,51 +207,53 @@ const MultiDonutGraph = ({
 							}}
 						>
 							{/* Dashed line from tooltip box to highlighted circle */}
-							<svg
-								className="pointer-events-none absolute top-0 right-0"
-								width="100%"
-								height="100%"
-								style={{
-									overflow: "visible",
-									pointerEvents: "none",
-									zIndex: 800,
-								}}
-							>
-								{(() => {
-									// Parameters used in donut placement
-									const svgSize = typeof size === "number" ? size : 200;
+							{tooltipContent && (
+								<svg
+									className="pointer-events-none absolute top-0 right-0"
+									width="100%"
+									height="100%"
+									style={{
+										overflow: "visible",
+										pointerEvents: "none",
+										zIndex: 800,
+									}}
+								>
+									{(() => {
+										// Parameters used in donut placement
+										const svgSize = typeof size === "number" ? size : 200;
 
-									// Find the hovered bar index and its geometry
-									const index = bars.findIndex((bar) => bar === hoveredBar);
+										// Find the hovered bar index and its geometry
+										const index = bars.findIndex((bar) => bar === hoveredBar);
 
-									// const radius =
-									// 	size / 2 - Math.sqrt(2) * (strokeWidth + gap) * index;
-									// const displacement = radius / Math.sqrt(2);
-									const displacement =
-										size / 2 - (strokeWidth + gap) * 2 * index;
+										// const radius =
+										// 	size / 2 - Math.sqrt(2) * (strokeWidth + gap) * index;
+										// const displacement = radius / Math.sqrt(2);
+										const displacement =
+											size / 2 - (strokeWidth + gap) * 2 * index;
 
-									// The center of the circle
-									const cx = svgSize / 2;
-									const cy = svgSize / 2;
+										// The center of the circle
+										const cx = svgSize / 2;
+										const cy = svgSize / 2;
 
-									return (
-										<line
-											x1={cx + size / 2}
-											y1={cy - size / 2}
-											x2={cx + displacement / Math.sqrt(2)}
-											y2={cy - displacement / Math.sqrt(2)}
-											stroke={hoveredBar?.color || "#000"}
-											strokeWidth={4}
-											strokeLinecap="round"
-											strokeDasharray="5,5"
-											style={{
-												zIndex: 800,
-												pointerEvents: "none",
-											}}
-										/>
-									);
-								})()}
-							</svg>
+										return (
+											<line
+												x1={cx + size / 2}
+												y1={cy - size / 2}
+												x2={cx + displacement / Math.sqrt(2)}
+												y2={cy - displacement / Math.sqrt(2)}
+												stroke={hoveredBar?.color || "#000"}
+												strokeWidth={4}
+												strokeLinecap="round"
+												strokeDasharray="5,5"
+												style={{
+													zIndex: 800,
+													pointerEvents: "none",
+												}}
+											/>
+										);
+									})()}
+								</svg>
+							)}
 						</motion.div>
 					</>
 				)}
@@ -236,7 +266,8 @@ const MultiDonutGraph = ({
 						index={index}
 						radius={startRadius - index * (strokeWidth + gap)}
 						color={bar.color}
-						animatedProgress={animatedProgress[index]}
+						animatedProgress={animatedProgress[index]?.current || 0}
+						animatedPlannedProgress={animatedProgress[index]?.planned || 0}
 						onMouseEnter={() => setHoveredBar(bar)}
 						onMouseLeave={() => setHoveredBar(null)}
 						strokeWidth={strokeWidth}
