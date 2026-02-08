@@ -4,12 +4,6 @@ import { defineConfig } from "wxt";
 export default defineConfig({
 	modules: ["@wxt-dev/module-react"],
 
-	dev: {
-		server: {
-			open: false,
-		},
-	},
-
 	// Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
 	hooks: {
 		"build:done": async (wxt) => {
