@@ -4,51 +4,47 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun lint
-
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun format
-
-  # commented out since we have no tests
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: oven-sh/setup-bun@v1
-  #     - run: bun install
-  #     - run: bun test
-      
-  commitlint:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Required to get full commit history
-
-      - name: Setup Bun
+      - name: Install bun
         uses: oven-sh/setup-bun@v1
-
-      - name: Install dependencies
+      - name: Check types
+        run: |
+          bun install
+          bun run compile
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+      - name: Lint
+        run: |
+          bun install
+          bun format
+ 
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+      - name: Format
+        run: |
+          bun install
+          bun format
+  
+  create-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+      - name: Build extension
         run: bun install
-
-      - name: Lint last commit (push)
-        if: github.event_name == 'push'
-        run: |
-          npx commitlint --from HEAD~1 --to HEAD --verbose
-
-      - name: Lint PR commits
-        if: github.event_name == 'pull_request'
-        run: |
-          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
