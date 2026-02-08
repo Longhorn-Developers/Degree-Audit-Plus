@@ -382,7 +382,10 @@ export async function fetchAndScrapeCourses(
   // Fetch descriptions from detail pages (skip cancelled courses)
   for (const course of courses) {
     if (course.uniqueId > 0 && course.status !== "CANCELLED") {
-      course.description = await fetchCourseDescription(semester, course.uniqueId);
+      course.description = await fetchCourseDescription(
+        semester,
+        course.uniqueId,
+      );
       await delay(100);
     }
   }

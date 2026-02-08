@@ -92,7 +92,9 @@ export function scrapeRequirementSections(
       if (titleTh) {
         // Try to get title from <a> tag first, fall back to direct th text
         const titleLink = titleTh.querySelector("a");
-        title = (titleLink?.textContent || titleTh.textContent)?.trim() || "Unknown Section";
+        title =
+          (titleLink?.textContent || titleTh.textContent)?.trim() ||
+          "Unknown Section";
       }
     }
 
