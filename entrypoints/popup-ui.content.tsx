@@ -9,7 +9,7 @@ function loadFonts() {
   // Check if already loaded to avoid duplicates
   if (
     document.querySelector(
-      'link[href*="fonts.googleapis.com/css2?family=Roboto+Flex"]'
+      'link[href*="fonts.googleapis.com/css2?family=Roboto+Flex"]',
     )
   ) {
     return;
@@ -118,7 +118,7 @@ export default defineContentScript({
       if (message.type === "TOGGLE_POPUP") {
         console.log(
           "[DAP Popup] Toggle message received, isVisible:",
-          isVisible
+          isVisible,
         );
         if (isVisible) {
           hidePopup();

@@ -41,52 +41,52 @@ const InnerDonutGraph = ({
 	onMouseEnter: () => void;
 	onMouseLeave: () => void;
 }) => {
-	// Calculate stroke-dasharray for circular progress
-	const svgRef = useRef<SVGSVGElement>(null);
-	const circumference = 2 * Math.PI * radius;
-	const progressLength =
-		(animatedProgress / bar.percentage.total) * circumference;
-	const dashArray = `${progressLength} ${circumference}`;
-	const colorValues = color
-		.substring(4, color.length - 1)
-		.split(",")
-		.map((s) => Number(s.trim()));
-	const darkeningFactor = 0.7;
-	const bgOpacity = 0.1;
-	const backgroundColor = `rgba(${colorValues[0] * darkeningFactor}, ${
-		colorValues[1] * darkeningFactor
-	}, ${colorValues[2] * darkeningFactor}, ${bgOpacity})`;
+  // Calculate stroke-dasharray for circular progress
+  const svgRef = useRef<SVGSVGElement>(null);
+  const circumference = 2 * Math.PI * radius;
+  const progressLength =
+    (animatedProgress / bar.percentage.total) * circumference;
+  const dashArray = `${progressLength} ${circumference}`;
+  const colorValues = color
+    .substring(4, color.length - 1)
+    .split(",")
+    .map((s) => Number(s.trim()));
+  const darkeningFactor = 0.7;
+  const bgOpacity = 0.1;
+  const backgroundColor = `rgba(${colorValues[0] * darkeningFactor}, ${
+    colorValues[1] * darkeningFactor
+  }, ${colorValues[2] * darkeningFactor}, ${bgOpacity})`;
 
-	return (
-		<svg
-			ref={svgRef}
-			style={{
-				position: "absolute",
-				top: "50%",
-				left: "50%",
-				transform: "translate(-50%, -50%)",
-				width: "100%",
-				height: "100%",
-				pointerEvents: "none", // Essential to allow mouse events to pass through to the background circle
-			}}
-			viewBox="0 0 200 200"
-			preserveAspectRatio="xMidYMid meet"
-		>
-			{/* Background circle (track) */}
-			<circle
-				cx="100"
-				cy="100"
-				r={radius}
-				fill="none"
-				stroke={backgroundColor}
-				strokeWidth={strokeWidth}
-				style={{
-					pointerEvents: "stroke",
-					cursor: "pointer",
-				}}
-				onMouseEnter={other.onMouseEnter}
-				onMouseLeave={other.onMouseLeave}
-			/>
+  return (
+    <svg
+      ref={svgRef}
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none", // Essential to allow mouse events to pass through to the background circle
+      }}
+      viewBox="0 0 200 200"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      {/* Background circle (track) */}
+      <circle
+        cx="100"
+        cy="100"
+        r={radius}
+        fill="none"
+        stroke={backgroundColor}
+        strokeWidth={strokeWidth}
+        style={{
+          pointerEvents: "stroke",
+          cursor: "pointer",
+        }}
+        onMouseEnter={other.onMouseEnter}
+        onMouseLeave={other.onMouseLeave}
+      />
 
 			{/* Planned circle */}
 			<circle
@@ -142,16 +142,16 @@ const MultiDonutGraph = ({
 		{ current: number; planned: number }[]
 	>(bars.map(() => ({ current: 0, planned: 0 })));
 
-	useEffect(() => {
-		// Animate each bar from 0 to its target value
-		const startTime = Date.now();
+  useEffect(() => {
+    // Animate each bar from 0 to its target value
+    const startTime = Date.now();
 
-		const animate = () => {
-			const elapsed = Date.now() - startTime;
-			const progress = Math.min(elapsed / animationDuration, 1);
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / animationDuration, 1);
 
-			// Easing function for smooth animation (ease-out)
-			const easedProgress = 1 - Math.pow(1 - progress, 3);
+      // Easing function for smooth animation (ease-out)
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
 
 			setAnimatedProgress(
 				bars.map((bar) => ({
@@ -160,41 +160,41 @@ const MultiDonutGraph = ({
 				}))
 			);
 
-			if (progress < 1) {
-				requestAnimationFrame(animate);
-			}
-		};
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
 
-		requestAnimationFrame(animate);
-	}, [bars]);
+    requestAnimationFrame(animate);
+  }, [bars]);
 
-	return (
-		<div
-			ref={ref}
-			style={{
-				height: size,
-				aspectRatio: "1",
-				position: "relative",
-			}}
-		>
-			<AnimatePresence>
-				{hoveredBar && (
-					<>
-						<motion.div
-							initial={{ opacity: 0, right: 10 }}
-							animate={{ opacity: 1, right: 0 }}
-							exit={{ opacity: 0, right: -10 }}
-							transition={{ duration: 0.2 }}
-							style={{
-								position: "absolute",
-								top: 0,
-								right: 0,
-								zIndex: 1000,
-								transform: "translate(100%, -50%)",
-							}}
-						>
-							{tooltipContent?.(hoveredBar)}
-						</motion.div>
+  return (
+    <div
+      ref={ref}
+      style={{
+        height: size,
+        aspectRatio: "1",
+        position: "relative",
+      }}
+    >
+      <AnimatePresence>
+        {hoveredBar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, right: 10 }}
+              animate={{ opacity: 1, right: 0 }}
+              exit={{ opacity: 0, right: -10 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                zIndex: 1000,
+                transform: "translate(100%, -50%)",
+              }}
+            >
+              {tooltipContent?.(hoveredBar)}
+            </motion.div>
 
 						<motion.div
 							initial={{ opacity: 0, right: 10 }}

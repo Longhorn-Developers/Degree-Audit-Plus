@@ -27,21 +27,25 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     >
       <div className="flex items-center justify-between">
         {/* Title */}
-        <div className={`font-bold text-[18px] leading-tight ${
-          isSelected ? "text-white" : "text-[var(--color-dap-orange)]"
-        }`}>
+        <div
+          className={`font-bold text-[18px] leading-tight ${
+            isSelected ? "text-white" : "text-[var(--color-dap-orange)]"
+          }`}
+        >
           {title}
         </div>
 
         {/* Percentage Badge */}
-        <div className={`rounded-md px-3 py-2 flex items-center justify-center ${
-          isSelected
-            ? "bg-white"
-            : "bg-[var(--color-dap-orange)]"
-        }`}>
-          <span className={`text-base font-bold leading-tight ${
-            isSelected ? "text-[var(--color-dap-orange)]" : "text-white"
-          }`}>
+        <div
+          className={`rounded-md px-3 py-2 flex items-center justify-center ${
+            isSelected ? "bg-white" : "bg-[var(--color-dap-orange)]"
+          }`}
+        >
+          <span
+            className={`text-base font-bold leading-tight ${
+              isSelected ? "text-[var(--color-dap-orange)]" : "text-white"
+            }`}
+          >
             {percentage}%
           </span>
         </div>

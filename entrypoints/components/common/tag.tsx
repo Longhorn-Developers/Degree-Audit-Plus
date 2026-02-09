@@ -6,7 +6,7 @@ interface TagProps {
   type: string;
 }
 // Uses CSS variables from content.css @theme
-const getBackgroundColor = (index: number, type: String): string => {
+const getBackgroundColor = (index: number, type: string): string => {
   if (type == "minor") {
     return "var(--color-dap-minor-bg)";
   }
@@ -22,7 +22,7 @@ const getBackgroundColor = (index: number, type: String): string => {
   }
 };
 
-const getColor = (index: number, type: String): string => {
+const getColor = (index: number, type: string): string => {
   if (type == "minor") {
     return "var(--color-dap-minor-text)";
   } else {

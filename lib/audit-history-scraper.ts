@@ -12,14 +12,14 @@ function parseMajor(programText: string): string {
   // NEW: strip leading punctuation and an optional "major" label
   function cleanExtractedMajor(raw: string): string {
     return raw
-      .replace(/^\s*[:,-]+\s*/g, "")          // leading ": , -"
-      .replace(/^\s*major\s*[:,-]?\s*/i, "")  // leading "major", "Major:", etc.
+      .replace(/^\s*[:,-]+\s*/g, "") // leading ": , -"
+      .replace(/^\s*major\s*[:,-]?\s*/i, "") // leading "major", "Major:", etc.
       .trim();
   }
-  
+
   // Accepts: "B S", "BS", "B.S.", "B A", "BA", "B.A."
   const BSBA_PREFIX = /B\.?\s*[SA]\.?\s*/;
-  
+
   // Pattern 1: "B S in Communication and Leadership" (with "in")
   const withInMatch = cleanText.match(
     new RegExp(`${BSBA_PREFIX.source}in\\s+(.+?)(?:\\(|$)`, "i"),
@@ -43,9 +43,6 @@ function parseMajor(programText: string): string {
   // Fallback: first token
   return cleanText.split(" ")[0];
 }
-  
-
-
 
 function parseCredential(programText: string): string | null {
   const match = programText.match(/- Credential:\s*(.+?)\s*\(/);

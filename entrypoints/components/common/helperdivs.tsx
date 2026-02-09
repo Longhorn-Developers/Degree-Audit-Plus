@@ -83,15 +83,15 @@ export const VStack = forwardRef<HTMLDivElement, HelperDivProps>(
 
 // Unified props type that accepts both VStack and HStack prop types
 type UnifiedSubstackProps = HelperDivProps & {
-	x?:
-		| "left"
-		| "center"
-		| "right"
-		| "space-between"
-		| "space-around"
-		| "between"
-		| "around";
-	y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
+  x?:
+    | "left"
+    | "center"
+    | "right"
+    | "space-between"
+    | "space-around"
+    | "between"
+    | "around";
+  y?: "top" | "middle" | "bottom" | "stretch" | "baseline";
 };
 
 export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
@@ -113,21 +113,21 @@ export const Substack = forwardRef<HTMLDivElement, UnifiedSubstackProps>(
 		Substack.displayName = "Substack";
 		const stackContext = useContext(StackContext);
 
-		// Determine which parent context we're in
-		// Prioritize the most immediate parent (VStack takes precedence if both exist)
-		const isVStack = stackContext?.type === "v";
-		const isHStack = stackContext?.type === "h";
+    // Determine which parent context we're in
+    // Prioritize the most immediate parent (VStack takes precedence if both exist)
+    const isVStack = stackContext?.type === "v";
+    const isHStack = stackContext?.type === "h";
 
-		if (!isVStack && !isHStack) {
-			throw new Error(
-				"Substack must be used as a child of a VStack or HStack component"
-			);
-		}
+    if (!isVStack && !isHStack) {
+      throw new Error(
+        "Substack must be used as a child of a VStack or HStack component",
+      );
+    }
 
-		const parentContext = stackContext;
-		if (!parentContext) {
-			throw new Error("Invalid context");
-		}
+    const parentContext = stackContext;
+    if (!parentContext) {
+      throw new Error("Invalid context");
+    }
 
 		// Inherit from parent, but allow overrides
 		const inheritedGap = gap ?? parentContext.gap;
@@ -265,8 +265,8 @@ export const HStack = forwardRef<HTMLDivElement, HelperDivProps>(
 );
 
 export const Wrap = forwardRef<
-	HTMLDivElement,
-	HelperDivProps & { maxCols?: number }
+  HTMLDivElement,
+  HelperDivProps & { maxCols?: number }
 >(
 	(
 		{
@@ -315,67 +315,67 @@ export const Wrap = forwardRef<
 );
 
 type GridProps = React.HTMLAttributes<HTMLDivElement> & {
-	maxCols?: number;
-	xGap?: number;
-	yGap?: number;
-	direction?: "row" | "column";
-	xSpacing?:
-		| "center"
-		| "left"
-		| "right"
-		| "space-between"
-		| "space-around"
-		| "space-evenly";
-	ySpacing?:
-		| "middle"
-		| "top"
-		| "bottom"
-		| "space-between"
-		| "space-around"
-		| "space-evenly";
-	fill?: boolean;
+  maxCols?: number;
+  xGap?: number;
+  yGap?: number;
+  direction?: "row" | "column";
+  xSpacing?:
+    | "center"
+    | "left"
+    | "right"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  ySpacing?:
+    | "middle"
+    | "top"
+    | "bottom"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  fill?: boolean;
 };
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-	(
-		{
-			children,
-			className,
-			maxCols = -1,
-			xGap = 4,
-			yGap = 4,
-			direction = "row",
-			xSpacing = "left",
-			ySpacing = "top",
-			fill = false,
-			...props
-		},
-		ref
-	) => {
-		Grid.displayName = "Grid";
-		return (
-			<div
-				ref={ref}
-				className={cn("grid", className, {
-					"w-full": fill,
-					"grid-cols-1": direction === "column",
-					"grid-cols-2": direction === "row",
-					"items-center": xSpacing === "center",
-					"items-left": xSpacing === "left",
-					"items-right": xSpacing === "right",
-					"justify-center": ySpacing === "middle",
-					"justify-start": ySpacing === "top",
-					"justify-end": ySpacing === "bottom",
-					"justify-between": ySpacing === "space-between",
-					"justify-around": ySpacing === "space-around",
-				})}
-				style={{
-					gap: `${yGap / 4}rem ${xGap / 4}rem`,
-					gridTemplateColumns: `repeat(${maxCols}, 1fr)`,
-				}}
-				{...props}
-			>
-				{children}
-			</div>
-		);
-	}
+  (
+    {
+      children,
+      className,
+      maxCols = -1,
+      xGap = 4,
+      yGap = 4,
+      direction = "row",
+      xSpacing = "left",
+      ySpacing = "top",
+      fill = false,
+      ...props
+    },
+    ref,
+  ) => {
+    Grid.displayName = "Grid";
+    return (
+      <div
+        ref={ref}
+        className={cn("grid", className, {
+          "w-full": fill,
+          "grid-cols-1": direction === "column",
+          "grid-cols-2": direction === "row",
+          "items-center": xSpacing === "center",
+          "items-left": xSpacing === "left",
+          "items-right": xSpacing === "right",
+          "justify-center": ySpacing === "middle",
+          "justify-start": ySpacing === "top",
+          "justify-end": ySpacing === "bottom",
+          "justify-between": ySpacing === "space-between",
+          "justify-around": ySpacing === "space-around",
+        })}
+        style={{
+          gap: `${yGap / 4}rem ${xGap / 4}rem`,
+          gridTemplateColumns: `repeat(${maxCols}, 1fr)`,
+        }}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  },
 );

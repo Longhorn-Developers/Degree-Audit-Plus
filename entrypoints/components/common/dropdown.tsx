@@ -1,11 +1,11 @@
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import React, {
-	Children,
-	createContext,
-	forwardRef,
-	isValidElement,
-	useContext,
-	useState,
+  Children,
+  createContext,
+  forwardRef,
+  isValidElement,
+  useContext,
+  useState,
 } from "react";
 import { cn } from "~/lib/utils";
 import Container from "./container";
@@ -13,25 +13,25 @@ import { HStack, VStack } from "./helperdivs";
 
 // Context to share dropdown state with sub-components
 type DropdownContextType = {
-	isOpen: boolean;
-	toggleDropdown: () => void;
+  isOpen: boolean;
+  toggleDropdown: () => void;
 };
 
 const DropdownContext = createContext<DropdownContextType | null>(null);
 
 // Dropdown Header Component
 export const DropdownHeader = forwardRef<
-	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-	const { children, className, ...rest } = props;
-	const context = useContext(DropdownContext);
+  const { children, className, ...rest } = props;
+  const context = useContext(DropdownContext);
 
-	if (!context) {
-		throw new Error("DropdownHeader must be used within a Dropdown component");
-	}
+  if (!context) {
+    throw new Error("DropdownHeader must be used within a Dropdown component");
+  }
 
-	const { isOpen, toggleDropdown } = context;
+  const { isOpen, toggleDropdown } = context;
 
 	return (
 		<HStack
@@ -63,21 +63,21 @@ DropdownHeader.displayName = "DropdownHeader";
 
 // Dropdown Content Component
 export const DropdownContent = forwardRef<
-	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-	const { children, className, ...rest } = props;
-	const context = useContext(DropdownContext);
+  const { children, className, ...rest } = props;
+  const context = useContext(DropdownContext);
 
-	if (!context) {
-		throw new Error("DropdownContent must be used within a Dropdown component");
-	}
+  if (!context) {
+    throw new Error("DropdownContent must be used within a Dropdown component");
+  }
 
-	const { isOpen } = context;
+  const { isOpen } = context;
 
-	if (!isOpen) {
-		return null;
-	}
+  if (!isOpen) {
+    return null;
+  }
 
 	return (
 		<div ref={ref} className={className} {...rest}>
@@ -98,23 +98,23 @@ const Dropdown = forwardRef<
 	const { children, gap, ...rest } = props;
 	const [isOpen, setIsOpen] = useState(false);
 
-	const toggleDropdown = () => {
-		setIsOpen(!isOpen);
-	};
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
 
-	// Separate children into header and content
-	let headerChild: React.ReactNode = null;
-	let contentChild: React.ReactNode = null;
+  // Separate children into header and content
+  let headerChild: React.ReactNode = null;
+  let contentChild: React.ReactNode = null;
 
-	Children.forEach(children, (child) => {
-		if (isValidElement(child)) {
-			if (child.type === DropdownHeader) {
-				headerChild = child;
-			} else if (child.type === DropdownContent) {
-				contentChild = child;
-			}
-		}
-	});
+  Children.forEach(children, (child) => {
+    if (isValidElement(child)) {
+      if (child.type === DropdownHeader) {
+        headerChild = child;
+      } else if (child.type === DropdownContent) {
+        contentChild = child;
+      }
+    }
+  });
 
 	return (
 		<DropdownContext.Provider value={{ isOpen, toggleDropdown }}>
