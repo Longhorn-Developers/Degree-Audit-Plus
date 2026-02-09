@@ -33,34 +33,30 @@ export const DropdownHeader = forwardRef<
 
   const { isOpen, toggleDropdown } = context;
 
-  return (
-    <HStack
-      ref={ref}
-      fill
-      x="between"
-      y="middle"
-      className={cn(
-        "p-3 rounded-lg cursor-pointer",
-        context.isOpen ? "bg-gray-100" : "bg-white",
-        className,
-      )}
-      onClick={toggleDropdown}
-      {...rest}
-    >
-      {children}
-      <span
-        className={cn(
-          "transition-transform duration-200 w-[20px] px-2 display-flex items-center justify-center",
-        )}
-      >
-        {isOpen ? (
-          <CaretUpIcon className="w-4 h-4" />
-        ) : (
-          <CaretDownIcon className="w-4 h-4" />
-        )}
-      </span>
-    </HStack>
-  );
+	return (
+		<HStack
+			ref={ref}
+			fill
+			x="between"
+			y="middle"
+			className={cn("cursor-pointer", className)}
+			onClick={toggleDropdown}
+			{...rest}
+		>
+			{children}
+			<span
+				className={cn(
+					"transition-transform duration-200 w-[20px] px-2 display-flex items-center justify-center"
+				)}
+			>
+				{isOpen ? (
+					<CaretUpIcon className="w-4 h-4" />
+				) : (
+					<CaretDownIcon className="w-4 h-4" />
+				)}
+			</span>
+		</HStack>
+	);
 });
 
 DropdownHeader.displayName = "DropdownHeader";
@@ -83,22 +79,24 @@ export const DropdownContent = forwardRef<
     return null;
   }
 
-  return (
-    <div ref={ref} className={cn("mt-2 p-3", className)} {...rest}>
-      {children}
-    </div>
-  );
+	return (
+		<div ref={ref} className={className} {...rest}>
+			{children}
+		</div>
+	);
 });
 
 DropdownContent.displayName = "DropdownContent";
 
 // Main Dropdown Component
 const Dropdown = forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement> & {
+		gap?: number;
+	}
 >((props, ref) => {
-  const { children, ...rest } = props;
-  const [isOpen, setIsOpen] = useState(false);
+	const { children, gap, ...rest } = props;
+	const [isOpen, setIsOpen] = useState(false);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -118,16 +116,16 @@ const Dropdown = forwardRef<
     }
   });
 
-  return (
-    <DropdownContext.Provider value={{ isOpen, toggleDropdown }}>
-      <Container ref={ref} {...rest}>
-        <VStack fill>
-          {headerChild}
-          {contentChild}
-        </VStack>
-      </Container>
-    </DropdownContext.Provider>
-  );
+	return (
+		<DropdownContext.Provider value={{ isOpen, toggleDropdown }}>
+			<Container ref={ref} {...rest}>
+				<VStack fill gap={gap}>
+					{headerChild}
+					{contentChild}
+				</VStack>
+			</Container>
+		</DropdownContext.Provider>
+	);
 });
 
 Dropdown.displayName = "Dropdown";
