@@ -12,43 +12,43 @@ import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar.tsx";
 
 const App = () => {
-	return (
-		<PreferencesProvider>
-			<AuditContextProvider>
-				<CourseModalContextProvider>
-					<HStack fill className="w-screen" gap={0}>
-						<Sidebar />
-						<MainContent />
-					</HStack>
-				</CourseModalContextProvider>
-			</AuditContextProvider>
-		</PreferencesProvider>
-	);
+  return (
+    <PreferencesProvider>
+      <AuditContextProvider>
+        <CourseModalContextProvider>
+          <HStack fill className="w-screen" gap={0}>
+            <Sidebar />
+            <MainContent />
+          </HStack>
+        </CourseModalContextProvider>
+      </AuditContextProvider>
+    </PreferencesProvider>
+  );
 };
 
 const MainContent = () => {
-	const { sidebarIsOpen, viewMode } = usePreferences();
+  const { sidebarIsOpen, viewMode } = usePreferences();
 
-	return (
-		<VStack
-			fill
-			x="center"
-			className={clsx("w-full transition-[margin-left] duration-300 ease-out", {
-				"ml-[375px]": sidebarIsOpen,
-				"ml-0": !sidebarIsOpen,
-			})}
-		>
-			<Navbar />
-			<VStack x="center" className="px-10 mx-auto mb-[30px] w-full">
-				{viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
-			</VStack>
-		</VStack>
-	);
+  return (
+    <VStack
+      fill
+      x="center"
+      className={clsx("w-full transition-[margin-left] duration-300 ease-out", {
+        "ml-[375px]": sidebarIsOpen,
+        "ml-0": !sidebarIsOpen,
+      })}
+    >
+      <Navbar />
+      <VStack x="center" className="px-10 mx-auto mb-[30px] w-full">
+        {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
+      </VStack>
+    </VStack>
+  );
 };
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
-	<React.StrictMode>
-		<App />
-	</React.StrictMode>
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
 );

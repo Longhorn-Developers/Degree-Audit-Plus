@@ -14,7 +14,6 @@ import { SpinnerIcon } from "@phosphor-icons/react";
 //   type HypotheticalCourse,
 // } from "../components/hypothetical-course-modal";
 
-
 export default function App() {
   const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -141,8 +140,8 @@ export default function App() {
   );
 
   const AuditCardDetailed = ({ audit }: { audit: DegreeAuditCardProps }) => (
-      <div
-        className="
+    <div
+      className="
           group
           w-full
           rounded-[12px]
@@ -155,11 +154,11 @@ export default function App() {
           hover:bg-[var(--color-dap-primary)]
           transition-colors
         "
-        onClick={(e) => {
-          e.stopPropagation();
-          handleOpenDegreeAuditPage(audit?.auditId);
-        }}
-      >
+      onClick={(e) => {
+        e.stopPropagation();
+        handleOpenDegreeAuditPage(audit?.auditId);
+      }}
+    >
       <div className="flex items-start justify-between gap-4">
         {/* Left */}
         <div className="min-w-0 flex-1">
@@ -177,8 +176,8 @@ export default function App() {
           </div>
 
           <div className="mt-3 flex items-center gap-3">
-          <span
-            className="
+            <span
+              className="
               text-[13px]
               font-medium
               tracking-wide
@@ -186,9 +185,9 @@ export default function App() {
               transition-colors
               hover:text-white
             "
-          >
-            MAJOR
-          </span>
+            >
+              MAJOR
+            </span>
 
             {(audit.majors ?? []).map((m, i) => (
               <span
@@ -238,17 +237,16 @@ export default function App() {
     </div>
   );
 
-
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white font-sans overflow-hidden flex flex-col border border-gray-100">
       <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
-        <img
-          src={logo}
-          alt="Logo"
-          style={{ width: "70px", height: "auto" }}
-        />
-        <span className="font-bold text-lg text-dap-primary leading-tight">
+          <img
+            src={logo}
+            alt="Logo"
+            style={{ width: "70px", height: "auto" }}
+          />
+          <span className="font-bold text-lg text-dap-primary leading-tight">
             Degree Audit
             <br />
             Plus
@@ -302,7 +300,9 @@ export default function App() {
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-[var(--color-dap-gray-light)]">Loading audit history...</p>
+            <p className="text-base text-[var(--color-dap-gray-light)]">
+              Loading audit history...
+            </p>
           </div>
         ) : error ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
@@ -339,7 +339,6 @@ export default function App() {
                     minors={audit.minors}
                     percentage={audit.percentage}
                   />
-
                 </div>
               ))}
             </div>
@@ -371,6 +370,6 @@ if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <App />
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 }
