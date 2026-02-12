@@ -20,11 +20,7 @@ const DAPLogo = () => {
         stroke="white"
         strokeLinejoin="round"
       />
-      <path
-        d="M29.6348 15.421V22.7411"
-        stroke="white"
-        strokeLinejoin="round"
-      />
+      <path d="M29.6348 15.421V22.7411" stroke="white" strokeLinejoin="round" />
       <path
         d="M29.6222 23.1857L27.9915 30.266H31.2431L29.6222 23.1857Z"
         fill="white"
