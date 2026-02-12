@@ -45,15 +45,20 @@ export default defineBackground(() => {
       (async () => {
         try {
           // Check if there's already a tab open to the audit page
-          const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
-          const exactAuditTab = tabs.find((t) => t.url?.startsWith(UT_AUDIT_URL));
+          const tabs = await browser.tabs.query({
+            url: "*://utdirect.utexas.edu/*",
+          });
+          const exactAuditTab = tabs.find((t) =>
+            t.url?.startsWith(UT_AUDIT_URL),
+          );
 
           if (exactAuditTab?.id) {
             // Tab already exists, inject clicker
             await browser.scripting.executeScript({
               target: { tabId: exactAuditTab.id },
               func: () => {
-                const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                const btn =
+                  document.querySelector<HTMLButtonElement>(".run_button");
                 if (btn) btn.click();
               },
             });
@@ -69,21 +74,27 @@ export default defineBackground(() => {
             const listener = async (tabId: number, info: any) => {
               if (tabId === newTab.id && info.status === "complete") {
                 browser.tabs.onUpdated.removeListener(listener);
-                
+
                 await browser.scripting.executeScript({
                   target: { tabId },
                   func: () => {
                     const clickWhenReady = () => {
-                      const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                      const btn =
+                        document.querySelector<HTMLButtonElement>(
+                          ".run_button",
+                        );
                       if (btn) {
                         btn.click();
                         return;
                       }
-                      
+
                       // If button not found, wait for it
                       let tries = 0;
                       const iv = setInterval(() => {
-                        const btn = document.querySelector<HTMLButtonElement>(".run_button");
+                        const btn =
+                          document.querySelector<HTMLButtonElement>(
+                            ".run_button",
+                          );
                         if (btn) {
                           btn.click();
                           clearInterval(iv);
@@ -92,15 +103,17 @@ export default defineBackground(() => {
                         }
                       }, 500);
                     };
-                    
+
                     if (document.readyState === "complete") {
                       clickWhenReady();
                     } else {
-                      window.addEventListener("load", clickWhenReady, { once: true });
+                      window.addEventListener("load", clickWhenReady, {
+                        once: true,
+                      });
                     }
                   },
                 });
-                
+
                 // Close tab after 30 seconds
                 setTimeout(() => {
                   if (newTab.id) browser.tabs.remove(newTab.id).catch(() => {});
@@ -118,7 +131,6 @@ export default defineBackground(() => {
 
       return true; // Keep message channel open
     }
-
   });
 
   // scrape audit data
