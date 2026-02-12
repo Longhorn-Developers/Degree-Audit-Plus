@@ -55,5 +55,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-${{ github.sha }}
+          name: extension
           path: .output/extension.zip
