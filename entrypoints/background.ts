@@ -71,8 +71,11 @@ export default defineBackground(() => {
             });
 
             // Wait for tab to load, then inject clicker
-            const listener = async (tabId: number, info: any) => {
-              if (tabId === newTab.id && info.status === "complete") {
+            const listener = async (
+              tabId: number,
+              changeInfo: Browser.tabs.OnUpdatedInfo,
+            ) => {
+              if (tabId === newTab.id && changeInfo.status === "complete") {
                 browser.tabs.onUpdated.removeListener(listener);
 
                 await browser.scripting.executeScript({

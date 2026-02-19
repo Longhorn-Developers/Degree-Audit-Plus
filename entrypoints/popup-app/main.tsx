@@ -70,7 +70,7 @@ export default function App() {
       })
       .catch(() => {});
 
-    const listener = (message: any) => {
+    const listener = (message: { type: string }) => {
       if (message.type === "SCRAPE_ALL_STARTED") {
         setIsSyncing(true);
       }
