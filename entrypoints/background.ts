@@ -1,9 +1,9 @@
-import { saveAuditData } from "@/lib/storage";
 import {
+  closeScraperTab,
   closeScraperWindow,
   createScraperTab,
-  closeScraperTab,
 } from "@/lib/scraper-window";
+import { saveAuditData } from "@/lib/storage";
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id });

@@ -46,7 +46,9 @@ const MainContent = () => {
   );
 };
 
-const root = ReactDOM.createRoot(document.getElementById("root")!);
+const root = ReactDOM.createRoot(
+  document.getElementById("degree-audit-plus-page-root-container")!,
+);
 root.render(
   <React.StrictMode>
     <App />

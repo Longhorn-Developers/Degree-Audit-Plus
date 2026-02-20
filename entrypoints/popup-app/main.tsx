@@ -1,26 +1,24 @@
-import React from "react";
+import type { DegreeAuditCardProps } from "@/lib/general-types";
+import { getAuditHistory } from "@/lib/storage";
+import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { browser } from "wxt/browser";
-import Button from "../components/common/button";
-import { DegreeAuditCardPopup } from "../components/audit-card";
-import "./style.css";
-import DAPLogo from "@/assets/svgs/dap-circle-logo";
 import logo from "../../public/logo.png";
-import { PlusIcon } from "@phosphor-icons/react";
-import { getAuditHistory } from "@/lib/storage";
-import type { DegreeAuditCardProps } from "@/lib/general-types";
-import { SpinnerIcon } from "@phosphor-icons/react";
+import { DegreeAuditCardPopup } from "../components/audit-card";
+import Button from "../components/common/button";
+import "./style.css";
 // import HypotheticalCourseModal, {
 //   type HypotheticalCourse,
 // } from "../components/hypothetical-course-modal";
 
 export default function App() {
-  const [audits, setAudits] = React.useState<DegreeAuditCardProps[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [showAll, setShowAll] = React.useState(false);
-  const [runningAudit, setRunningAudit] = React.useState(false);
-  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [runningAudit, setRunningAudit] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   // const [isAuthenticated, setIsAuthenticated] = React.useState(true);
   // const [isModalOpen, setIsModalOpen] = React.useState(false);
   // const [hypotheticalCourses, setHypotheticalCourses] = React.useState<
@@ -29,7 +27,8 @@ export default function App() {
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
-  React.useEffect(() => {
+
+  useEffect(() => {
     async function loadAudits() {
       try {
         console.log("Popup: Loading audit history from cached storage...");
@@ -60,7 +59,7 @@ export default function App() {
     loadAudits();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // get sycn status for ui
     browser.runtime
       .sendMessage({ type: "GET_SYNC_STATUS" })
@@ -249,7 +248,7 @@ export default function App() {
           <span className="font-bold text-lg text-dap-primary leading-tight">
             Degree Audit
             <br />
-            Plus
+            Plus??
           </span>
         </div>
 
@@ -263,7 +262,7 @@ export default function App() {
             ) : (
               <div className="flex items-center space-x-2">
                 <PlusIcon size={24} />
-                <p className="text-lg font-bold">Run New Audit</p>
+                <p className="text-lg font-bold">Run New Audit!!!!</p>
               </div>
             )}
           </Button>
@@ -365,7 +364,9 @@ export default function App() {
 }
 
 // Only render if we're in the standalone popup context (not injected via content script)
-const rootElement = document.getElementById("root");
+const rootElement = document.getElementById(
+  "degree-audit-plus-popup-root-container",
+);
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
