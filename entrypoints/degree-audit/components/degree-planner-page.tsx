@@ -11,6 +11,8 @@ import { Course } from "@/lib/general-types";
 import { Plus } from "lucide-react";
 import { useAuditContext } from "./audit-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
+import Draggable from "./drag-and-drop/draggable";
+import DroppableArea from "./drag-and-drop/droppable";
 import SemesterCard from "./semester-card";
 
 const SidePanel = () => {
@@ -87,6 +89,21 @@ const MainContent = () => {
         ))}
         <AddSemesterButton />
       </Wrap>
+      <Draggable id="add-semester-button">
+        <AddSemesterButton />
+      </Draggable>
+      <HStack x="between" fill>
+        <DroppableArea id="semester-1">
+          <div className="w-full h-full bg-gray-500 p-10 rounded-lg border-2 border-dotted border-black">
+            Drop your stuff here!
+          </div>
+        </DroppableArea>
+        <DroppableArea id="semester-2">
+          <div className="w-full h-full bg-gray-500 p-10 rounded-lg border-2 border-dotted border-black">
+            Drop your stuff here!
+          </div>
+        </DroppableArea>
+      </HStack>
     </VStack>
   );
 };

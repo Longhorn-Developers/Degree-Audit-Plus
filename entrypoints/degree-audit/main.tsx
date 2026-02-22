@@ -3,11 +3,15 @@ import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "../components/common/helperdivs";
-import { PreferencesProvider, usePreferences } from "../providers/main-page";
-import AuditContextProvider from "./components/audit-provider";
+import {
+  PreferencesProvider,
+  usePreferences,
+} from "../providers/main-page.tsx";
+import AuditContextProvider from "./components/audit-provider.tsx";
 import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";
 import DegreePlannerPage from "./components/degree-planner-page.tsx";
+import DragAndDropProvider from "./components/drag-and-drop/dnd-provider.tsx";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar.tsx";
 
@@ -16,10 +20,12 @@ const App = () => {
     <PreferencesProvider>
       <AuditContextProvider>
         <CourseModalContextProvider>
-          <HStack fill className="w-screen" gap={0}>
-            <Sidebar />
-            <MainContent />
-          </HStack>
+          <DragAndDropProvider>
+            <HStack fill className="w-screen" gap={0}>
+              <Sidebar />
+              <MainContent />
+            </HStack>
+          </DragAndDropProvider>
         </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>

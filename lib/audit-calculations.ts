@@ -1,24 +1,21 @@
-import type {
-  PlanableProgress,
-  Progress,
-  RequirementSection,
-} from "./general-types";
+import type { PlanableProgress, RequirementSection } from "./general-types";
 
 export type CurrentAuditProgress = {
-  total: Progress;
+  total: PlanableProgress;
   sections: {
     title: string;
     progress: PlanableProgress;
   }[];
 };
 
-export function calculateWeightedDegreeCompletion(
+export function calculatePlanableDegreeCompletion(
   sections: RequirementSection[],
 ): CurrentAuditProgress {
   const results: CurrentAuditProgress = {
-    total: { current: 0, total: 0 },
+    total: { current: 0, planned: 0, total: 0 },
     sections: [],
   };
+  console.log("sections", sections);
   sections.forEach((section) => {
     const sectionProgress = {
       title: section.title,
@@ -37,6 +34,41 @@ export function calculateWeightedDegreeCompletion(
           sectionProgress.progress.planned += course.hours ?? 0;
         }
       });
+    });
+
+    results.sections.push(sectionProgress);
+  });
+  results.total.current = results.sections.reduce(
+    (acc, section) => acc + section.progress.current,
+    0,
+  );
+  results.total.total = results.sections.reduce(
+    (acc, section) => acc + section.progress.total,
+    0,
+  );
+  return results;
+}
+
+export function calculateWeightedDegreeCompletion(
+  sections: RequirementSection[],
+): CurrentAuditProgress {
+  const results: CurrentAuditProgress = {
+    total: { current: 0, planned: 0, total: 0 },
+    sections: [],
+  };
+  console.log("sections", sections);
+  sections.forEach((section) => {
+    const sectionProgress = {
+      title: section.title,
+      progress: { current: 0, planned: 0, total: 0 },
+    };
+    sectionProgress.progress.total = section.rules.reduce(
+      (acc, rule) => acc + rule.requiredHours,
+      0,
+    );
+
+    section.rules.forEach((rule) => {
+      sectionProgress.progress.current += rule.appliedHours;
     });
 
     results.sections.push(sectionProgress);

@@ -85,28 +85,27 @@ export type StoredPreferences = {
   };
 };
 
-export type EphemeralPreferences = {};
+// export type EphemeralPreferences = {};
 
-export const DEFAULT_PREFERENCES: ExpandOut<
-  StoredPreferences & EphemeralPreferences
-> = {
-  luminosity: {
-    value: "system",
-    key: "ui-theme",
-    isDarkMode: () => false,
-    toggleDarkMode: () => null,
-  },
-  sidebarIsOpen: {
-    value: true,
-    key: "sidebar-is-open",
-    toggleSidebar: () => null,
-  },
-  viewMode: {
-    value: "audit",
-    key: "view-mode",
-    toggleViewMode: () => null,
-  },
-};
+export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences /* & EphemeralPreferences */> =
+  {
+    luminosity: {
+      value: "system",
+      key: "ui-theme",
+      isDarkMode: () => false,
+      toggleDarkMode: () => null,
+    },
+    sidebarIsOpen: {
+      value: true,
+      key: "sidebar-is-open",
+      toggleSidebar: () => null,
+    },
+    viewMode: {
+      value: "audit",
+      key: "view-mode",
+      toggleViewMode: () => null,
+    },
+  };
 
 const PreferencesProviderContext = createContext<PreferencesContext>(
   Object.entries(DEFAULT_PREFERENCES).reduce(

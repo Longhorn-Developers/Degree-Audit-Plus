@@ -5,6 +5,10 @@ import Dropdown, {
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import CourseCard from "@/entrypoints/components/course-card";
 import { Course } from "@/lib/general-types";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 export interface SemesterCardProps {
   semester: string;
@@ -26,27 +30,32 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
         </HStack>
       </DropdownHeader>
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
-        <VStack fill className="w-full" gap={4}>
-          {courses.length > 0 ? (
-            courses.map((course) => (
-              <CourseCard
-                className="w-full"
-                key={course.code}
-                fullName={course.name}
-                courseName={course.code}
-                color="orange"
-              />
-            ))
-          ) : (
-            <VStack
-              centered
-              className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-white"
-              fillWidth
-            >
-              Drag and drop courses here
-            </VStack>
-          )}
-        </VStack>
+        <SortableContext
+          items={courses.map((course) => course.code)}
+          strategy={verticalListSortingStrategy}
+        >
+          <VStack fill className="w-full" gap={4}>
+            {courses.length > 0 ? (
+              courses.map((course) => (
+                <CourseCard
+                  className="w-full"
+                  key={course.code}
+                  fullName={course.name}
+                  courseName={course.code}
+                  color="orange"
+                />
+              ))
+            ) : (
+              <VStack
+                centered
+                className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-white"
+                fillWidth
+              >
+                Drag and drop courses here
+              </VStack>
+            )}
+          </VStack>
+        </SortableContext>
       </DropdownContent>
     </Dropdown>
   );
