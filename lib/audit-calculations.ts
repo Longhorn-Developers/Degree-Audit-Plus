@@ -30,10 +30,12 @@ export function calculateWeightedDegreeCompletion(
     );
 
     section.rules.forEach((rule) => {
+      // Use pre-calculated appliedHours for current progress (reliable)
+      sectionProgress.progress.current += rule.appliedHours;
+
+      // Calculate planned hours from individual courses (for planner feature)
       rule.courses.forEach((course) => {
-        if (course.status !== "Planned") {
-          sectionProgress.progress.current += course.hours ?? 0;
-        } else {
+        if (course.status === "Planned") {
           sectionProgress.progress.planned += course.hours ?? 0;
         }
       });
@@ -41,11 +43,15 @@ export function calculateWeightedDegreeCompletion(
 
     results.sections.push(sectionProgress);
   });
-  results.total.current = results.sections.reduce(
+  // Only include non-GPA sections in completion totals
+  const nonGPASections = results.sections.filter(
+    (section) => !section.title.toLowerCase().includes("gpa"),
+  );
+  results.total.current = nonGPASections.reduce(
     (acc, section) => acc + section.progress.current,
     0,
   );
-  results.total.total = results.sections.reduce(
+  results.total.total = nonGPASections.reduce(
     (acc, section) => acc + section.progress.total,
     0,
   );
