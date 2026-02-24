@@ -7,7 +7,7 @@ import { useAuditContext } from "./audit-provider";
 import { CATEGORY_COLORS } from "./requirement-breakdown";
 
 const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
-  const { progresses } = useAuditContext();
+  const { progresses, completion } = useAuditContext();
   const bars = progresses.sections
     .filter((section) => section.progress.total > 0)
     .sort((a, b) => b.progress.total - a.progress.total)
@@ -17,9 +17,7 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
       percentage: section.progress,
     })) satisfies Bar[];
 
-  const overallPercentage = Math.round(
-    (progresses.total.current / progresses.total.total) * 100,
-  );
+  const overallPercentage = completion;
 
   return (
     <MultiDonutGraph
@@ -61,7 +59,7 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
 };
 
 export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
-  const { progresses } = useAuditContext();
+  const { progresses, completion } = useAuditContext();
   const bars = progresses.sections
     .filter((section) => section.progress.total > 0)
     .sort((a, b) => b.progress.total - a.progress.total)
@@ -71,9 +69,7 @@ export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
       percentage: section.progress,
     })) satisfies Bar[];
 
-  const overallPercentage = Math.round(
-    (progresses.total.current / progresses.total.total) * 100,
-  );
+  const overallPercentage = completion;
 
   return (
     <MultiDonutGraph {...styleProps} bars={bars}>

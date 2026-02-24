@@ -14,7 +14,7 @@ export const GPATotalsCard = ({
   points = 320,
 }: GPATotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-white">
+    <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-md">
       <HStack x="between" y="top" fill>
         <h3 className="text-xl font-bold text-gray-900">GPA Totals</h3>
         <img src="/Info.svg" alt="Info" className="w-6 h-6 cursor-pointer" />
@@ -70,7 +70,7 @@ export const CreditHourTotalsCard = ({
   ],
 }: CreditHourTotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-white">
+    <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-md">
       <h3 className="text-xl font-bold text-gray-900">Credit Hour Totals</h3>
 
       <VStack gap={3} className="mt-4">

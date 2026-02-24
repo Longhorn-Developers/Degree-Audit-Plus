@@ -10,8 +10,8 @@ const SidePanel = () => {
   const { sections } = useAuditContext();
 
   // Find GPA Totals section
-  const gpaSection = sections.find(
-    (section) => section.title.toLowerCase().includes("gpa"),
+  const gpaSection = sections.find((section) =>
+    section.title.toLowerCase().includes("gpa"),
   );
 
   // Extract GPA values from first rule (if exists)
@@ -20,7 +20,12 @@ const SidePanel = () => {
   const currentGPA = gpaRule?.appliedHours ?? 0.0;
 
   return (
-    <VStack fill className="h-full" y="stretch" x="center">
+    <VStack
+      fill
+      className="h-full sticky top-[75px] z-20 bg-white"
+      y="stretch"
+      x="center"
+    >
       <SimpleDegreeCompletionDonut size={300} />
       <VStack gap={4} className="w-sm mt-10">
         <GPATotalsCard
@@ -61,7 +66,9 @@ const MainContent = () => {
       <Title text="Degree Progress Overview" />
       {nonGPASections.map((section) => {
         // Find the correct progress index from original sections array
-        const originalIdx = sections.findIndex((s) => s.title === section.title);
+        const originalIdx = sections.findIndex(
+          (s) => s.title === section.title,
+        );
         const sectionProgress = progresses.sections[originalIdx];
 
         return (
