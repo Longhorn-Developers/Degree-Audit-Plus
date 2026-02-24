@@ -9,7 +9,12 @@ interface DraggableProps {
 
 const Draggable = ({ id, children }: DraggableProps) => {
   const { isDragging, attributes, listeners, setNodeRef, transform } =
-    useDraggable({ id });
+    useDraggable({
+      id,
+      data: {
+        random: "foo",
+      },
+    });
 
   return (
     <div

@@ -9,10 +9,8 @@ import {
 } from "../providers/main-page.tsx";
 import AuditContextProvider from "./components/audit-provider.tsx";
 import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
-import DegreeAuditPage from "./components/degree-audit-page.tsx";
-import DegreePlannerPage from "./components/degree-planner-page.tsx";
-import DragAndDropProvider from "./components/drag-and-drop/dnd-provider.tsx";
 import Navbar from "./components/navbar";
+import PlaygroundPage from "./components/playground-page.tsx";
 import Sidebar from "./components/sidebar.tsx";
 
 const App = () => {
@@ -20,12 +18,10 @@ const App = () => {
     <PreferencesProvider>
       <AuditContextProvider>
         <CourseModalContextProvider>
-          <DragAndDropProvider>
-            <HStack fill className="w-screen" gap={0}>
-              <Sidebar />
-              <MainContent />
-            </HStack>
-          </DragAndDropProvider>
+          <HStack fill className="w-screen" gap={0}>
+            <Sidebar />
+            <MainContent />
+          </HStack>
         </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>
@@ -46,7 +42,8 @@ const MainContent = () => {
     >
       <Navbar />
       <VStack x="center" className="px-10 mx-auto mb-[30px] w-full">
-        {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
+        <PlaygroundPage />
+        {/* {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />} */}
       </VStack>
     </VStack>
   );
