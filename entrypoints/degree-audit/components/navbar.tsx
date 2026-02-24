@@ -30,7 +30,7 @@ const Navbar = () => {
       fill
       x="between"
       y="middle"
-      className="border-b-2 border-gray-100 px-10 py-2"
+      className="border-b-2 border-gray-100 px-10 py-2 sticky top-0 z-10 bg-white"
       style={{
         height: "75px",
       }}

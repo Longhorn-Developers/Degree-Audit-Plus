@@ -15,6 +15,12 @@ export function parseHours(text: string): number {
   return match ? parseInt(match[0], 10) : 0;
 }
 
+export function parseGPA(text: string): number {
+  // Extract decimal number including digits after decimal point
+  const match = text.match(/\d+\.?\d+/);
+  return match ? parseFloat(match[0]) : 0;
+}
+
 export function parseCourseStatus(text: string): CourseStatus {
   if (text.includes("Applied")) return "Applied";
   if (text.includes("Planned")) return "Planned";
@@ -108,11 +114,20 @@ export function scrapeRequirementSections(
       const cells = row.querySelectorAll("td");
       if (cells.length < 6) continue;
 
+      // Check if this is a GPA section to use decimal parsing
+      const isGPASection = title.toLowerCase().includes("gpa");
+
       const rule: RequirementRule = {
         text: (cells[2] as HTMLElement).innerText.trim(),
-        requiredHours: parseHours((cells[3] as HTMLElement).innerText),
-        appliedHours: parseHours((cells[4] as HTMLElement).innerText),
-        remainingHours: parseHours((cells[5] as HTMLElement).innerText),
+        requiredHours: isGPASection
+          ? parseGPA((cells[3] as HTMLElement).innerText)
+          : parseHours((cells[3] as HTMLElement).innerText),
+        appliedHours: isGPASection
+          ? parseGPA((cells[4] as HTMLElement).innerText)
+          : parseHours((cells[4] as HTMLElement).innerText),
+        remainingHours: isGPASection
+          ? parseGPA((cells[5] as HTMLElement).innerText)
+          : parseHours((cells[5] as HTMLElement).innerText),
         status: getRuleStatus(row.classList),
         courses: [],
       };

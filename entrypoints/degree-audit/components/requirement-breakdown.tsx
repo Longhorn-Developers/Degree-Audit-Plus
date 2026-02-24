@@ -197,7 +197,7 @@ const ProgressBar = ({
   const percentage = Math.min((current / total) * 100, 100);
 
   return (
-    <div className="w-40 h-2 bg-gray-200 rounded-full overflow-hidden">
+    <div className="w-52 h-3 bg-gray-200 rounded-full overflow-hidden">
       <div
         className="h-full rounded-full transition-all"
         style={{ width: `${percentage}%`, backgroundColor: color.tailwind }}
@@ -216,33 +216,33 @@ const RequirementBreakdown = (
 
   return (
     <div
-      className="w-full bg-gray-50 rounded-md border border-gray-200 overflow-hidden border-l-8"
+      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-8 shadow-md"
       style={{ borderLeftColor: borderColor.tailwind }}
     >
       {/* Main header */}
       <button
         className={cn(
-          "w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors",
+          "w-full py-7 px-6 flex items-center justify-between hover:bg-gray-50 transition-colors",
           isOpen && "bg-gray-50",
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <VStack gap={1}>
-          <span className="font-bold text-lg">{title}</span>
+        <VStack gap={2}>
+          <span className="font-bold text-xl">{title}</span>
           <ProgressBar
             current={hours.current}
             total={hours.total}
             colorIndex={colorIndex}
           />
         </VStack>
-        <HStack y="middle" gap={2}>
-          <span className="text-gray-600">
+        <HStack y="middle" gap={3}>
+          <span className="text-black text-base">
             {hours.current.toString().padStart(2, "0")} / {hours.total} hours
           </span>
           {isOpen ? (
-            <CaretUpIcon className="w-5 h-5 text-gray-400" />
+            <CaretUpIcon className="w-5 h-5 text-black" />
           ) : (
-            <CaretDownIcon className="w-5 h-5 text-gray-400" />
+            <CaretDownIcon className="w-5 h-5 text-black" />
           )}
         </HStack>
       </button>
