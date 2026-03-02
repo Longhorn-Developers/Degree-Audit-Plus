@@ -6,7 +6,7 @@ import { HStack, VStack } from "../components/common/helperdivs";
 import {
   PreferencesProvider,
   usePreferences,
-} from "../providers/main-page.tsx";
+} from "../providers/preferences-provider.tsx";
 import AuditContextProvider from "./components/audit-provider.tsx";
 import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";

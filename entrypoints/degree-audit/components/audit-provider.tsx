@@ -1,14 +1,17 @@
+import { usePreferences } from "@/entrypoints/providers/preferences-provider";
 import {
   calculateWeightedDegreeCompletion,
   CurrentAuditProgress,
 } from "@/lib/audit-calculations";
 import {
+  AuditHistoryData,
   Course,
   RequirementSection,
   StringSemester,
 } from "@/lib/general-types";
 import { getAuditData, getAuditHistory } from "@/lib/storage";
 import { createContext, useContext, useEffect, useState } from "react";
+import LoadingPage from "./loading-page";
 
 // Context for sharing audit data betw sidebar and main
 type SemesterInfo = Record<StringSemester, Course[]>;
@@ -16,8 +19,9 @@ type SemesterInfo = Record<StringSemester, Course[]>;
 interface AuditContextType {
   sections: RequirementSection[];
   allCourses: Course[];
+  history: AuditHistoryData;
   currentAuditId: string | null;
-  setCurrentAuditId: (id: string | null) => void;
+  setCurrentAuditId: (id: string) => void;
   progresses: CurrentAuditProgress;
   completion: number;
   semesters: SemesterInfo;
@@ -30,14 +34,19 @@ export const AuditContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [sections, setSections] = useState<RequirementSection[]>([]);
-  const [completion, setCompletion] = useState<number>(0);
-  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
-    new URLSearchParams(window.location.search).get("auditId"), // look at broswer
-  );
+  const [loaded, setLoaded] = useState(false);
+  const { lastAuditId, updateLastAuditId } = usePreferences();
 
-  const progresses = calculateWeightedDegreeCompletion(sections ?? []);
-  console.log("progresses", progresses);
+  const [sections, setSections] = useState<RequirementSection[]>([]);
+  const [history, setHistory] = useState<AuditHistoryData>();
+  const [completion, setCompletion] = useState(0);
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get("auditId") ?? lastAuditId, // look at broswer
+  );
+  const progresses = useMemo(
+    () => calculateWeightedDegreeCompletion(sections ?? []),
+    [sections],
+  );
 
   // A simpler way to get all courses from the sections that comes prefiltered
   const allCourses = useMemo(
@@ -61,16 +70,26 @@ export const AuditContextProvider = ({
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
-    if (!currentAuditId) {
-      console.log("[Main] No audit ID provided");
-      return;
-    }
+    setLoaded(false);
 
     async function loadAudit() {
       console.log(`[Main] Loading audit data for: ${currentAuditId}`);
 
       // Get completion from audit history
       const history = await getAuditHistory();
+      if (!history) {
+        console.error(`[Main] Audit history not found`);
+        return;
+      }
+      if (
+        !currentAuditId ||
+        !history.audits.find((a) => a.auditId === currentAuditId)
+      ) {
+        setCurrentAuditId(history.audits[0].auditId!);
+        updateLastAuditId(history.audits[0].auditId!);
+      }
+      console.log(`[Main] Audit history found`, history);
+      setHistory(history);
       const matchingAudit = history?.audits.find(
         (a) => a.auditId === currentAuditId,
       );
@@ -92,19 +111,31 @@ export const AuditContextProvider = ({
           })),
         );
       else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+
+      setLoaded(true);
     }
 
     loadAudit();
   }, [currentAuditId]);
 
+  if (!loaded) {
+    return <LoadingPage />;
+  }
+
+  console.log("[Main] Current audit ID:", currentAuditId);
   return (
     <AuditContext.Provider
       value={{
         sections,
         allCourses,
+        history: history!,
         semesters,
         currentAuditId,
-        setCurrentAuditId,
+        setCurrentAuditId: (id) => {
+          window.history.pushState({}, "", `?auditId=${id}`);
+          setCurrentAuditId(id);
+          updateLastAuditId(id);
+        },
         progresses,
         completion,
       }}

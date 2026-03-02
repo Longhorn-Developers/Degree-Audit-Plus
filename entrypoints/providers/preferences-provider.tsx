@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import LoadingPage from "../degree-audit/components/loading-page";
 import { OptionsStore } from "../storage/preferences";
 
 type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never;
@@ -39,6 +40,9 @@ type PreferencesContext = {
   viewMode: PREFERENCE_ViewMode;
   setViewMode: (value: PREFERENCE_ViewMode) => void;
   toggleViewMode: () => void;
+
+  lastAuditId: string | null;
+  updateLastAuditId: (value: string) => void;
 };
 
 type AdditionalValues<T extends Record<string, { value: unknown }>> = {
@@ -83,6 +87,9 @@ export type StoredPreferences = {
   viewMode: StoredPreferenceValue<PREFERENCE_ViewMode> & {
     toggleViewMode: () => void;
   };
+  lastAuditId: StoredPreferenceValue<string | null> & {
+    updateLastAuditId: (value: string) => void;
+  };
 };
 
 // export type EphemeralPreferences = {};
@@ -105,6 +112,11 @@ export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences /* & EphemeralPref
       key: "view-mode",
       toggleViewMode: () => null,
     },
+    lastAuditId: {
+      value: null,
+      key: "current-audit-id",
+      updateLastAuditId: () => null,
+    },
   };
 
 const PreferencesProviderContext = createContext<PreferencesContext>(
@@ -123,6 +135,9 @@ const PreferencesProviderContext = createContext<PreferencesContext>(
 
 export function PreferencesProvider(props: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [lastAuditId, setLastAuditId] = useState<string | null>(
+    DEFAULT_PREFERENCES.lastAuditId.value,
+  );
   const [viewMode, setViewMode] = useState<PREFERENCE_ViewMode>(
     DEFAULT_PREFERENCES.viewMode.value,
   );
@@ -196,13 +211,16 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
         viewMode === "audit" ? "planner" : "audit",
       );
     },
+    lastAuditId,
+    updateLastAuditId: async (value: string) => {
+      setLastAuditId(value);
+      await OptionsStore.set("lastAuditId", value);
+    },
   };
 
   if (!isMounted) {
-    return null;
+    return <LoadingPage />;
   }
-
-  console.log("value", value);
 
   return (
     <PreferencesProviderContext.Provider {...props} value={value}>
