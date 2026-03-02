@@ -3,15 +3,15 @@ import Dropdown, {
   DropdownHeader,
 } from "@/entrypoints/components/common/dropdown";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
-import CourseCard from "@/entrypoints/components/course-card";
-import { Course } from "@/lib/general-types";
+import { Course, StringSemester } from "@/lib/general-types";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import DraggableCourseCard from "../planner-view/drag-and-drop/draggable-course-card";
 
 export interface SemesterCardProps {
-  semester: string;
+  semester: StringSemester;
   courses: Course[];
 }
 
@@ -31,15 +31,17 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
       </DropdownHeader>
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
         <SortableContext
-          items={courses.map((course) => course.code)}
+          items={courses.map((course) => course.uniqueNumber)}
           strategy={verticalListSortingStrategy}
         >
           <VStack fill className="w-full" gap={4}>
             {courses.length > 0 ? (
               courses.map((course) => (
-                <CourseCard
-                  className="w-full"
+                <DraggableCourseCard
                   key={course.code}
+                  semester={semester}
+                  id={course.uniqueNumber}
+                  className="w-full"
                   fullName={course.name}
                   courseName={course.code}
                   color="orange"

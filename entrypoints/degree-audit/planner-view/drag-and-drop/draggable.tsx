@@ -22,7 +22,7 @@ const Draggable = ({ id, children }: DraggableProps) => {
       {...listeners}
       ref={setNodeRef}
       style={{
-        transform: CSS.Transform.toString(transform),
+        transform: transform ? CSS.Translate.toString(transform) : undefined,
       }}
       className={cn(isDragging ? "opacity-50" : "opacity-100")}
     >

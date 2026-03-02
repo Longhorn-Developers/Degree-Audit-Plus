@@ -9,9 +9,10 @@ import {
 } from "../providers/main-page.tsx";
 import AuditContextProvider from "./components/audit-provider.tsx";
 import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
+import DegreeAuditPage from "./components/degree-audit-page.tsx";
 import Navbar from "./components/navbar";
-import PlaygroundPage from "./components/playground-page.tsx";
 import Sidebar from "./components/sidebar.tsx";
+import DegreePlannerPage from "./planner-view/degree-planner-page.tsx";
 
 const App = () => {
   return (
@@ -42,8 +43,7 @@ const MainContent = () => {
     >
       <Navbar />
       <VStack x="center" className="px-10 mx-auto mb-[30px] w-full">
-        <PlaygroundPage />
-        {/* {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />} */}
+        {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
       </VStack>
     </VStack>
   );

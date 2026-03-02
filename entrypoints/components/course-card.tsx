@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 
-type CourseCardProps = {
+export type CourseCardProps = {
   fullName: string;
   courseName: string;
   color?: "orange" | "indigo";
@@ -15,7 +15,7 @@ const colorMap = {
 
 const CourseCard = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & CourseCardProps
+  CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
   const { fullName, courseName, color = "orange", className, ...rest } = props;
 

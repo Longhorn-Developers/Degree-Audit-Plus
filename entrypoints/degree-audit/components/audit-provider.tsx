@@ -2,11 +2,16 @@ import {
   calculateWeightedDegreeCompletion,
   CurrentAuditProgress,
 } from "@/lib/audit-calculations";
-import { Course, RequirementSection } from "@/lib/general-types";
+import {
+  Course,
+  RequirementSection,
+  StringSemester,
+} from "@/lib/general-types";
 import { getAuditData, getAuditHistory } from "@/lib/storage";
 import { createContext, useContext, useEffect, useState } from "react";
 
 // Context for sharing audit data betw sidebar and main
+type SemesterInfo = Record<StringSemester, Course[]>;
 
 interface AuditContextType {
   sections: RequirementSection[];
@@ -15,6 +20,7 @@ interface AuditContextType {
   setCurrentAuditId: (id: string | null) => void;
   progresses: CurrentAuditProgress;
   completion: number;
+  semesters: SemesterInfo;
 }
 
 const AuditContext = createContext<AuditContextType | null>(null);
@@ -46,6 +52,13 @@ export const AuditContextProvider = ({
     [sections],
   );
 
+  const semesters = useMemo(() => {
+    return allCourses.reduce((acc, course) => {
+      acc[course.semester] = [...(acc[course.semester] ?? []), course];
+      return acc;
+    }, {} as SemesterInfo);
+  }, [allCourses]);
+
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
     if (!currentAuditId) {
@@ -65,7 +78,19 @@ export const AuditContextProvider = ({
 
       // Load requirements from cache
       const cached = await getAuditData(currentAuditId!);
-      if (cached) setSections(cached.requirements);
+      if (cached)
+        setSections(
+          cached.requirements.map((section) => ({
+            ...section,
+            rules: section.rules.map((rule) => ({
+              ...rule,
+              courses: rule.courses.map((course) => ({
+                ...course,
+                id: course.code + "|" + course.uniqueNumber,
+              })),
+            })),
+          })),
+        );
       else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
     }
 
@@ -77,6 +102,7 @@ export const AuditContextProvider = ({
       value={{
         sections,
         allCourses,
+        semesters,
         currentAuditId,
         setCurrentAuditId,
         progresses,
