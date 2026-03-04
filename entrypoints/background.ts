@@ -2,8 +2,9 @@ import {
   closeScraperTab,
   closeScraperWindow,
   createScraperTab,
-} from "@/lib/scraper-window";
-import { saveAuditData } from "@/lib/storage";
+} from "@/lib/backend/scraper-window";
+import { saveAuditData } from "@/lib/backend/storage";
+import type { CachedAuditData } from "@/lib/general-types";
 
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id });
@@ -291,6 +292,7 @@ export default defineBackground(() => {
     if (message.type === "AUDIT_RESULTS") {
       const tabId = sender.tab?.id;
       const auditId = message.auditId;
+      const { courses, requirements } = message.audit as CachedAuditData;
 
       console.log(
         `[Background] Received AUDIT_RESULTS for audit: ${auditId || "unknown"}`,
@@ -304,11 +306,15 @@ export default defineBackground(() => {
       );
 
       // Save the scraped data to storage
-      if (auditId && message.requirements && message.data) {
-        console.log(`[Background] Saving audit data for: ${auditId}`);
+      if (auditId && requirements && courses) {
+        console.log(
+          `[Background] Saving audit data for: ${auditId} | Courses: ${courses.length} | Requirements: ${requirements.length}`,
+          courses,
+          requirements,
+        );
         saveAuditData(auditId, {
-          requirements: message.requirements,
-          courses: message.data,
+          requirements,
+          courses,
         })
           .then(() => {
             console.log(

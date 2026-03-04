@@ -31,7 +31,7 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
       </DropdownHeader>
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
         <SortableContext
-          items={courses.map((course) => course.uniqueNumber)}
+          items={courses.map((course) => course.id)}
           strategy={verticalListSortingStrategy}
         >
           <VStack fill className="w-full" gap={4}>
@@ -40,7 +40,7 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
                 <DraggableCourseCard
                   key={course.code}
                   semester={semester}
-                  id={course.uniqueNumber}
+                  id={course.id}
                   className="w-full"
                   fullName={course.name}
                   courseName={course.code}

@@ -1,7 +1,5 @@
 import DegreeAuditCard from "@/entrypoints/components/audit-card";
-import { usePreferences } from "@/entrypoints/providers/main-page";
-import { DegreeAuditCardProps } from "@/lib/general-types";
-import { getAuditHistory } from "@/lib/storage";
+import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
 import dapLogo from "@/public/dap-logo.png";
 import lhdLogo from "@/public/icon/LHD Logo.png";
 import {
@@ -16,30 +14,29 @@ import {
   Sidebar as SidebarIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
-import React, { useState } from "react";
-import { useAuditContext } from "./audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const { currentAuditId, setCurrentAuditId, progresses } = useAuditContext();
-  const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]); //history
-  const [loading, setLoading] = useState(true);
+  const { currentAuditId, setCurrentAuditId, history } = useAuditContext();
+  // const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]); //history
+  // const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    async function loadAudits() {
-      try {
-        const data = await getAuditHistory();
-        if (data && !data.error) {
-          setAudits(data.audits);
-        }
-      } catch (e) {
-        console.error("Error loading audit history:", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadAudits();
-  }, []);
+  // React.useEffect(() => {
+  //   async function loadAudits() {
+  //     try {
+  //       const data = await getAuditHistory();
+  //       if (data && !data.error) {
+  //         setAudits(data.audits);
+  //       }
+  //     } catch (e) {
+  //       console.error("Error loading audit history:", e);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
+  //   loadAudits();
+  // }, []);
 
   return (
     <div
@@ -82,13 +79,12 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-2 flex flex-col gap-3">
-          {loading ? (
-            <p className="text-sm text-gray-500">Loading audits...</p>
-          ) : audits.length === 0 ? (
+          {history.audits.length === 0 ? (
             <p className="text-sm text-gray-500">No audits found</p>
           ) : (
-            audits.map((audit, index) => {
+            history.audits.map((audit, index) => {
               const id = audit.auditId || String(index);
+              console.log("[Sidebar] Audit ID:", id);
               return (
                 <DegreeAuditCard
                   key={id}

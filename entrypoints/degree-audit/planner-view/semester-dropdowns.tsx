@@ -12,8 +12,8 @@ import {
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { useAuditContext } from "../components/audit-provider";
 import SemesterCard from "../components/semester-card";
+import { useAuditContext } from "../providers/audit-provider";
 
 function sortSemesters(sem_a: StringSemester, sem_b: StringSemester): number {
   const [season_a, year_a] = sem_a.split(" ");
@@ -42,7 +42,7 @@ function nextSemester(semester: StringSemester): StringSemester {
 }
 
 const SemesterDropdowns = () => {
-  const { allCourses, semesters } = useAuditContext();
+  const { courses, semesters } = useAuditContext();
   const [extraEmptySemesters, setExtraEmptySemesters] = useState<
     StringSemester[]
   >([]);
@@ -113,12 +113,12 @@ const SemesterDropdowns = () => {
         {activeDragId ? (
           <CourseCard
             fullName={
-              allCourses.find((course) => course.uniqueNumber === activeDragId)
-                ?.name ?? "UNKNOWN COURSE"
+              courses.find((course) => course.id === activeDragId)?.name ??
+              "UNKNOWN COURSE"
             }
             courseName={
-              allCourses.find((course) => course.uniqueNumber === activeDragId)
-                ?.code ?? "UNKNOWN COURSE"
+              courses.find((course) => course.id === activeDragId)?.code ??
+              "UNKNOWN COURSE"
             }
             color="orange"
           />

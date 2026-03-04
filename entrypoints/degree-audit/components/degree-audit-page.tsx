@@ -1,6 +1,6 @@
 import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
-import { useAuditContext } from "./audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 import DegreeCompletionDonut from "./degree-completion-donut";
 import RequirementBreakdown from "./requirement-breakdown";
 
@@ -18,7 +18,7 @@ const DegreeAuditPage = () => {
               key={section.title || `section-${idx}`}
               title={section.title}
               hours={progresses.sections[idx].progress}
-              requirements={section.rules ?? []}
+              requirements={section.rule ?? []}
               colorIndex={idx}
             />
           ),

@@ -1,7 +1,7 @@
 import {
   PREFERENCE_PreferredLuminosity,
   PREFERENCE_ViewMode,
-} from "../providers/main-page";
+} from "../../entrypoints/degree-audit/providers/preferences-provider";
 
 /**
  * A store that is used for storing user options
@@ -10,12 +10,14 @@ export interface IOptionsStore {
   showSidebar: boolean;
   luminosity: PREFERENCE_PreferredLuminosity;
   viewMode: PREFERENCE_ViewMode;
+  lastAuditId: string | null;
 }
 
 const defaultOptions: IOptionsStore = {
   showSidebar: true,
   luminosity: "system",
   viewMode: "audit",
+  lastAuditId: null,
 };
 
 type StorageKey = keyof IOptionsStore;
@@ -108,4 +110,5 @@ export const initSettings = async () =>
     showSidebar: await OptionsStore.get("showSidebar"),
     luminosity: await OptionsStore.get("luminosity"),
     viewMode: await OptionsStore.get("viewMode"),
+    lastAuditId: await OptionsStore.get("lastAuditId"),
   }) satisfies IOptionsStore;

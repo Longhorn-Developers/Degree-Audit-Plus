@@ -261,7 +261,7 @@ const MultiDonutGraph = ({
       {bars.map((bar, index) => {
         return (
           <InnerDonutGraph
-            key={bar.title}
+            key={index}
             bar={bar}
             index={index}
             radius={startRadius - index * (strokeWidth + gap)}

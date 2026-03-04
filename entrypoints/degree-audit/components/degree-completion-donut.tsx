@@ -3,7 +3,7 @@ import MultiDonutGraph, {
   Bar,
   GraphStyleProps,
 } from "@/entrypoints/degree-audit/components/graph";
-import { useAuditContext } from "./audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 import { CATEGORY_COLORS } from "./requirement-breakdown";
 
 const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
