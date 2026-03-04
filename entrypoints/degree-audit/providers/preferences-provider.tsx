@@ -6,25 +6,17 @@ import {
   useRef,
   useState,
 } from "react";
-import LoadingPage from "../degree-audit/components/loading-page";
-import { OptionsStore } from "../storage/preferences";
+import { OptionsStore } from "../../../lib/backend/sync-storage-wrapper";
+import LoadingPage from "../components/loading-page";
 
-type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never;
-type Shape = Record<string, { value: unknown }>;
 export type StoredPreferenceValue<T> = {
   value: T;
   key: string;
 };
 
-export type EphemeralPrefernceValue<T> = {
-  value: T;
-};
-
-// type PreferencesContext = {
-// 	isMounted: boolean;
-// } & FlattenedAndExpandedValues<EphemeralPreferences> &
-// 	FlattenedAndExpandedValues<StoredPreferences>;
-
+/**
+ * All the "user settings" style information. Basically stuff that is not real data but should survive a page refresh.
+ */
 type PreferencesContext = {
   isMounted: boolean;
 
@@ -44,32 +36,6 @@ type PreferencesContext = {
   lastAuditId: string | null;
   updateLastAuditId: (value: string) => void;
 };
-
-type AdditionalValues<T extends Record<string, { value: unknown }>> = {
-  [K in keyof T as `${K & string}`]: {
-    [k in keyof Omit<T[K], "key" | "value">]: T[K][k];
-  };
-};
-
-type FlattenedAndExpandedValues<T extends Shape> = ExpandOut<
-  {
-    [K in keyof T]: T[K]["value"];
-  } & {
-    [K in keyof T as `set${Capitalize<K & string>}`]: (
-      value: T[K]["value"],
-    ) => void;
-  } & {
-      [K in keyof AdditionalValues<T>]: AdditionalValues<T>[K] extends object
-        ? keyof AdditionalValues<T>[K] extends never
-          ? never
-          : AdditionalValues<T>[K]
-        : never;
-    }[keyof AdditionalValues<T>] extends infer U
-    ? U extends object
-      ? { [K in keyof U]: U[K] }
-      : never
-    : never
->;
 
 /** ---------------------------------------------------------------------------------------------------- **/
 
@@ -92,32 +58,30 @@ export type StoredPreferences = {
   };
 };
 
-// export type EphemeralPreferences = {};
-
-export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences /* & EphemeralPreferences */> =
-  {
-    luminosity: {
-      value: "system",
-      key: "ui-theme",
-      isDarkMode: () => false,
-      toggleDarkMode: () => null,
-    },
-    sidebarIsOpen: {
-      value: true,
-      key: "sidebar-is-open",
-      toggleSidebar: () => null,
-    },
-    viewMode: {
-      value: "audit",
-      key: "view-mode",
-      toggleViewMode: () => null,
-    },
-    lastAuditId: {
-      value: null,
-      key: "current-audit-id",
-      updateLastAuditId: () => null,
-    },
-  };
+type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never; // Simple way of expanding an object type one layer so it shows its children's contents
+export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences> = {
+  luminosity: {
+    value: "system",
+    key: "ui-theme",
+    isDarkMode: () => false,
+    toggleDarkMode: () => null,
+  },
+  sidebarIsOpen: {
+    value: true,
+    key: "sidebar-is-open",
+    toggleSidebar: () => null,
+  },
+  viewMode: {
+    value: "audit",
+    key: "view-mode",
+    toggleViewMode: () => null,
+  },
+  lastAuditId: {
+    value: null,
+    key: "current-audit-id",
+    updateLastAuditId: () => null,
+  },
+};
 
 const PreferencesProviderContext = createContext<PreferencesContext>(
   Object.entries(DEFAULT_PREFERENCES).reduce(

@@ -1,30 +1,30 @@
-import { usePreferences } from "@/entrypoints/providers/preferences-provider";
-import {
-  calculateWeightedDegreeCompletion,
-  CurrentAuditProgress,
-} from "@/lib/audit-calculations";
+import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
+import { calculateWeightedDegreeCompletion } from "@/lib/audit-calculations";
+import { getAuditData, getAuditHistory } from "@/lib/backend/storage";
 import {
   AuditHistoryData,
+  AuditRequirement,
   Course,
-  RequirementSection,
+  CourseId,
+  CurrentAuditProgress,
   StringSemester,
 } from "@/lib/general-types";
-import { getAuditData, getAuditHistory } from "@/lib/storage";
 import { createContext, useContext, useEffect, useState } from "react";
-import LoadingPage from "./loading-page";
+import LoadingPage from "../components/loading-page";
 
 // Context for sharing audit data betw sidebar and main
 type SemesterInfo = Record<StringSemester, Course[]>;
 
 interface AuditContextType {
-  sections: RequirementSection[];
-  allCourses: Course[];
+  sections: AuditRequirement[];
+  courses: Course[];
   history: AuditHistoryData;
   currentAuditId: string | null;
   setCurrentAuditId: (id: string) => void;
   progresses: CurrentAuditProgress;
   completion: number;
   semesters: SemesterInfo;
+  getCourseById: (id: CourseId) => Course;
 }
 
 const AuditContext = createContext<AuditContextType | null>(null);
@@ -37,7 +37,8 @@ export const AuditContextProvider = ({
   const [loaded, setLoaded] = useState(false);
   const { lastAuditId, updateLastAuditId } = usePreferences();
 
-  const [sections, setSections] = useState<RequirementSection[]>([]);
+  const [courseDict, setCourseDict] = useState<Record<CourseId, Course>>({});
+  const [sections, setSections] = useState<AuditRequirement[]>([]);
   const [history, setHistory] = useState<AuditHistoryData>();
   const [completion, setCompletion] = useState(0);
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
@@ -47,26 +48,27 @@ export const AuditContextProvider = ({
     () => calculateWeightedDegreeCompletion(sections ?? []),
     [sections],
   );
+  const courses = useMemo(() => Object.values(courseDict), [courseDict]);
 
   // A simpler way to get all courses from the sections that comes prefiltered
-  const allCourses = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          sections
-            .flatMap((section) => section.rules.flatMap((rule) => rule.courses))
-            .map((course) => [course.code + "|" + course.semester, course]),
-        ).values(),
-      ) as Course[],
-    [sections],
-  );
+  // const courses2 = useMemo(
+  //   () =>
+  //     Array.from(
+  //       new Map(
+  //         sections
+  //           .flatMap((section) => section.rules.flatMap((rule) => rule.courses))
+  //           .map((course) => [course.code + "|" + course.semester, course]),
+  //       ).values(),
+  //     ) as Course[],
+  //   [sections],
+  // );
 
   const semesters = useMemo(() => {
-    return allCourses.reduce((acc, course) => {
+    return Object.values(courses).reduce((acc, course) => {
       acc[course.semester] = [...(acc[course.semester] ?? []), course];
       return acc;
     }, {} as SemesterInfo);
-  }, [allCourses]);
+  }, [courses]);
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
@@ -97,20 +99,19 @@ export const AuditContextProvider = ({
 
       // Load requirements from cache
       const cached = await getAuditData(currentAuditId!);
-      if (cached)
+      if (cached) {
         setSections(
           cached.requirements.map((section) => ({
             ...section,
-            rules: section.rules.map((rule) => ({
+            rules: section.rule.map((rule) => ({
               ...rule,
-              courses: rule.courses.map((course) => ({
-                ...course,
-                id: course.code + "|" + course.uniqueNumber,
-              })),
+              courses: rule.courses,
             })),
           })),
         );
-      else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+        console.log("[Main] courses", cached.courses);
+        setCourseDict(cached.courses);
+      } else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
 
       setLoaded(true);
     }
@@ -127,7 +128,7 @@ export const AuditContextProvider = ({
     <AuditContext.Provider
       value={{
         sections,
-        allCourses,
+        courses,
         history: history!,
         semesters,
         currentAuditId,
@@ -138,6 +139,13 @@ export const AuditContextProvider = ({
         },
         progresses,
         completion,
+        getCourseById: (id) => {
+          const course = courseDict[id];
+          if (!course) {
+            throw new Error(`🚫 [Main] Course ${id} not found`);
+          }
+          return course;
+        },
       }}
     >
       {children}

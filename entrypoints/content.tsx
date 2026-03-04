@@ -1,10 +1,11 @@
+import type { CachedAuditData } from "@/lib/general-types";
 import { createRoot } from "react-dom/client";
 import TryDAPBanner from "./components/banner";
 // Import your Tailwind CSS - THIS IS CRITICAL for shadow DOM
+import { fetchAuditHistory } from "@/lib/backend/audit-history-scraper";
+import { db } from "@/lib/backend/db";
+import { getUncachedAuditIds, saveAuditHistory } from "@/lib/backend/storage";
 import "./styles/content.css"; // Make sure this path is correct
-import { fetchAuditHistory } from "@/lib/audit-history-scraper";
-import { saveAuditHistory, getUncachedAuditIds } from "@/lib/storage";
-import { db } from "@/lib/db";
 
 function loadFonts() {
   const preconnect1 = document.createElement("link");
@@ -27,7 +28,7 @@ function loadFonts() {
   console.log("Staatliches and Roboto Flex fonts loaded dynamically");
 }
 
-import { seedDatabase } from "@/lib/db-seeder";
+import { seedDatabase } from "@/lib/backend/db-seeder";
 
 export default defineContentScript({
   // Runs on ALL UT Direct audit pages - fetches fresh data and watches for updates
@@ -124,41 +125,41 @@ async function fetchAndStoreAuditHistory() {
 //-----------------------------------------------------------------
 //-----------------------------------------------------------------
 // code to scrape course catalog
-import { DEPARTMENT_MAP } from "@/lib/examples/data/department-map";
-let scrapedCourses: ScrapedCourse[] = [];
+// import { DEPARTMENT_MAP } from "@/lib/examples/data/department-map";
+// let scrapedCourses: ScrapedCourse[] = [];
 // logic for fetching data for course catalog scraping
-async function scrapeCourseCatalog() {
-  console.log("starting scraping");
-  const departments = Object.keys(DEPARTMENT_MAP); // gets keys
-  const semester = "20262"; // Fall 2025
+// async function scrapeCourseCatalog() {
+//   console.log("starting scraping");
+//   const departments = Object.keys(DEPARTMENT_MAP); // gets keys
+//   const semester = "20262"; // Fall 2025
 
-  console.log(`Scraping ${departments} courses for semester ${semester}...\n`);
+//   console.log(`Scraping ${departments} courses for semester ${semester}...\n`);
 
-  // get data for each department (both upper and lower division)
-  for (let i = 0; i < departments.length; i++) {
-    const department = departments[i];
-    try {
-      const upperCourses = await fetchAndScrapeCourses(
-        semester,
-        department,
-        "U",
-      );
-      const lowerCourses = await fetchAndScrapeCourses(
-        semester,
-        department,
-        "L",
-      );
-      scrapedCourses = [...upperCourses, ...lowerCourses];
-      console.log(`Found ${scrapedCourses.length} courses for ${department}\n`);
+//   // get data for each department (both upper and lower division)
+//   for (let i = 0; i < departments.length; i++) {
+//     const department = departments[i];
+//     try {
+//       const upperCourses = await fetchAndScrapeCourses(
+//         semester,
+//         department,
+//         "U",
+//       );
+//       const lowerCourses = await fetchAndScrapeCourses(
+//         semester,
+//         department,
+//         "L",
+//       );
+//       scrapedCourses = [...upperCourses, ...lowerCourses];
+//       console.log(`Found ${scrapedCourses.length} courses for ${department}\n`);
 
-      // Save to IndexedDB
-      await db.courses.bulkPut(scrapedCourses);
-      console.log("Completed department; ", i);
-    } catch (err) {
-      console.error("Error:", err instanceof Error ? err.message : err);
-    }
-  }
-}
+//       // Save to IndexedDB
+//       await db.courses.bulkPut(scrapedCourses);
+//       console.log("Completed department; ", i);
+//     } catch (err) {
+//       console.error("Error:", err instanceof Error ? err.message : err);
+//     }
+//   }
+// }
 
 const saveScrapedCourses = async () => {
   const data = await db.courses.toArray();
@@ -257,7 +258,6 @@ function defineUTDToppageHeight() {
 }
 
 //TODO: Finish below logic to run background audits
-
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.action !== "run_audit_headless") return;
 
@@ -303,11 +303,11 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
       ok: res.ok,
       status: res.status,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[Content] Headless audit failed:", err);
     browser.runtime.sendMessage({
       type: "audit_error",
-      error: err?.message ?? "unknown_error",
+      error: err instanceof Error ? err.message : "unknown_error",
     });
   }
 });
@@ -319,11 +319,7 @@ import {
   checkLoginRequired,
   scrapeCourseworkTable,
   scrapeRequirementSections,
-} from "@/lib/audit-scraper";
-import {
-  fetchAndScrapeCourses,
-  ScrapedCourse,
-} from "@/lib/course-catalog-scraper";
+} from "@/lib/backend/audit-scraper";
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (msg.type !== "RUN_SCRAPER") return;
@@ -359,18 +355,22 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Scrape data using functions from audit-scraper
   const courses = scrapeCourseworkTable(courseworkTable);
-  const requirements = scrapeRequirementSections(requirementSections);
+  const requirements = scrapeRequirementSections(requirementSections, courses);
 
   console.log(
-    `[Scraper] Parsed ${requirements.length} sections, ${courses.length} courses`,
+    `[Scraper] Parsed ${requirements.length} sections, ${courses} courses`,
+    courses,
+    requirements,
   );
 
   // Send results back
   browser.runtime.sendMessage({
     type: "AUDIT_RESULTS",
     auditId,
-    data: courses,
-    requirements,
+    audit: {
+      courses,
+      requirements,
+    } as CachedAuditData,
   });
 });
 function getCSRFToken(): string | null {

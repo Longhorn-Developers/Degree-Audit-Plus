@@ -3,16 +3,16 @@ import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "../components/common/helperdivs";
-import {
-  PreferencesProvider,
-  usePreferences,
-} from "../providers/preferences-provider.tsx";
-import AuditContextProvider from "./components/audit-provider.tsx";
-import { CourseModalContextProvider } from "./components/course-modal-provider.tsx";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";
 import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar.tsx";
 import DegreePlannerPage from "./planner-view/degree-planner-page.tsx";
+import AuditContextProvider from "./providers/audit-provider.tsx";
+import { CourseModalContextProvider } from "./providers/course-modal-provider.tsx";
+import {
+  PreferencesProvider,
+  usePreferences,
+} from "./providers/preferences-provider.tsx";
 
 const App = () => {
   return (

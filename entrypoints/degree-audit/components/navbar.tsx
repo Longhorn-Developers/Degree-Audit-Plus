@@ -3,7 +3,7 @@ import Button, {
   ToggleSwitch,
 } from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
-import { usePreferences } from "@/entrypoints/providers/preferences-provider";
+import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
 import { ExportIcon, GearIcon, ListIcon } from "@phosphor-icons/react";
 
 const Logo = ({ size }: { size: number }) => {

@@ -1,5 +1,5 @@
 import DegreeAuditCard from "@/entrypoints/components/audit-card";
-import { usePreferences } from "@/entrypoints/providers/preferences-provider";
+import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
 import dapLogo from "@/public/dap-logo.png";
 import lhdLogo from "@/public/icon/LHD Logo.png";
 import {
@@ -14,7 +14,7 @@ import {
   Sidebar as SidebarIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
-import { useAuditContext } from "./audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();

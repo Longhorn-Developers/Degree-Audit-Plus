@@ -1,4 +1,4 @@
-import { CaretLeft, GraduationCap } from "@phosphor-icons/react";
+import { CaretLeftIcon, GraduationCap } from "@phosphor-icons/react";
 import React, { useState } from "react";
 import type { CatalogCourse } from "~/lib/general-types";
 import { cn } from "~/lib/utils";
@@ -284,13 +284,13 @@ export function CourseSearchResults({
         onClick={onBack}
         className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
       >
-        <CaretLeft size={16} weight="bold" />
+        <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
       <div className="space-y-2">
         {courses.map((course) => (
           <CourseCard
-            key={course.uniqueId}
+            key={course.id}
             fullName={course.fullName}
             courseName={course.courseName}
           />
@@ -309,6 +309,7 @@ export default function CourseAddModal({
   const [view, setView] = useState<boolean>(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([
     {
+      id: crypto.randomUUID(),
       uniqueId: 1,
       fullName: "HIS 314K",
       courseName: "HISTORY OF MEXICAN AMERS IN US",
@@ -327,6 +328,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 2,
       fullName: "HIS 315G",
       courseName: "INTRO TO AMERICAN STUDIES",
@@ -345,6 +347,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 3,
       fullName: "HIS 315K",
       courseName: "THE UNITED STATES, 1492-1865",
@@ -363,6 +366,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 4,
       fullName: "HIS 315L",
       courseName: "THE UNITED STATES SINCE 1865",
