@@ -1,6 +1,6 @@
-import { CaretLeft, GraduationCap } from "@phosphor-icons/react";
+import { CourseId } from "@/lib/general-types";
+import { CaretLeftIcon, GraduationCap } from "@phosphor-icons/react";
 import React, { useState } from "react";
-import type { CatalogCourse } from "~/lib/general-types";
 import { cn } from "~/lib/utils";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
@@ -35,31 +35,31 @@ const DEPARTMENTS = [
   "History",
 ];
 
-const RECOMMENDED_COURSES = [
-  {
-    fullName: "HIS 315K - Fourmy",
-    courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
-    color: "orange" as const,
-  },
-  {
-    fullName: "DES 374 - Garmon",
-    courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
-    color: "indigo" as const,
-  },
-];
+// const RECOMMENDED_COURSES = [
+//   {
+//     fullName: "HIS 315K - Fourmy",
+//     courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
+//     color: "orange" as const,
+//   },
+//   {
+//     fullName: "DES 374 - Garmon",
+//     courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
+//     color: "indigo" as const,
+//   },
+// ];
 
 function SearchCourses(searchData: CourseSearchData) {
   // TODO: Implement course search logic
 }
 
 interface CourseSearchContentProps {
-  recommendedCourses?: typeof RECOMMENDED_COURSES;
+  recommendedCourses?: CourseId[];
   onSearchSubmit?: (formData: CourseSearchData) => void;
   isLoading?: boolean;
 }
 
 export function CourseSearchContent({
-  recommendedCourses = RECOMMENDED_COURSES,
+  recommendedCourses = [],
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
@@ -108,12 +108,7 @@ export function CourseSearchContent({
         </p>
         <div className="space-y-2">
           {recommendedCourses.map((course, index) => (
-            <CourseCard
-              key={index}
-              fullName={course.fullName}
-              courseName={course.courseName}
-              color={course.color}
-            />
+            <CourseCard key={index} courseId={course} />
           ))}
         </div>
       </div>
@@ -270,7 +265,7 @@ export function CourseSearchContent({
 }
 
 interface CourseSearchResultsProps {
-  courses: CatalogCourse[];
+  courses: CourseId[];
   onBack: () => void;
 }
 
@@ -284,16 +279,12 @@ export function CourseSearchResults({
         onClick={onBack}
         className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
       >
-        <CaretLeft size={16} weight="bold" />
+        <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
       <div className="space-y-2">
         {courses.map((course) => (
-          <CourseCard
-            key={course.uniqueId}
-            fullName={course.fullName}
-            courseName={course.courseName}
-          />
+          <CourseCard key={course} courseId={course} />
         ))}
       </div>
     </div>
@@ -309,6 +300,7 @@ export default function CourseAddModal({
   const [view, setView] = useState<boolean>(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([
     {
+      id: crypto.randomUUID(),
       uniqueId: 1,
       fullName: "HIS 314K",
       courseName: "HISTORY OF MEXICAN AMERS IN US",
@@ -327,6 +319,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 2,
       fullName: "HIS 315G",
       courseName: "INTRO TO AMERICAN STUDIES",
@@ -345,6 +338,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 3,
       fullName: "HIS 315K",
       courseName: "THE UNITED STATES, 1492-1865",
@@ -363,6 +357,7 @@ export default function CourseAddModal({
       scrapedAt: 0,
     },
     {
+      id: crypto.randomUUID(),
       uniqueId: 4,
       fullName: "HIS 315L",
       courseName: "THE UNITED STATES SINCE 1865",

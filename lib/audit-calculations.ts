@@ -1,42 +1,25 @@
-import type {
-  PlanableProgress,
-  Progress,
-  RequirementSection,
-} from "./general-types";
-
-export type CurrentAuditProgress = {
-  total: Progress;
-  sections: {
-    title: string;
-    progress: PlanableProgress;
-  }[];
-};
+import type { AuditRequirement, CurrentAuditProgress } from "./general-types";
 
 export function calculateWeightedDegreeCompletion(
-  sections: RequirementSection[],
+  sections: AuditRequirement[],
 ): CurrentAuditProgress {
   const results: CurrentAuditProgress = {
-    total: { current: 0, total: 0 },
+    total: { current: 0, planned: 0, total: 0 },
     sections: [],
   };
+  console.log("sections", sections);
   sections.forEach((section) => {
     const sectionProgress = {
       title: section.title,
       progress: { current: 0, planned: 0, total: 0 },
     };
-    sectionProgress.progress.total = section.rules.reduce(
+    sectionProgress.progress.total = section.rule.reduce(
       (acc, rule) => acc + rule.requiredHours,
       0,
     );
 
-    section.rules.forEach((rule) => {
-      rule.courses.forEach((course) => {
-        if (course.status !== "Planned") {
-          sectionProgress.progress.current += course.hours ?? 0;
-        } else {
-          sectionProgress.progress.planned += course.hours ?? 0;
-        }
-      });
+    section.rule.forEach((rule) => {
+      sectionProgress.progress.current += rule.appliedHours;
     });
 
     results.sections.push(sectionProgress);

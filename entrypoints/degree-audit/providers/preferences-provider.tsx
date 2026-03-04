@@ -6,24 +6,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { OptionsStore } from "../storage/preferences";
+import { OptionsStore } from "../../../lib/backend/sync-storage-wrapper";
+import LoadingPage from "../components/loading-page";
 
-type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never;
-type Shape = Record<string, { value: unknown }>;
 export type StoredPreferenceValue<T> = {
   value: T;
   key: string;
 };
 
-export type EphemeralPrefernceValue<T> = {
-  value: T;
-};
-
-// type PreferencesContext = {
-// 	isMounted: boolean;
-// } & FlattenedAndExpandedValues<EphemeralPreferences> &
-// 	FlattenedAndExpandedValues<StoredPreferences>;
-
+/**
+ * All the "user settings" style information. Basically stuff that is not real data but should survive a page refresh.
+ */
 type PreferencesContext = {
   isMounted: boolean;
 
@@ -39,33 +32,10 @@ type PreferencesContext = {
   viewMode: PREFERENCE_ViewMode;
   setViewMode: (value: PREFERENCE_ViewMode) => void;
   toggleViewMode: () => void;
-};
 
-type AdditionalValues<T extends Record<string, { value: unknown }>> = {
-  [K in keyof T as `${K & string}`]: {
-    [k in keyof Omit<T[K], "key" | "value">]: T[K][k];
-  };
+  lastAuditId: string | null;
+  updateLastAuditId: (value: string) => void;
 };
-
-type FlattenedAndExpandedValues<T extends Shape> = ExpandOut<
-  {
-    [K in keyof T]: T[K]["value"];
-  } & {
-    [K in keyof T as `set${Capitalize<K & string>}`]: (
-      value: T[K]["value"],
-    ) => void;
-  } & {
-      [K in keyof AdditionalValues<T>]: AdditionalValues<T>[K] extends object
-        ? keyof AdditionalValues<T>[K] extends never
-          ? never
-          : AdditionalValues<T>[K]
-        : never;
-    }[keyof AdditionalValues<T>] extends infer U
-    ? U extends object
-      ? { [K in keyof U]: U[K] }
-      : never
-    : never
->;
 
 /** ---------------------------------------------------------------------------------------------------- **/
 
@@ -83,13 +53,13 @@ export type StoredPreferences = {
   viewMode: StoredPreferenceValue<PREFERENCE_ViewMode> & {
     toggleViewMode: () => void;
   };
+  lastAuditId: StoredPreferenceValue<string | null> & {
+    updateLastAuditId: (value: string) => void;
+  };
 };
 
-export type EphemeralPreferences = {};
-
-export const DEFAULT_PREFERENCES: ExpandOut<
-  StoredPreferences & EphemeralPreferences
-> = {
+type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never; // Simple way of expanding an object type one layer so it shows its children's contents
+export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences> = {
   luminosity: {
     value: "system",
     key: "ui-theme",
@@ -105,6 +75,11 @@ export const DEFAULT_PREFERENCES: ExpandOut<
     value: "audit",
     key: "view-mode",
     toggleViewMode: () => null,
+  },
+  lastAuditId: {
+    value: null,
+    key: "current-audit-id",
+    updateLastAuditId: () => null,
   },
 };
 
@@ -124,6 +99,9 @@ const PreferencesProviderContext = createContext<PreferencesContext>(
 
 export function PreferencesProvider(props: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
+  const [lastAuditId, setLastAuditId] = useState<string | null>(
+    DEFAULT_PREFERENCES.lastAuditId.value,
+  );
   const [viewMode, setViewMode] = useState<PREFERENCE_ViewMode>(
     DEFAULT_PREFERENCES.viewMode.value,
   );
@@ -197,13 +175,16 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
         viewMode === "audit" ? "planner" : "audit",
       );
     },
+    lastAuditId,
+    updateLastAuditId: async (value: string) => {
+      setLastAuditId(value);
+      await OptionsStore.set("lastAuditId", value);
+    },
   };
 
   if (!isMounted) {
-    return null;
+    return <LoadingPage />;
   }
-
-  console.log("value", value);
 
   return (
     <PreferencesProviderContext.Provider {...props} value={value}>

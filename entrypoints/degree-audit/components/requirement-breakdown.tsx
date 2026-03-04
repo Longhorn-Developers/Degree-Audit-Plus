@@ -1,9 +1,11 @@
 import Button from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import {
-  CourseRowData,
-  RequirementBreakdownComponentProps,
+  Course,
+  PlannableStatus,
+  Progress,
   RequirementRule,
+  Status,
 } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
 import {
@@ -18,14 +20,15 @@ import {
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
-import { useCourseModalContext } from "./course-modal-provider";
+import { useAuditContext } from "../providers/audit-provider";
+import { useCourseModalContext } from "../providers/course-modal-provider";
 
 // Status icon component for requirements
-const StatusIcon = ({ status }: { status: RequirementRule["status"] }) => {
-  if (status === "fulfilled") {
+const StatusIcon = ({ status }: { status: Status }) => {
+  if (status === "Completed") {
     return <CheckCircleIcon weight="fill" className="w-6 h-6 text-green-600" />;
   }
-  if (status === "unfulfilled") {
+  if (status === "Not Started") {
     return <MinusCircleIcon weight="fill" className="w-6 h-6 text-red-500" />;
   }
   return <MinusCircleIcon weight="fill" className="w-6 h-6 text-yellow-500" />;
@@ -42,7 +45,7 @@ const HoursBadge = ({ current, total }: { current: number; total: number }) => {
 };
 
 const statusIcons = {
-  Applied: {
+  Completed: {
     icon: (
       <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />
     ),
@@ -63,20 +66,21 @@ const statusIcons = {
     ),
     color: "bg-[var(--color-course-in-progress)]",
   },
-  Unknown: {
+  // TODO: make sure this is valid
+  "Not Started": {
     icon: (
       <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />
     ),
     color: "bg-[var(--color-course-unknown)]",
   },
 } as const satisfies Record<
-  CourseRowData["status"],
+  PlannableStatus,
   { icon: React.ReactNode; color: string }
 >;
 
 // Course pill component matching Figma design
-const CoursePill = ({ course }: { course: CourseRowData }) => {
-  const isApplied = course.status === "Applied";
+const CoursePill = ({ course }: { course: Course }) => {
+  const isApplied = course.status === "Completed";
 
   return (
     <div
@@ -89,7 +93,7 @@ const CoursePill = ({ course }: { course: CourseRowData }) => {
       <span className="font-semibold min-w-[80px]">{course.code}</span>
       <span className="flex-1">
         {course.name}
-        {course.uniqueNumber && ` (${course.uniqueNumber})`}
+        {course.code && ` (${course.code})`}
       </span>
       <span className="text-gray-700">
         {course.semester}
@@ -115,10 +119,14 @@ const parseRequirementCode = (
 
 // Individual requirement row with expandable courses
 const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
+  const { getCourseById } = useAuditContext();
+  const courses = requirement.courses.map((courseId) =>
+    getCourseById(courseId),
+  );
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(
-    requirement.status === "partial" ||
-      requirement.courses.some((c) => c.status === "In Progress"),
+    requirement.status === "In Progress" ||
+      courses.some((course) => course.status === "In Progress"),
   );
 
   return (
@@ -149,7 +157,7 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
       {/* Expanded courses */}
       {isExpanded && requirement.courses.length > 0 && (
         <VStack gap={2} className="pl-11 pr-4 pb-3">
-          {requirement.courses.map((course, idx) => (
+          {courses.map((course, idx) => (
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
         </VStack>
@@ -206,9 +214,13 @@ const ProgressBar = ({
   );
 };
 
-const RequirementBreakdown = (
-  props: RequirementBreakdownComponentProps & { colorIndex?: number },
-) => {
+type RequirementBreakdownProps = {
+  title: string;
+  hours: Progress;
+  requirements: RequirementRule[];
+  colorIndex?: number;
+};
+const RequirementBreakdown = (props: RequirementBreakdownProps) => {
   const { openModal } = useCourseModalContext();
   const { title, hours, requirements, colorIndex = 0 } = props;
   const [isOpen, setIsOpen] = useState(false);
@@ -279,5 +291,3 @@ const RequirementBreakdown = (
 };
 
 export default RequirementBreakdown;
-
-export type { RequirementBreakdownComponentProps };

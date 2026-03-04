@@ -1,57 +1,106 @@
+import type { UniqueIdentifier } from "@dnd-kit/core";
+
+/**
+ * A unique identifier for each course. Is shared between the course object and the requirement rule object.
+ */
+export type CourseId = UniqueIdentifier;
+
+/**
+ * A progress object.
+ */
 export type Progress = {
   current: number;
   total: number;
 };
 
+/**
+ * A progress object for a planned course.
+ */
 export type PlanableProgress = {
   current: number;
   planned: number;
   total: number;
 };
 
-// Scraper types - source of truth from audit page parsing
-export type CourseStatus = "Applied" | "Planned" | "In Progress" | "Unknown";
-
-export type CourseRowData = {
-  code: string;
-  name: string;
-  uniqueNumber?: string;
-  semester: string;
-  grade?: string;
-  hours?: number;
-  status: CourseStatus;
+/**
+ * The progress of an audit. Note that it keeps track of both the current and planned progress separately.
+ */
+export type CurrentAuditProgress = {
+  total: PlanableProgress;
+  sections: {
+    title: string;
+    progress: PlanableProgress;
+  }[];
 };
 
+/**
+ * The data that is cached for an audit. One of these is stored per auditId.
+ * Broken into requirements which explains where course credits are used and
+ * courses which contains all the courses in the audit as a simple list.
+ */
+export interface CachedAuditData {
+  requirements: AuditRequirement[];
+  courses: Record<CourseId, Course>;
+}
+
+/**
+ * The status of a course or a more general audit requirement
+ */
+export type Status = "Completed" | "In Progress" | "Not Started";
+
+/**
+ * A status that can be planned.
+ */
+export type PlannableStatus = Status | "Planned";
+
+/**
+ * A specific rule within a larger requirement section.
+ */
 export type RequirementRule = {
   text: string;
   requiredHours: number;
   appliedHours: number;
   remainingHours: number;
-  status: "fulfilled" | "partial" | "unfulfilled";
-  courses: CourseRowData[];
+  status: Status;
+  courses: CourseId[];
 };
 
-export type RequirementSection = {
+/**
+ * A requirement within an audit. For instance, "Core Requirements" or "Major Requirements".
+ */
+export type AuditRequirement = {
   title: string;
-  rules: RequirementRule[];
+  rule: RequirementRule[];
 };
 
+export type SemesterSeason = "Fall" | "Spring" | "Summer";
+export type Year = number;
+
+/**
+ * A semester in the format of "Fall 2025" or "Spring 2026".
+ */
+export type StringSemester = `${SemesterSeason} ${Year}`;
+
+/**
+ * The completion method of a course. AKA, how the course was completed.
+ */
+export type CourseCompletionMethod =
+  | "Transfer"
+  | "Credit By Exam"
+  | "In-Residence";
+
+/**
+ * All the information about a course. Everything is grabbed from scraping except the id which is a custom UUID.
+ */
 export type Course = {
+  id: CourseId;
   code: string;
   name: string;
   hours: number;
-  credits: number;
-  semester: string;
-  grade: string;
-  status: "Completed" | "In Progress" | "Not Started" | "Hyp";
-};
-
-export type RequirementBreakdownProps = {
-  title: string;
-  hours: Progress;
-  credits: Progress;
-  courses: Course[];
-  onAddCourse?: () => void;
+  semester: StringSemester;
+  grade?: string;
+  status: PlannableStatus;
+  type: CourseCompletionMethod;
 };
 
 export interface DegreeAuditCardProps {
@@ -74,57 +123,3 @@ export interface AuditHistoryData {
   // Track which audits have been scraped and cached
   scrapedAuditIds?: string[];
 }
-
-export interface AuditData {
-  // holds complete information for an audit.
-  auditNumber: number;
-  completion: number;
-  requirements: RequirementSection[];
-  courses: CourseRowData[];
-}
-
-export type RequirementBreakdownComponentProps = {
-  title: string;
-  hours: { current: number; total: number };
-  requirements: RequirementRule[];
-};
-
-// Course catalog types - for scraped course data from UT course schedule
-export type Instructor = {
-  fullName: string;
-  firstName?: string;
-  lastName?: string;
-  middleInitial?: string;
-};
-
-export type ScheduleItem = {
-  days: string;
-  hours: string;
-  location: string;
-};
-
-export type Semester = {
-  year: number;
-  season: string;
-  code: string;
-};
-
-export type CatalogCourse = {
-  uniqueId: number;
-  fullName: string;
-  courseName: string;
-  department: string;
-  number: string;
-  creditHours: number;
-  status: string;
-  isReserved: boolean;
-  instructionMode: string;
-  instructors: Instructor[];
-  schedule: ScheduleItem[];
-  flags: string[];
-  core: string[];
-  url: string;
-  description: string[];
-  semester?: Semester;
-  scrapedAt: number;
-};

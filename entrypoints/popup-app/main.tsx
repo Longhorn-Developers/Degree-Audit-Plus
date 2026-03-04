@@ -1,5 +1,5 @@
+import { getAuditHistory } from "@/lib/backend/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
-import { getAuditHistory } from "@/lib/storage";
 import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
@@ -70,7 +70,7 @@ export default function App() {
       })
       .catch(() => {});
 
-    const listener = (message: any) => {
+    const listener = (message: { type: string }) => {
       if (message.type === "SCRAPE_ALL_STARTED") {
         setIsSyncing(true);
       }

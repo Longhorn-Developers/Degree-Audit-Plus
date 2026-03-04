@@ -1,7 +1,5 @@
-import React from "react";
-import Tag from "./common/tag";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
-import { CaretUp, CaretDown, DotsThree } from "@phosphor-icons/react";
+import React from "react";
 
 /**
  * Sidebar variant - collapsible with caret icons and menu dots

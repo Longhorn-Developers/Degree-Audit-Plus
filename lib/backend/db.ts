@@ -1,7 +1,7 @@
 import Dexie from "dexie";
-import { CatalogCourse } from "./general-types";
+import { Course } from "../general-types";
 export class UTDatabase extends Dexie {
-  courses!: Dexie.Table<CatalogCourse, number>;
+  courses!: Dexie.Table<Course, number>;
 
   constructor() {
     super("UTCoursesDB");

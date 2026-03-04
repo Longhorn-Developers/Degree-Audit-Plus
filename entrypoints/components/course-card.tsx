@@ -1,9 +1,13 @@
+import { CourseId } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
-import { DotsSixVertical } from "@phosphor-icons/react";
+import { DotsSixVerticalIcon } from "@phosphor-icons/react";
+import { forwardRef } from "react";
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
-type CourseCardProps = {
-  fullName: string;
-  courseName: string;
+export type CourseCardProps = {
+  courseId: CourseId;
+  // fullName: string;
+  // courseName: string;
   color?: "orange" | "indigo";
 };
 
@@ -12,13 +16,18 @@ const colorMap = {
   indigo: "bg-dap-indigo",
 };
 
-import React from "react";
-
-const CourseCard = React.forwardRef<
+const CourseCard = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & CourseCardProps
+  CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const { fullName, courseName, color = "orange", className, ...rest } = props;
+  const { courseId, color: propColor, className, ...rest } = props;
+  const {
+    name: fullName,
+    code: courseName,
+    status,
+  } = useAuditContext().getCourseById(courseId);
+  const color = (propColor ?? status === "Completed") ? "orange" : "indigo";
+
   return (
     <div
       {...rest}
@@ -31,7 +40,7 @@ const CourseCard = React.forwardRef<
       <div
         className={`w-6 flex items-center justify-center ${colorMap[color]} rounded-l-sm border-r-2 border-dap-border`}
       >
-        <DotsSixVertical size={18} weight="bold" className="text-white" />
+        <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
       </div>
       <div className="py-3 px-3">
         <p className="text-gray-900 font-semibold text-sm">{fullName}</p>
