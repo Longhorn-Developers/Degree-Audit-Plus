@@ -1,56 +1,7 @@
-import type { PlanableProgress, RequirementSection } from "./general-types";
-
-export type CurrentAuditProgress = {
-  total: PlanableProgress;
-  sections: {
-    title: string;
-    progress: PlanableProgress;
-  }[];
-};
-
-export function calculatePlanableDegreeCompletion(
-  sections: RequirementSection[],
-): CurrentAuditProgress {
-  const results: CurrentAuditProgress = {
-    total: { current: 0, planned: 0, total: 0 },
-    sections: [],
-  };
-  console.log("sections", sections);
-  sections.forEach((section) => {
-    const sectionProgress = {
-      title: section.title,
-      progress: { current: 0, planned: 0, total: 0 },
-    };
-    sectionProgress.progress.total = section.rules.reduce(
-      (acc, rule) => acc + rule.requiredHours,
-      0,
-    );
-
-    section.rules.forEach((rule) => {
-      rule.courses.forEach((course) => {
-        if (course.status !== "Planned") {
-          sectionProgress.progress.current += course.hours ?? 0;
-        } else {
-          sectionProgress.progress.planned += course.hours ?? 0;
-        }
-      });
-    });
-
-    results.sections.push(sectionProgress);
-  });
-  results.total.current = results.sections.reduce(
-    (acc, section) => acc + section.progress.current,
-    0,
-  );
-  results.total.total = results.sections.reduce(
-    (acc, section) => acc + section.progress.total,
-    0,
-  );
-  return results;
-}
+import type { AuditRequirement, CurrentAuditProgress } from "./general-types";
 
 export function calculateWeightedDegreeCompletion(
-  sections: RequirementSection[],
+  sections: AuditRequirement[],
 ): CurrentAuditProgress {
   const results: CurrentAuditProgress = {
     total: { current: 0, planned: 0, total: 0 },
@@ -62,12 +13,12 @@ export function calculateWeightedDegreeCompletion(
       title: section.title,
       progress: { current: 0, planned: 0, total: 0 },
     };
-    sectionProgress.progress.total = section.rules.reduce(
+    sectionProgress.progress.total = section.rule.reduce(
       (acc, rule) => acc + rule.requiredHours,
       0,
     );
 
-    section.rules.forEach((rule) => {
+    section.rule.forEach((rule) => {
       sectionProgress.progress.current += rule.appliedHours;
     });
 
