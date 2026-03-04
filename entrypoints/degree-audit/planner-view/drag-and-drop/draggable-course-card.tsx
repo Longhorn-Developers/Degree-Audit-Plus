@@ -1,15 +1,12 @@
 import CourseCard from "@/entrypoints/components/course-card";
-import { StringSemester } from "@/lib/general-types";
+import { CourseId, StringSemester } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
-import { UniqueIdentifier } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 type DraggableCourseCardProps = {
-  id: UniqueIdentifier;
+  id: CourseId;
   className?: string;
-  fullName: string;
-  courseName: string;
   color: "orange" | "indigo";
   semester: StringSemester;
 };
@@ -18,8 +15,6 @@ const DraggableCourseCard = ({
   id,
   className,
   semester,
-  fullName = "",
-  courseName = "",
   color = "orange",
 }: DraggableCourseCardProps) => {
   const {
@@ -42,8 +37,7 @@ const DraggableCourseCard = ({
 
   return (
     <CourseCard
-      fullName={fullName}
-      courseName={courseName}
+      courseId={id}
       color={color}
       className={cn(isDragging ? "opacity-50" : "opacity-100", className)}
       ref={setNodeRef}

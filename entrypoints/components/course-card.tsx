@@ -1,10 +1,13 @@
+import { CourseId } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 export type CourseCardProps = {
-  fullName: string;
-  courseName: string;
+  courseId: CourseId;
+  // fullName: string;
+  // courseName: string;
   color?: "orange" | "indigo";
 };
 
@@ -17,7 +20,13 @@ const CourseCard = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const { fullName, courseName, color = "orange", className, ...rest } = props;
+  const { courseId, color: propColor, className, ...rest } = props;
+  const {
+    name: fullName,
+    code: courseName,
+    status,
+  } = useAuditContext().getCourseById(courseId);
+  const color = (propColor ?? status === "Completed") ? "orange" : "indigo";
 
   return (
     <div

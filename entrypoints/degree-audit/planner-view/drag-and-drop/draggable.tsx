@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { useDraggable } from "@dnd-kit/core";
+import { UniqueIdentifier, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
 interface DraggableProps {
-  id: string;
+  id: UniqueIdentifier;
   children: React.ReactNode;
 }
 

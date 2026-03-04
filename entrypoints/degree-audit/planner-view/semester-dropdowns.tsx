@@ -1,14 +1,13 @@
 import Button from "@/entrypoints/components/common/button";
 import { Wrap } from "@/entrypoints/components/common/helperdivs";
 import CourseCard from "@/entrypoints/components/course-card";
-import { StringSemester } from "@/lib/general-types";
+import { CourseId, StringSemester } from "@/lib/general-types";
 import {
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
-  UniqueIdentifier,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { useState } from "react";
@@ -42,16 +41,17 @@ function nextSemester(semester: StringSemester): StringSemester {
 }
 
 const SemesterDropdowns = () => {
-  const { courses, semesters } = useAuditContext();
+  const { courseMap, semesters, moveCourseToNewSemester } = useAuditContext();
   const [extraEmptySemesters, setExtraEmptySemesters] = useState<
     StringSemester[]
   >([]);
-  const [activeDragId, setActiveDragId] = useState<UniqueIdentifier | null>(
-    null,
-  );
+  const [activeDragId, setActiveDragId] = useState<CourseId | null>(null);
 
   const onDragOver = (event: DragOverEvent) => {
     console.log("onDragOver", event);
+    if (event.over?.id && !(event.over.id in courseMap)) {
+      moveCourseToNewSemester(event.active.id, event.over.id as StringSemester);
+    }
   };
 
   const onDragStart = (event: DragStartEvent) => {
@@ -62,15 +62,14 @@ const SemesterDropdowns = () => {
   const onDragEnd = (event: DragEndEvent) => {
     setActiveDragId(null);
     console.log("onDragEnd", event);
-    const activeId = event.active.id;
+    const activeId: CourseId = event.active.id;
     const overId = event.over?.id;
 
     if (!overId) {
       return;
     }
 
-    // const activeSemesters =
-    //   semesters[event.active.data.current!.semester as StringSemester];
+    moveCourseToNewSemester(activeId, overId as StringSemester);
   };
 
   return (
@@ -111,17 +110,7 @@ const SemesterDropdowns = () => {
       </Wrap>
       <DragOverlay>
         {activeDragId ? (
-          <CourseCard
-            fullName={
-              courses.find((course) => course.id === activeDragId)?.name ??
-              "UNKNOWN COURSE"
-            }
-            courseName={
-              courses.find((course) => course.id === activeDragId)?.code ??
-              "UNKNOWN COURSE"
-            }
-            color="orange"
-          />
+          <CourseCard courseId={activeDragId} color="orange" />
         ) : null}
       </DragOverlay>
     </DndContext>

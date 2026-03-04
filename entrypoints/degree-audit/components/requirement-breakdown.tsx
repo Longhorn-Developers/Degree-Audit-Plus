@@ -217,9 +217,7 @@ const ProgressBar = ({
 type RequirementBreakdownProps = {
   title: string;
   hours: Progress;
-  credits: Progress;
   requirements: RequirementRule[];
-  onAddCourse?: () => void;
   colorIndex?: number;
 };
 const RequirementBreakdown = (props: RequirementBreakdownProps) => {

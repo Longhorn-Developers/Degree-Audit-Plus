@@ -25,6 +25,12 @@ interface AuditContextType {
   completion: number;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
+  courseMap: Record<CourseId, Course>;
+  // moveCourseWithinSemester: (activeId: CourseId, overId: CourseId) => void;
+  moveCourseToNewSemester: (
+    activeId: CourseId,
+    newSemester: StringSemester,
+  ) => void;
 }
 
 const AuditContext = createContext<AuditContextType | null>(null);
@@ -36,7 +42,6 @@ export const AuditContextProvider = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const { lastAuditId, updateLastAuditId } = usePreferences();
-
   const [courseDict, setCourseDict] = useState<Record<CourseId, Course>>({});
   const [sections, setSections] = useState<AuditRequirement[]>([]);
   const [history, setHistory] = useState<AuditHistoryData>();
@@ -50,25 +55,23 @@ export const AuditContextProvider = ({
   );
   const courses = useMemo(() => Object.values(courseDict), [courseDict]);
 
-  // A simpler way to get all courses from the sections that comes prefiltered
-  // const courses2 = useMemo(
-  //   () =>
-  //     Array.from(
-  //       new Map(
-  //         sections
-  //           .flatMap((section) => section.rules.flatMap((rule) => rule.courses))
-  //           .map((course) => [course.code + "|" + course.semester, course]),
-  //       ).values(),
-  //     ) as Course[],
-  //   [sections],
-  // );
-
   const semesters = useMemo(() => {
     return Object.values(courses).reduce((acc, course) => {
       acc[course.semester] = [...(acc[course.semester] ?? []), course];
       return acc;
     }, {} as SemesterInfo);
   }, [courses]);
+
+  const moveCourseToNewSemester = (
+    activeId: CourseId,
+    newSemester: StringSemester,
+  ) => {
+    const activeCourse = courseDict[activeId];
+    if (!activeCourse) return;
+
+    activeCourse.semester = newSemester;
+    setCourseDict((prev) => ({ ...prev, [activeId]: activeCourse }));
+  };
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
@@ -137,6 +140,7 @@ export const AuditContextProvider = ({
           setCurrentAuditId(id);
           updateLastAuditId(id);
         },
+        moveCourseToNewSemester,
         progresses,
         completion,
         getCourseById: (id) => {
@@ -146,6 +150,7 @@ export const AuditContextProvider = ({
           }
           return course;
         },
+        courseMap: courseDict,
       }}
     >
       {children}

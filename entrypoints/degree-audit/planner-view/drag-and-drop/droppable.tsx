@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { useDroppable } from "@dnd-kit/core";
+import { UniqueIdentifier, useDroppable } from "@dnd-kit/core";
 import { useDragAndDrop } from "./dnd-provider";
 
 interface DroppableAreaProps {
-  id: string;
+  id: UniqueIdentifier;
   children: React.ReactNode;
 }
 

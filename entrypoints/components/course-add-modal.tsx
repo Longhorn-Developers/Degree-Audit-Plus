@@ -1,6 +1,6 @@
+import { CourseId } from "@/lib/general-types";
 import { CaretLeftIcon, GraduationCap } from "@phosphor-icons/react";
 import React, { useState } from "react";
-import type { CatalogCourse } from "~/lib/general-types";
 import { cn } from "~/lib/utils";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
@@ -35,31 +35,31 @@ const DEPARTMENTS = [
   "History",
 ];
 
-const RECOMMENDED_COURSES = [
-  {
-    fullName: "HIS 315K - Fourmy",
-    courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
-    color: "orange" as const,
-  },
-  {
-    fullName: "DES 374 - Garmon",
-    courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
-    color: "indigo" as const,
-  },
-];
+// const RECOMMENDED_COURSES = [
+//   {
+//     fullName: "HIS 315K - Fourmy",
+//     courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
+//     color: "orange" as const,
+//   },
+//   {
+//     fullName: "DES 374 - Garmon",
+//     courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
+//     color: "indigo" as const,
+//   },
+// ];
 
 function SearchCourses(searchData: CourseSearchData) {
   // TODO: Implement course search logic
 }
 
 interface CourseSearchContentProps {
-  recommendedCourses?: typeof RECOMMENDED_COURSES;
+  recommendedCourses?: CourseId[];
   onSearchSubmit?: (formData: CourseSearchData) => void;
   isLoading?: boolean;
 }
 
 export function CourseSearchContent({
-  recommendedCourses = RECOMMENDED_COURSES,
+  recommendedCourses = [],
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
@@ -108,12 +108,7 @@ export function CourseSearchContent({
         </p>
         <div className="space-y-2">
           {recommendedCourses.map((course, index) => (
-            <CourseCard
-              key={index}
-              fullName={course.fullName}
-              courseName={course.courseName}
-              color={course.color}
-            />
+            <CourseCard key={index} courseId={course} />
           ))}
         </div>
       </div>
@@ -270,7 +265,7 @@ export function CourseSearchContent({
 }
 
 interface CourseSearchResultsProps {
-  courses: CatalogCourse[];
+  courses: CourseId[];
   onBack: () => void;
 }
 
@@ -289,11 +284,7 @@ export function CourseSearchResults({
       </button>
       <div className="space-y-2">
         {courses.map((course) => (
-          <CourseCard
-            key={course.id}
-            fullName={course.fullName}
-            courseName={course.courseName}
-          />
+          <CourseCard key={course} courseId={course} />
         ))}
       </div>
     </div>

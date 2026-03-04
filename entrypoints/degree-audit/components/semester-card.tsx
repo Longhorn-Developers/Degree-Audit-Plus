@@ -4,6 +4,8 @@ import Dropdown, {
 } from "@/entrypoints/components/common/dropdown";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { Course, StringSemester } from "@/lib/general-types";
+import { cn } from "@/lib/utils";
+import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -16,17 +18,19 @@ export interface SemesterCardProps {
 }
 
 const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
-  const totalHours = courses.reduce((acc, course) => acc + course.hours, 0);
+  const { isOver, setNodeRef: droppableRef } = useDroppable({ id: semester });
 
   return (
     <Dropdown
       className="w-sm p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]"
       gap={6}
     >
-      <DropdownHeader>
+      <DropdownHeader
+        ref={droppableRef}
+        className={cn(isOver ? "opacity-35" : "opacity-100")}
+      >
         <HStack y="middle" x="between" fill>
           <h2 className="text-lg text-dap-orange font-bold">{semester}</h2>
-          <h2 className="text-sm">{`${totalHours} hours`}</h2>
         </HStack>
       </DropdownHeader>
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
@@ -42,8 +46,6 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
                   semester={semester}
                   id={course.id}
                   className="w-full"
-                  fullName={course.name}
-                  courseName={course.code}
                   color="orange"
                 />
               ))
