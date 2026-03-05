@@ -18,7 +18,7 @@ const DegreeAuditPage = () => {
               key={section.title || `section-${idx}`}
               title={section.title}
               hours={progresses.sections[idx].progress}
-              requirements={section.rule ?? []}
+              requirements={section.rules ?? []}
               colorIndex={idx}
             />
           ),

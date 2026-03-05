@@ -7,7 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 type DraggableCourseCardProps = {
   id: CourseId;
   className?: string;
-  color: "orange" | "indigo";
+  color?: "orange" | "indigo";
   semester: StringSemester;
 };
 
@@ -15,7 +15,7 @@ const DraggableCourseCard = ({
   id,
   className,
   semester,
-  color = "orange",
+  color,
 }: DraggableCourseCardProps) => {
   const {
     isDragging,

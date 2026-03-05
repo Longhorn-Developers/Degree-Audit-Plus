@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { OptionsStore } from "../../../lib/backend/sync-storage-wrapper";
+import { ExpandOut } from "../../../lib/general-types";
 import LoadingPage from "../components/loading-page";
 
 export type StoredPreferenceValue<T> = {
@@ -58,7 +59,6 @@ export type StoredPreferences = {
   };
 };
 
-type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never; // Simple way of expanding an object type one layer so it shows its children's contents
 export const DEFAULT_PREFERENCES: ExpandOut<StoredPreferences> = {
   luminosity: {
     value: "system",
