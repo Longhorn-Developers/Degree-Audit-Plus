@@ -25,9 +25,9 @@ export function getCurrentSemester(): StringSemester {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  if (currentMonth < 5) return `${currentYear - 1} Spring` as StringSemester;
-  if (currentMonth >= 8) return `${currentYear} Fall` as StringSemester;
-  return `${currentYear} Summer` as StringSemester;
+  if (currentMonth < 5) return `Spring ${currentYear}` as StringSemester;
+  if (currentMonth >= 8) return `Fall ${currentYear}` as StringSemester;
+  return `Summer ${currentYear}` as StringSemester;
 }
 
 export function isCurrentSemester(semester: StringSemester): boolean {
@@ -192,7 +192,7 @@ export function scrapeRequirementSections(
     }
 
     if (rules.length > 0) {
-      results.push({ title, rule: rules });
+      results.push({ title, rules: rules });
     }
   }
 

@@ -44,6 +44,22 @@ export interface CachedAuditData {
 }
 
 /**
+ * Simple way of expanding an object type one layer so it shows its children's contents
+ */
+export type ExpandOut<T> = T extends infer R ? { [K in keyof R]: R[K] } : never;
+/**
+ * Override a field in a type with a new type. Useful for when you want to ensure a field is a specific type or value.
+ */
+export type Ensure<T, R> = ExpandOut<Omit<T, keyof R> & R>;
+
+/**
+ * A course outline to add that is going to be planned. So, it doesn't have an id field and the status is forcibly "Planned".
+ */
+export type PlannedCourseOutline = ExpandOut<
+  Omit<Ensure<Course, { status: "Planned" }>, "id">
+>;
+
+/**
  * The status of a course or a more general audit requirement
  */
 export type Status = "Completed" | "In Progress" | "Not Started";
@@ -70,7 +86,7 @@ export type RequirementRule = {
  */
 export type AuditRequirement = {
   title: string;
-  rule: RequirementRule[];
+  rules: RequirementRule[];
 };
 
 export type SemesterSeason = "Fall" | "Spring" | "Summer";
