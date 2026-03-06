@@ -1,14 +1,14 @@
 import { CourseId } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
+import { useDraggable } from "@dnd-kit/core";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 export type CourseCardProps = {
   courseId: CourseId;
-  // fullName: string;
-  // courseName: string;
   color?: "orange" | "indigo";
+  className?: string;
 };
 
 const colorMap = {
@@ -16,7 +16,7 @@ const colorMap = {
   indigo: "bg-dap-indigo",
 };
 
-const CourseCard = forwardRef<
+const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
@@ -50,6 +50,44 @@ const CourseCard = forwardRef<
   );
 });
 
-CourseCard.displayName = "CourseCard";
+CourseCardVisual.displayName = "CourseCardVisual";
+
+const DraggableCourseCard = ({
+  courseId,
+  color,
+  className,
+}: CourseCardProps) => {
+  const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
+    id: courseId,
+  });
+
+  return (
+    <CourseCardVisual
+      {...attributes}
+      {...listeners}
+      courseId={courseId}
+      color={color}
+      className={cn(isDragging ? "opacity-50" : "opacity-100", className)}
+      ref={setNodeRef}
+    />
+  );
+};
+
+const CourseCard = ({
+  courseId,
+  className,
+  color,
+  draggable,
+}: CourseCardProps & { draggable?: boolean }) => {
+  return draggable ? (
+    <DraggableCourseCard
+      courseId={courseId}
+      color={color}
+      className={className}
+    />
+  ) : (
+    <CourseCardVisual courseId={courseId} className={className} color={color} />
+  );
+};
 
 export default CourseCard;
