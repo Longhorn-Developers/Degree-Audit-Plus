@@ -140,7 +140,13 @@ const SemesterDropdowns = () => {
         </Button>
       </Wrap>
       <DragOverlay>
-        {activeDragId ? <CourseCard courseId={activeDragId} /> : null}
+        {activeDragId ? (
+          <CourseCard
+            className="cursor-grabbing"
+            courseId={activeDragId}
+            showDots
+          />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
