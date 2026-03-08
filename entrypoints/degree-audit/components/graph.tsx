@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlanableProgress } from "../../../lib/general-types";
 
 export type Bar = {
@@ -21,6 +21,17 @@ export type GraphProps = GraphStyleProps & {
   bars: Bar[];
   tooltipContent?: (bar: Bar) => React.ReactNode;
 } & GraphStyleProps;
+
+function lowerOpacityColor(
+  color: `rgb(${number}, ${number}, ${number})`,
+  opacity: number,
+): `rgb(${number}, ${number}, ${number}, ${number})` {
+  const colorValues = color
+    .substring(4, color.length - 1)
+    .split(",")
+    .map((s) => Number(s.trim()));
+  return `rgb(${colorValues[0]}, ${colorValues[1]}, ${colorValues[2]}, ${opacity})`;
+}
 
 const InnerDonutGraph = ({
   bar,
@@ -46,12 +57,17 @@ const InnerDonutGraph = ({
   const circumference = 2 * Math.PI * radius;
   const progressLength =
     (animatedProgress / bar.percentage.total) * circumference;
+  const plannedProgressLength =
+    ((animatedPlannedProgress + animatedProgress) / bar.percentage.total) *
+    circumference;
   const dashArray = `${progressLength} ${circumference}`;
+  const plannedDashArray = `${plannedProgressLength} ${circumference}`;
   const colorValues = color
     .substring(4, color.length - 1)
     .split(",")
     .map((s) => Number(s.trim()));
-  const darkeningFactor = 0.7;
+  const darkeningFactor = 0.6;
+  const plannedOpacity = 0.4;
   const bgOpacity = 0.1;
   const backgroundColor = `rgba(${colorValues[0] * darkeningFactor}, ${
     colorValues[1] * darkeningFactor
@@ -94,10 +110,10 @@ const InnerDonutGraph = ({
         cy="100"
         r={radius}
         fill="none"
-        stroke={"#000"}
+        stroke={lowerOpacityColor(color, plannedOpacity)}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        strokeDasharray={dashArray}
+        strokeDasharray={plannedDashArray}
         transform="rotate(-90 100 100)"
         style={{
           pointerEvents: "none", // Essential to allow mouse events to pass through to the background circle
@@ -143,7 +159,8 @@ const MultiDonutGraph = ({
   >(bars.map(() => ({ current: 0, planned: 0 })));
 
   useEffect(() => {
-    // Animate each bar from 0 to its target value
+    // Animate each bar from its current displayed value to the new target
+    const startValues = animatedProgress.map((p) => ({ ...p }));
     const startTime = Date.now();
 
     const animate = () => {
@@ -154,10 +171,17 @@ const MultiDonutGraph = ({
       const easedProgress = 1 - Math.pow(1 - progress, 3);
 
       setAnimatedProgress(
-        bars.map((bar) => ({
-          current: bar.percentage.current * easedProgress,
-          planned: bar.percentage.planned * easedProgress,
-        })),
+        bars.map((bar, i) => {
+          const start = startValues[i] ?? { current: 0, planned: 0 };
+          const targetCurrent = bar.percentage.current;
+          const targetPlanned = bar.percentage.planned;
+          return {
+            current:
+              start.current + (targetCurrent - start.current) * easedProgress,
+            planned:
+              start.planned + (targetPlanned - start.planned) * easedProgress,
+          };
+        }),
       );
 
       if (progress < 1) {

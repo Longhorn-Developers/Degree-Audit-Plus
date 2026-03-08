@@ -1,6 +1,6 @@
 // Scrapes audit history from UT Direct and parses it into structured data
 
-import type { DegreeAuditCardProps } from "./general-types";
+import type { DegreeAuditCardProps } from "../general-types";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";

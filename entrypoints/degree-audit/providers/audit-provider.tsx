@@ -1,12 +1,19 @@
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
 import { calculateWeightedDegreeCompletion } from "@/lib/audit-calculations";
-import { getAuditData, getAuditHistory } from "@/lib/backend/storage";
+import {
+  addPlannedCourse as addPlannedCourseToStorage,
+  getAuditData,
+  getAuditHistory,
+  removePlannedCourse as removePlannedCourseFromStorage,
+  wipeAllPlannedCourses as wipeAllPlannedCoursesFromStorage,
+} from "@/lib/backend/storage";
 import {
   AuditHistoryData,
   AuditRequirement,
   Course,
   CourseId,
   CurrentAuditProgress,
+  PlannedCourseOutline,
   StringSemester,
 } from "@/lib/general-types";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -19,10 +26,9 @@ interface AuditContextType {
   sections: AuditRequirement[];
   courses: Course[];
   history: AuditHistoryData;
-  currentAuditId: string | null;
+  currentAuditId: string;
   setCurrentAuditId: (id: string) => void;
   progresses: CurrentAuditProgress;
-  completion: number;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
   courseMap: Record<CourseId, Course>;
@@ -31,6 +37,13 @@ interface AuditContextType {
     activeId: CourseId,
     newSemester: StringSemester,
   ) => void;
+  addPlannedCourse: (
+    course: PlannedCourseOutline,
+    requirementTitle: string,
+    ruleTitle: string,
+  ) => Promise<CourseId | null>;
+  removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
+  wipeAllPlannedCourses: () => Promise<number>;
 }
 
 const AuditContext = createContext<AuditContextType | null>(null);
@@ -40,38 +53,132 @@ export const AuditContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [loaded, setLoaded] = useState(false);
   const { lastAuditId, updateLastAuditId } = usePreferences();
+  const [loaded, setLoaded] = useState(false);
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get("auditId") ?? lastAuditId,
+  );
+
   const [courseDict, setCourseDict] = useState<Record<CourseId, Course>>({});
   const [sections, setSections] = useState<AuditRequirement[]>([]);
   const [history, setHistory] = useState<AuditHistoryData>();
-  const [completion, setCompletion] = useState(0);
-  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
-    new URLSearchParams(window.location.search).get("auditId") ?? lastAuditId, // look at broswer
-  );
+
   const progresses = useMemo(
-    () => calculateWeightedDegreeCompletion(sections ?? []),
+    () => calculateWeightedDegreeCompletion(sections ?? [], courseDict),
     [sections],
   );
-  const courses = useMemo(() => Object.values(courseDict), [courseDict]);
-
   const semesters = useMemo(() => {
-    return Object.values(courses).reduce((acc, course) => {
+    const a = Object.values(courseDict).reduce((acc, course) => {
       acc[course.semester] = [...(acc[course.semester] ?? []), course];
       return acc;
     }, {} as SemesterInfo);
-  }, [courses]);
+    console.log("[Audit Provider] new semesters", a, courseDict);
+    return a;
+  }, [courseDict]);
 
-  const moveCourseToNewSemester = (
+  function removeCourseInternally(courseId: CourseId) {
+    setCourseDict((prev) => {
+      const next = { ...prev };
+      delete next[courseId];
+      return next;
+    });
+    setSections((prev) => {
+      const next = [...prev];
+      for (const section of next) {
+        for (const rule of section.rules) {
+          rule.courses = rule.courses.filter((c) => c !== courseId);
+        }
+      }
+      console.log("[Audit Provider] new sections", next);
+      return next;
+    });
+  }
+
+  function addCourseInternally(
+    course: Course,
+    requirementTitle: string,
+    ruleTitle: string,
+  ) {
+    setCourseDict((prev) => ({
+      ...prev,
+      [course.id]: course,
+    }));
+    setSections((prev) => {
+      const next = [...prev];
+      for (const section of next) {
+        if (section.title === requirementTitle) {
+          for (const rule of section.rules) {
+            if (rule.text === ruleTitle) {
+              rule.courses.push(course.id);
+            }
+          }
+        }
+      }
+      return next;
+    });
+  }
+
+  function moveCourseToNewSemester(
     activeId: CourseId,
     newSemester: StringSemester,
-  ) => {
+  ) {
     const activeCourse = courseDict[activeId];
     if (!activeCourse) return;
 
-    activeCourse.semester = newSemester;
-    setCourseDict((prev) => ({ ...prev, [activeId]: activeCourse }));
-  };
+    console.log(
+      "[Audit Provider] moving course to new semester",
+      activeId,
+      newSemester,
+    );
+    setCourseDict((prev) => ({
+      ...prev,
+      [activeId]: { ...activeCourse, semester: newSemester },
+    }));
+  }
+
+  async function addPlannedCourse(
+    course: PlannedCourseOutline,
+    requirementTitle: string,
+    ruleTitle: string,
+  ) {
+    const newCourseId = await addPlannedCourseToStorage(
+      currentAuditId!,
+      course,
+      requirementTitle,
+      ruleTitle,
+    );
+    if (newCourseId) {
+      addCourseInternally(
+        { ...course, id: newCourseId },
+        requirementTitle,
+        ruleTitle,
+      );
+      return newCourseId;
+    }
+    return null;
+  }
+
+  async function removePlannedCourse(courseId: CourseId) {
+    const success = await removePlannedCourseFromStorage(
+      currentAuditId!,
+      courseId,
+    );
+    if (success) {
+      removeCourseInternally(courseId);
+      return true;
+    }
+    return false;
+  }
+
+  async function wipeAllPlannedCourses() {
+    const numRemoved = await wipeAllPlannedCoursesFromStorage(currentAuditId!);
+    for (const course of Object.values(courseDict)) {
+      if (course.status === "Planned") {
+        removeCourseInternally(course.id);
+      }
+    }
+    return numRemoved;
+  }
 
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
@@ -95,10 +202,6 @@ export const AuditContextProvider = ({
       }
       console.log(`[Main] Audit history found`, history);
       setHistory(history);
-      const matchingAudit = history?.audits.find(
-        (a) => a.auditId === currentAuditId,
-      );
-      if (matchingAudit?.percentage) setCompletion(matchingAudit.percentage);
 
       // Load requirements from cache
       const cached = await getAuditData(currentAuditId!);
@@ -106,7 +209,7 @@ export const AuditContextProvider = ({
         setSections(
           cached.requirements.map((section) => ({
             ...section,
-            rules: section.rule.map((rule) => ({
+            rules: section.rules.map((rule) => ({
               ...rule,
               courses: rule.courses,
             })),
@@ -122,16 +225,15 @@ export const AuditContextProvider = ({
     loadAudit();
   }, [currentAuditId]);
 
-  if (!loaded) {
+  if (!loaded || !currentAuditId) {
     return <LoadingPage />;
   }
 
-  console.log("[Main] Current audit ID:", currentAuditId);
   return (
     <AuditContext.Provider
       value={{
         sections,
-        courses,
+        courses: Object.values(courseDict),
         history: history!,
         semesters,
         currentAuditId,
@@ -142,7 +244,6 @@ export const AuditContextProvider = ({
         },
         moveCourseToNewSemester,
         progresses,
-        completion,
         getCourseById: (id) => {
           const course = courseDict[id];
           if (!course) {
@@ -151,6 +252,9 @@ export const AuditContextProvider = ({
           return course;
         },
         courseMap: courseDict,
+        addPlannedCourse,
+        removePlannedCourse,
+        wipeAllPlannedCourses,
       }}
     >
       {children}

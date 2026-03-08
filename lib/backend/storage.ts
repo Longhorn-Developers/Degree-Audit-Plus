@@ -5,7 +5,9 @@ import { browser } from "wxt/browser";
 import type {
   AuditHistoryData,
   CachedAuditData,
+  CourseId,
   DegreeAuditCardProps,
+  PlannedCourseOutline,
 } from "../general-types";
 
 const STORAGE_KEY = "auditHistory";
@@ -32,48 +34,50 @@ export async function saveAuditHistory(
 /**
  * Adds a course to the audit history.
  * @param auditId - The ID of the audit to add the course to.
- * @param course - The course to add to the audit history.
+ * @param course - A course with the status "Planned" and no id.
  * @param requirementTitle - The title of the requirement to add the course to.
  * @param ruleTitle - The title of the rule to add the course to.
  * @returns True if the course was added successfully, false otherwise.
  */
-// TODO: Reimplement with new course, sections dynamic
-// export async function addCourse(
-//   auditId: string,
-//   course: Course,
-//   requirementTitle: string,
-//   ruleTitle: string,
-// ): Promise<boolean> {
-//   course.status = "Hyp";
-//   try {
-//     // Get the correct rule's courses and error handle along the way
-//     const auditData = await getAuditData(auditId);
-//     if (!auditData) {
-//       console.error("Audit data not found for auditId:", auditId);
-//       return false;
-//     }
-//     const requirement = auditData.requirements.find(
-//       (requirement) => requirement.title === requirementTitle,
-//     );
-//     if (!requirement) {
-//       console.error("Requirement not found for auditId:", auditId);
-//       return false;
-//     }
-//     const rule = requirement.rules.find((rule) => rule.text === ruleTitle);
-//     if (!rule) {
-//       console.error("Rule not found for auditId:", auditId);
-//       return false;
-//     }
+export async function addPlannedCourse(
+  auditId: string,
+  course: PlannedCourseOutline,
+  requirementTitle: string,
+  ruleTitle: string,
+): Promise<CourseId | null> {
+  try {
+    // Get the correct rule's courses and error handle along the way
+    const auditData = await getAuditData(auditId);
+    if (!auditData) {
+      console.error("Audit data not found for auditId:", auditId);
+      return null;
+    }
+    const { courses, requirements } = auditData;
 
-//     // Add the course to the rule's courses
-//     rule.courses.push({ ...course, id: crypto.randomUUID() });
-//     await saveAuditData(auditId, auditData);
-//     return true;
-//   } catch (e) {
-//     console.error("Failed to add course to audit history:", e);
-//     return false;
-//   }
-// }
+    const requirement = requirements.find(
+      (requirement) => requirement.title === requirementTitle,
+    );
+    if (!requirement) {
+      console.error("Requirement not found for auditId:", auditId);
+      return null;
+    }
+    const rule = requirement.rules.find((rule) => rule.text === ruleTitle);
+    if (!rule) {
+      console.error("Rule not found for auditId:", auditId);
+      return null;
+    }
+
+    // Add the course to the rule's courses
+    const courseId = crypto.randomUUID();
+    rule.courses.push(courseId);
+    courses[courseId] = { ...course, id: courseId };
+    await saveAuditData(auditId, auditData);
+    return courseId;
+  } catch (e) {
+    console.error("Failed to add course to audit history:", e);
+    return null;
+  }
+}
 
 /**
  * Removes a PLANNED course from the audit history.
@@ -84,56 +88,42 @@ export async function saveAuditHistory(
  * @param ruleTitle - The title of the rule to remove the course from.
  * @returns True if the course was removed successfully, false otherwise.
  */
-// TODO: Reimplement with new course, sections dynamic
-// export async function removeCourse(
-//   auditId: string,
-//   course: Course,
-//   requirementTitle: string,
-//   ruleTitle: string,
-// ): Promise<boolean> {
-//   try {
-//     // Get the correct rule's courses and error handle along the way
-//     const auditData = await getAuditData(auditId);
-//     if (!auditData) {
-//       console.error("Audit data not found for auditId:", auditId);
-//       return false;
-//     }
-//     const requirement = auditData.requirements.find(
-//       (requirement) => requirement.title === requirementTitle,
-//     );
-//     if (!requirement) {
-//       console.error("Requirement not found for auditId:", auditId);
-//       return false;
-//     }
-//     const rule = requirement.rules.find((rule) => rule.text === ruleTitle);
-//     if (!rule) {
-//       console.error("Rule not found for auditId:", auditId);
-//       return false;
-//     }
+// TODO: Implement with new course, sections dynamic
+export async function removePlannedCourse(
+  auditId: string,
+  courseId: CourseId,
+): Promise<boolean> {
+  try {
+    // Get the correct rule's courses and error handle along the way
+    const auditData = await getAuditData(auditId);
+    if (!auditData) {
+      console.error("Audit data not found for auditId:", auditId);
+      return false;
+    }
+    const { courses, requirements } = auditData;
+    const course = courses[courseId];
+    if (!course || course.status !== "Planned") {
+      console.error(
+        "Course not found or not planned for courseId:",
+        courseId,
+        course,
+      );
+      return false;
+    }
+    delete courses[courseId];
 
-//     // Remove the course from the rule's courses
-//     const sizeBefore = rule.courses.length;
-//     rule.courses = rule.courses.filter(
-//       (c) => c.code !== course.code && c.status === "Hyp",
-//     );
-
-//     // If no course was removed, return false
-//     const sizeAfter = rule.courses.length;
-//     if (sizeBefore === sizeAfter) {
-//       console.error(
-//         "Course either not found or not planned and therefore cannot be removed for auditId:",
-//         auditId,
-//         course,
-//       );
-//       return false;
-//     }
-//     await saveAuditData(auditId, auditData);
-//     return true;
-//   } catch (e) {
-//     console.error("Failed to add course to audit history:", e);
-//     return false;
-//   }
-// }
+    for (const requirement of requirements) {
+      for (const rule of requirement.rules) {
+        rule.courses = rule.courses.filter((c) => c !== courseId);
+      }
+    }
+    await saveAuditData(auditId, auditData);
+    return true;
+  } catch (e) {
+    console.error("Failed to add course to audit history:", e);
+    return false;
+  }
+}
 
 /**
  * Wipes all planned courses from the audit history.
@@ -141,29 +131,35 @@ export async function saveAuditHistory(
  * @param auditId - The ID of the audit to wipe the courses from.
  * @returns The number of courses wiped successfully.
  */
-// TODO: Reimplement with new course, sections dynamic
-// export async function wipeAllPlannedCourses(auditId: string): Promise<number> {
-//   try {
-//     const auditData = await getAuditData(auditId);
-//     if (!auditData) {
-//       console.error("Audit data not found for auditId:", auditId);
-//       return 0;
-//     }
-//     let totalRemoved = 0;
-//     for (const requirement of auditData.requirements) {
-//       for (const rule of requirement.rules) {
-//         const sizeBefore = rule.courses.length;
-//         rule.courses = rule.courses.filter((c) => c.status !== "Hyp");
-//         totalRemoved += sizeBefore - rule.courses.length;
-//       }
-//     }
-//     await saveAuditData(auditId, auditData);
-//     return totalRemoved;
-//   } catch (e) {
-//     console.error("Failed to access audit data for auditId:", auditId, e);
-//     return 0;
-//   }
-// }
+export async function wipeAllPlannedCourses(auditId: string): Promise<number> {
+  try {
+    const auditData = await getAuditData(auditId);
+    if (!auditData) {
+      console.error("Audit data not found for auditId:", auditId);
+      return 0;
+    }
+    const { courses, requirements } = auditData;
+    let totalRemoved = 0;
+    for (const course of Object.values(courses)) {
+      if (course.status === "Planned") {
+        delete courses[course.id];
+        totalRemoved++;
+      }
+    }
+
+    for (const requirement of requirements) {
+      for (const rule of requirement.rules) {
+        // Remove all course ids that are not in the courses object (the ones that just got removed)
+        rule.courses = rule.courses.filter((c) => courses[c]);
+      }
+    }
+    await saveAuditData(auditId, auditData);
+    return totalRemoved;
+  } catch (e) {
+    console.error("Failed to access audit data for auditId:", auditId, e);
+    return 0;
+  }
+}
 
 // if in history, get
 export async function getAuditHistory(): Promise<AuditHistoryData | null> {
