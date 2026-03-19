@@ -9,7 +9,7 @@ import {
   CurrentAuditProgress,
   StringSemester,
 } from "@/lib/general-types";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import LoadingPage from "../components/loading-page";
 
 // Context for sharing audit data betw sidebar and main
@@ -78,45 +78,52 @@ export const AuditContextProvider = ({
     setLoaded(false);
 
     async function loadAudit() {
-      console.log(`[Main] Loading audit data for: ${currentAuditId}`);
+      try {
+        console.log(`[Main] Loading audit data for: ${currentAuditId}`);
 
-      // Get completion from audit history
-      const history = await getAuditHistory();
-      if (!history) {
-        console.error(`[Main] Audit history not found`);
-        return;
-      }
-      if (
-        !currentAuditId ||
-        !history.audits.find((a) => a.auditId === currentAuditId)
-      ) {
-        setCurrentAuditId(history.audits[0].auditId!);
-        updateLastAuditId(history.audits[0].auditId!);
-      }
-      console.log(`[Main] Audit history found`, history);
-      setHistory(history);
-      const matchingAudit = history?.audits.find(
-        (a) => a.auditId === currentAuditId,
-      );
-      if (matchingAudit?.percentage) setCompletion(matchingAudit.percentage);
-
-      // Load requirements from cache
-      const cached = await getAuditData(currentAuditId!);
-      if (cached) {
-        setSections(
-          cached.requirements.map((section) => ({
-            ...section,
-            rules: section.rule.map((rule) => ({
-              ...rule,
-              courses: rule.courses,
-            })),
-          })),
+        // Get completion from audit history
+        const history = await getAuditHistory();
+        if (!history) {
+          console.error(`[Main] Audit history not found`);
+          setLoaded(true);
+          return;
+        }
+        if (
+          !currentAuditId ||
+          !history.audits.find((a) => a.auditId === currentAuditId)
+        ) {
+          setCurrentAuditId(history.audits[0].auditId!);
+          updateLastAuditId(history.audits[0].auditId!);
+          return;
+        }
+        console.log(`[Main] Audit history found`, history);
+        setHistory(history);
+        const matchingAudit = history?.audits.find(
+          (a) => a.auditId === currentAuditId,
         );
-        console.log("[Main] courses", cached.courses);
-        setCourseDict(cached.courses);
-      } else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+        if (matchingAudit?.percentage) setCompletion(matchingAudit.percentage);
 
-      setLoaded(true);
+        // Load requirements from cache
+        const cached = await getAuditData(currentAuditId!);
+        if (cached) {
+          setSections(
+            cached.requirements.map((section) => ({
+              ...section,
+              rules: section.rule.map((rule) => ({
+                ...rule,
+                courses: rule.courses,
+              })),
+            })),
+          );
+          console.log("[Main] courses", cached.courses);
+          setCourseDict(cached.courses);
+        } else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+
+        setLoaded(true);
+      } catch (error) {
+        console.error(`[Main] Error loading audit:`, error);
+        setLoaded(true);
+      }
     }
 
     loadAudit();
