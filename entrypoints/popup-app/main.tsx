@@ -238,14 +238,14 @@ export default function App() {
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white font-sans overflow-hidden flex flex-col border border-gray-100">
-      <header className="flex justify-between items-center p-3 border-b border-gray-200 flex-shrink-0">
+      <header className="flex justify-between items-center px-5 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <img
             src={logo}
             alt="Logo"
-            style={{ width: "70px", height: "auto" }}
+            style={{ width: "40px", height: "auto" }}
           />
-          <span className="font-bold text-lg text-dap-primary leading-tight">
+          <span className="font-semibold text-[16px] text-dap-primary leading-none">
             Degree Audit
             <br />
             Plus??
