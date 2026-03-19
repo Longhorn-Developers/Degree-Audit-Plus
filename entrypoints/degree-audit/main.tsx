@@ -8,6 +8,7 @@ import Navbar from "./components/navbar";
 import Sidebar from "./components/sidebar.tsx";
 import DegreePlannerPage from "./planner-view/degree-planner-page.tsx";
 import AuditContextProvider from "./providers/audit-provider.tsx";
+import CourseModalContextProvider from "./providers/course-modal-provider.tsx";
 import {
   PreferencesProvider,
   usePreferences,
@@ -17,12 +18,12 @@ const App = () => {
   return (
     <PreferencesProvider>
       <AuditContextProvider>
-        {/* <CourseModalContextProvider> */}
+        <CourseModalContextProvider>
         <HStack fill className="w-screen" gap={0}>
           <Sidebar />
           <MainContent />
         </HStack>
-        {/* </CourseModalContextProvider> */}
+        </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>
   );
@@ -31,7 +32,7 @@ const App = () => {
 const MainContent = () => {
   const { sidebarIsOpen, viewMode } = usePreferences();
 
-  return (
+  return ( 
     <VStack
       fill
       x="center"
