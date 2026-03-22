@@ -1,48 +1,10 @@
 // Scrapes audit history from UT Direct and parses it into structured data
 
 import type { DegreeAuditCardProps } from "../general-types";
+import { parseMajor } from "./parse-major";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
-
-function parseMajor(programText: string): string {
-  // Clean up whitespace first (normalize spaces and newlines)
-  const cleanText = programText.replace(/\s+/g, " ").trim();
-
-  // NEW: strip leading punctuation and an optional "major" label
-  function cleanExtractedMajor(raw: string): string {
-    return raw
-      .replace(/^\s*[:,-]+\s*/g, "") // leading ": , -"
-      .replace(/^\s*major\s*[:,-]?\s*/i, "") // leading "major", "Major:", etc.
-      .trim();
-  }
-
-  // Accepts: "B S", "BS", "B.S.", "B A", "BA", "B.A."
-  const BSBA_PREFIX = /B\.?\s*[SA]\.?\s*/;
-
-  // Pattern 1: "B S in Communication and Leadership" (with "in")
-  const withInMatch = cleanText.match(
-    new RegExp(`${BSBA_PREFIX.source}in\\s+(.+?)(?:\\(|$)`, "i"),
-  );
-  if (withInMatch) return cleanExtractedMajor(withInMatch[1]);
-
-  // Pattern 2: "B S Computer Science, CS" or "B A Economics" or "B S Mathematics"
-  const spacedMatch = cleanText.match(
-    new RegExp(`${BSBA_PREFIX.source}(.+?)(?:,|\\(|$)`, "i"),
-  );
-  if (spacedMatch) return cleanExtractedMajor(spacedMatch[1]);
-
-  // Other degree letters (keep your behavior, just allow dots/no-space and end-of-string)
-  const degreeMatch = cleanText.match(/B\.?\s*[A-Z]\.?\s*(.+?)(?:,|\(|$)/i);
-  if (degreeMatch) return cleanExtractedMajor(degreeMatch[1]);
-
-  // Pattern 3: "BSGS, Climate System Science" or "DEGREE_CODE, Major Name"
-  const codeFirstMatch = cleanText.match(/^[A-Z]+,\s*(.+?)(?:\(|$)/);
-  if (codeFirstMatch) return cleanExtractedMajor(codeFirstMatch[1]);
-
-  // Fallback: first token
-  return cleanText.split(" ")[0];
-}
 
 function parseCredential(programText: string): string | null {
   const match = programText.match(/- Credential:\s*(.+?)\s*\(/);
