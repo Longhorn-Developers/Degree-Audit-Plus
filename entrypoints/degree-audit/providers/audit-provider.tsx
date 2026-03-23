@@ -7,6 +7,7 @@ import {
   Course,
   CourseId,
   CurrentAuditProgress,
+  RequirementRule,
   StringSemester,
 } from "@/lib/general-types";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -14,6 +15,13 @@ import LoadingPage from "../components/loading-page";
 
 // Context for sharing audit data betw sidebar and main
 type SemesterInfo = Record<StringSemester, Course[]>;
+type RequirementRuleLike = Omit<RequirementRule, "courses"> & {
+  courses?: Array<CourseId | Course>;
+};
+type AuditRequirementLike = Omit<AuditRequirement, "rule"> & {
+  rule?: RequirementRuleLike[];
+  rules?: RequirementRuleLike[];
+};
 
 interface AuditContextType {
   sections: AuditRequirement[];
@@ -34,6 +42,44 @@ interface AuditContextType {
 }
 
 const AuditContext = createContext<AuditContextType | null>(null);
+
+function normalizeCourseDict(
+  courses: Record<CourseId, Course> | Course[] | null | undefined,
+): Record<CourseId, Course> {
+  if (!courses) {
+    return {};
+  }
+
+  if (Array.isArray(courses)) {
+    return courses.reduce(
+      (acc, course) => ({
+        ...acc,
+        [course.id]: course,
+      }),
+      {} as Record<CourseId, Course>,
+    );
+  }
+
+  return courses;
+}
+
+function normalizeRequirements(
+  requirements: AuditRequirementLike[],
+): AuditRequirement[] {
+  return requirements.map((section) => ({
+    ...section,
+    rule: (section.rule ?? section.rules ?? []).map((rule) => ({
+      ...rule,
+      courses: (rule.courses ?? [])
+        .map((courseRef) =>
+          typeof courseRef === "object" && courseRef !== null
+            ? courseRef.id
+            : courseRef,
+        )
+        .filter(Boolean) as CourseId[],
+    })),
+  }));
+}
 
 export const AuditContextProvider = ({
   children,
@@ -106,17 +152,10 @@ export const AuditContextProvider = ({
         // Load requirements from cache
         const cached = await getAuditData(currentAuditId!);
         if (cached) {
-          setSections(
-            cached.requirements.map((section) => ({
-              ...section,
-              rules: section.rule.map((rule) => ({
-                ...rule,
-                courses: rule.courses,
-              })),
-            })),
-          );
+          const normalizedCourses = normalizeCourseDict(cached.courses);
+          setSections(normalizeRequirements(cached.requirements));
           console.log("[Main] courses", cached.courses);
-          setCourseDict(cached.courses);
+          setCourseDict(normalizedCourses);
         } else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
 
         setLoaded(true);
