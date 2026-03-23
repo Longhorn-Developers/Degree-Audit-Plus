@@ -3,9 +3,10 @@ import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
 import { useAuditContext } from "../providers/audit-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
+import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown from "./requirement-breakdown";
 
-const GpaSummaryCard = () => {
+const SidePanel = () => {
   const { sections } = useAuditContext();
   const gpaSection = sections.find((section) =>
     section.title.toLowerCase().includes("gpa"),
@@ -58,33 +59,53 @@ const SidePanel = () => {
       x="center"
     >
       <SimpleDegreeCompletionDonut size={300} />
-      <div className="mt-10">
-        <GpaSummaryCard />
-      </div>
+      <VStack gap={4} className="w-sm mt-10">
+        <GPATotalsCard
+          required={gpaRule?.requiredHours ?? 2.0}
+          counted={gpaRule?.appliedHours ?? 0.0}
+          hoursUsed={80}
+          points={320}
+        />
+        <CreditHourTotalsCard
+          requirements={[
+            {
+              met: true,
+              hours: 21,
+              description: "upper-division coursework in residence.",
+            },
+            {
+              met: false,
+              hours: 36,
+              description: "upper-division coursework required.",
+            },
+          ]}
+        />
+      </VStack>
     </VStack>
   );
 };
 
 const MainContent = () => {
   const { progresses, sections } = useAuditContext();
-  const checklistSections = sections.filter(
+  const nonGPASections = sections.filter(
     (section) => !section.title.toLowerCase().includes("gpa"),
   );
 
   return (
     <VStack fill className="w-full">
       <Title text="Degree Progress Overview" />
-      <Title text="Degree Checklist" />
-      {checklistSections.map((section) => {
-        const sectionIndex = sections.findIndex((item) => item === section);
+      {nonGPASections.map((section) => {
+        const originalIdx = sections.findIndex((s) => s.title === section.title);
+        const sectionProgress = progresses.sections[originalIdx];
+
         return (
-          progresses.sections[sectionIndex]?.progress.total > 0 && (
+          sectionProgress?.progress.total > 0 && (
             <RequirementBreakdown
-              key={section.title || `section-${sectionIndex}`}
+              key={section.title || `section-${originalIdx}`}
               title={section.title}
-              hours={progresses.sections[sectionIndex].progress}
+              hours={sectionProgress.progress}
               requirements={section.rule ?? []}
-              colorIndex={sectionIndex}
+              colorIndex={originalIdx}
             />
           )
         );
