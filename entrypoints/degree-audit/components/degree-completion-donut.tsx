@@ -9,13 +9,12 @@ import { CATEGORY_COLORS } from "./requirement-breakdown";
 const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses } = useAuditContext();
   const bars = progresses.sections
-    .filter((section) => section.progress.total > 0)
-    .sort((a, b) => b.progress.total - a.progress.total)
     .map((section, index) => ({
       title: section.title,
       color: CATEGORY_COLORS[index % CATEGORY_COLORS.length].rgb,
       percentage: section.progress,
-    })) satisfies Bar[];
+    }))
+    .filter((bar) => bar.percentage.total > 0) satisfies Bar[];
 
   const overallPercentage = Math.round(
     (progresses.total.current / progresses.total.total) * 100,
@@ -63,13 +62,12 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
 export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses } = useAuditContext();
   const bars = progresses.sections
-    .filter((section) => section.progress.total > 0)
-    .sort((a, b) => b.progress.total - a.progress.total)
     .map((section, index) => ({
       title: section.title,
       color: CATEGORY_COLORS[index % CATEGORY_COLORS.length].rgb,
       percentage: section.progress,
-    })) satisfies Bar[];
+    }))
+    .filter((bar) => bar.percentage.total > 0) satisfies Bar[];
 
   const overallPercentage = Math.round(
     (progresses.total.current / progresses.total.total) * 100,
