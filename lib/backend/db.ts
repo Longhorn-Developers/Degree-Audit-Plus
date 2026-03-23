@@ -1,12 +1,15 @@
 import Dexie from "dexie";
-import { Course } from "../general-types";
+import type { CatalogCourse } from "../general-types";
+
 export class UTDatabase extends Dexie {
-  courses!: Dexie.Table<Course, number>;
+  courses!: Dexie.Table<CatalogCourse, number>;
 
   constructor() {
     super("UTCoursesDB");
-    this.version(2).stores({
-      courses: "uniqueId, department, number, fullName, semester.code",
+    // IndexedDB persists the full catalog record; this schema only defines indexes.
+    this.version(3).stores({
+      courses:
+        "uniqueId, [department+number], fullName, courseName, department, number, creditHours, status, isReserved, instructionMode, *flags, *core, url, scrapedAt, semester.code",
     });
   }
 }

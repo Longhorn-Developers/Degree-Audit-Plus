@@ -24,11 +24,15 @@ export function calculateWeightedDegreeCompletion(
 
     results.sections.push(sectionProgress);
   });
-  results.total.current = results.sections.reduce(
+  // Only include non-GPA sections in completion totals
+  const nonGPASections = results.sections.filter(
+    (section) => !section.title.toLowerCase().includes("gpa"),
+  );
+  results.total.current = nonGPASections.reduce(
     (acc, section) => acc + section.progress.current,
     0,
   );
-  results.total.total = results.sections.reduce(
+  results.total.total = nonGPASections.reduce(
     (acc, section) => acc + section.progress.total,
     0,
   );
