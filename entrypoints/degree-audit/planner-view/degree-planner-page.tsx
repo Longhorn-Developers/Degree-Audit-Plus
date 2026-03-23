@@ -7,7 +7,12 @@ import SemesterDropdowns from "./semester-dropdowns";
 
 const SidePanel = () => {
   return (
-    <VStack fill className="h-full" y="stretch" x="center">
+    <VStack
+      fill
+      className="h-full sticky top-[75px] z-20 bg-white"
+      y="stretch"
+      x="center"
+    >
       <SimpleDegreeCompletionDonut size={300} />
       <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-[#FAFAF9]">
         <CourseSearchContent />
