@@ -11,8 +11,46 @@ const SidePanel = () => {
   const gpaSection = sections.find((section) =>
     section.title.toLowerCase().includes("gpa"),
   );
-  const gpaRule = gpaSection?.rule?.[0];
+  const gpaRule = gpaSection?.rule[0];
 
+  if (!gpaRule) {
+    return null;
+  }
+
+  return (
+    <div className="w-sm rounded-lg border border-gray-200 bg-white p-5 shadow-md">
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-xl font-bold text-gray-900">GPA Totals</h3>
+        <div className="rounded-lg bg-[#4A7C59] px-4 py-2 text-lg font-semibold text-white">
+          {gpaRule.appliedHours.toFixed(4)}
+        </div>
+      </div>
+
+      <div className="mt-4 flex gap-6">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-gray-500">Required</span>
+          <div className="rounded-lg border border-gray-300 px-4 py-2">
+            <span className="text-lg font-semibold">
+              {gpaRule.requiredHours.toFixed(4)}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm text-gray-500">Remaining</span>
+          <div className="rounded-lg border border-gray-300 px-4 py-2">
+            <span className="text-lg font-semibold">
+              {Math.max(gpaRule.remainingHours, 0).toFixed(4)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm text-gray-600">{gpaRule.text}</p>
+    </div>
+  );
+};
+
+const SidePanel = () => {
   return (
     <VStack
       fill

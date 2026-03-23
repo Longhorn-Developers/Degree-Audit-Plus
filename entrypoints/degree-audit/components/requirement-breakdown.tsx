@@ -11,26 +11,64 @@ import { cn } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
-  CheckSquare, 
-  MinusSquare, 
   PlusCircleIcon,
-  XSquare, 
 } from "@phosphor-icons/react";
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 
-// Status icon component for requirements
-const StatusIcon = ({ status }: { status: Status }) => {
-  if (status === "Completed") {
-    return <CheckSquare weight="fill" className="w-6 h-6 text-green-600" />;
+type RequirementCompletionState = "completed" | "not-started" | "in-progress";
+
+const getRequirementCompletionState = (
+  current: number,
+  total: number,
+): RequirementCompletionState => {
+  if (total > 0 && current >= total) {
+    return "completed";
   }
-  if (status === "Not Started") {
-    return <XSquare weight="fill" className="w-6 h-6 text-gray-700" />;
+  if (current <= 0) {
+    return "not-started";
   }
-  return <MinusSquare weight="fill" className="w-6 h-6 text-gray-400" />;
+  return "in-progress";
+};
+
+const requirementStatusStyles = {
+  completed: {
+    icon: CheckIcon,
+    className: "bg-[#67B44A] text-white",
+  },
+  "not-started": {
+    icon: XIcon,
+    className: "bg-[#425466] text-white",
+  },
+  "in-progress": {
+    icon: MinusIcon,
+    className: "bg-[#B7C6D1] text-white",
+  },
+} as const;
+
+const StatusIcon = ({
+  current,
+  total,
+}: {
+  current: number;
+  total: number;
+}) => {
+  const state = getRequirementCompletionState(current, total);
+  const { icon: Icon, className } = requirementStatusStyles[state];
+
+  return (
+    <div
+      className={cn(
+        "flex h-10 w-10 items-center justify-center rounded-md shadow-sm",
+        className,
+      )}
+    >
+      <Icon className="h-6 w-6" strokeWidth={3} />
+    </div>
+  );
 };
 
 // Hours badge component
@@ -128,7 +166,10 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
         className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <StatusIcon status={requirement.status} />
+        <StatusIcon
+          current={requirement.appliedHours}
+          total={requirement.requiredHours}
+        />
         <VStack gap={0} className="flex-1 text-left">
           <span className="font-bold text-base">{code}</span>
           <span className="text-sm text-gray-500">{description}</span>
