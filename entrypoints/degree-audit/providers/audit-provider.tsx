@@ -151,6 +151,7 @@ export const AuditContextProvider = ({
 
         // Load requirements from cache
         const cached = await getAuditData(currentAuditId!);
+        console.log("[Main] getAuditData result:", cached);
         if (cached) {
           const normalizedCourses = normalizeCourseDict(cached.courses);
           setSections(normalizeRequirements(cached.requirements));

@@ -3,7 +3,7 @@ import type { CatalogCourse } from "../general-types";
 import { db } from "./db";
 
 const STORAGE_KEY = "db_seed_version";
-const CURRENT_VERSION = "20269-v3"; // Incremented manually when json or DB storage format changes
+const CURRENT_VERSION = "20269-fall"; // manually increment when updating json
 
 export async function seedDatabase() {
   // Check if we've already seeded this version

@@ -73,6 +73,18 @@ export type AuditRequirement = {
   rule: RequirementRule[];
 };
 
+export type CoreArea =
+  | "First-Year Signature Course"
+  | "Communication"
+  | "Humanities"
+  | "American and Texas Government"
+  | "U.S. History"
+  | "Social and Behavioral Sciences"
+  | "Mathematics"
+  | "Natural Science and Technology, Part I"
+  | "Natural Science and Technology, Part II"
+  | "Visual and Performing Arts";
+
 export type SemesterSeason = "Fall" | "Spring" | "Summer";
 export type Year = number;
 

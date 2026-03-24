@@ -1,5 +1,5 @@
 import Dexie from "dexie";
-import type { CatalogCourse } from "../general-types";
+import type { CatalogCourse, CoreArea } from "../general-types";
 
 export class UTDatabase extends Dexie {
   courses!: Dexie.Table<CatalogCourse, number>;
@@ -15,3 +15,8 @@ export class UTDatabase extends Dexie {
 }
 
 export const db = new UTDatabase();
+
+// Accepts one allowed core area string and returns a Promise<CatalogCourse[]> of all matching courses.
+export function findCoursesByCore(core: CoreArea): Promise<CatalogCourse[]> {
+  return db.courses.where("core").equals(core).toArray();
+}
