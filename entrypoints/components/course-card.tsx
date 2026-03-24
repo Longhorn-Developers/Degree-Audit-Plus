@@ -1,4 +1,4 @@
-import { CourseId } from "@/lib/general-types";
+import { CourseCode, CourseId } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
@@ -7,27 +7,34 @@ import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 export type CourseCardProps = {
   courseId: CourseId;
-  color?: "orange" | "indigo";
   className?: string;
   showDots?: boolean;
 };
 
-const colorMap = {
-  orange: "bg-dap-orange",
-  indigo: "bg-dap-indigo",
-};
+const colorMap = [
+  "bg-dap-orange",
+  "bg-dap-teal",
+  "bg-dap-yellow",
+  "bg-dap-indigo",
+  "bg-dap-pink",
+  "bg-dap-green",
+  "bg-dap-purple",
+  "bg-dap-red",
+] as const satisfies string[];
+
+function getColor(code: CourseCode) {
+  const [department, id] = code.split(" ");
+  const departmentSum = department
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colorMap[departmentSum % colorMap.length];
+}
 
 const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const {
-    courseId,
-    color = "orange",
-    className,
-    showDots = false,
-    ...rest
-  } = props;
+  const { courseId, className, showDots = false, ...rest } = props;
   const {
     name: fullName,
     code: courseName,
@@ -44,7 +51,7 @@ const CourseCardVisual = forwardRef<
       )}
     >
       <div
-        className={`w-6 flex items-center justify-center ${colorMap[color]} rounded-l-sm border-r-2 border-dap-border`}
+        className={`w-6 flex items-center justify-center ${getColor(courseName)} rounded-l-sm border-r-2 border-dap-border`}
       >
         {showDots ? (
           <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
@@ -60,11 +67,7 @@ const CourseCardVisual = forwardRef<
 
 CourseCardVisual.displayName = "CourseCardVisual";
 
-const DraggableCourseCard = ({
-  courseId,
-  color,
-  className,
-}: CourseCardProps) => {
+const DraggableCourseCard = ({ courseId, className }: CourseCardProps) => {
   const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
     id: courseId,
   });
@@ -74,7 +77,6 @@ const DraggableCourseCard = ({
       {...attributes}
       {...listeners}
       courseId={courseId}
-      color={color}
       showDots
       className={cn(
         isDragging ? "opacity-50" : "opacity-100",
@@ -89,14 +91,12 @@ const DraggableCourseCard = ({
 const CourseCard = ({
   courseId,
   className,
-  color,
   draggable,
   showDots = false,
 }: CourseCardProps & { draggable?: boolean }) => {
   return draggable ? (
     <DraggableCourseCard
       courseId={courseId}
-      color={color}
       className={className}
       showDots={showDots}
     />
@@ -104,7 +104,6 @@ const CourseCard = ({
     <CourseCardVisual
       courseId={courseId}
       className={className}
-      color={color}
       showDots={showDots}
     />
   );

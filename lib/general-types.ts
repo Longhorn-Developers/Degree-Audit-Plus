@@ -117,12 +117,14 @@ export type CourseCompletionMethod =
   | "Credit By Exam"
   | "In-Residence";
 
+export type CourseCode = `${string} ${number}` | `${string} ${number}${string}`;
+
 /**
  * All the information about a course. Everything is grabbed from scraping except the id which is a custom UUID.
  */
 export type Course = {
   id: CourseId;
-  code: string;
+  code: CourseCode;
   name: string;
   hours: number;
   semester: StringSemester;
