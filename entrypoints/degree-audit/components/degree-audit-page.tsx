@@ -1,10 +1,70 @@
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
+import { AuditRequirement, CoreArea } from "@/lib/general-types";
+import { useEffect } from "react";
 import { useAuditContext } from "../providers/audit-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown from "./requirement-breakdown";
+
+function parseGpaSummary(text: string | undefined) {
+  if (!text) {
+    return null;
+  }
+
+  const match = text.match(/(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    hoursUsed: Number(match[1]),
+    points: Number(match[2]),
+  };
+}
+
+// gets remaining core requreiemtsn needed with core area as key and hours needed as value
+const CORE_CODE_TO_NAME: Partial<Record<string, CoreArea>> = {
+  "090": "First-Year Signature Course",
+  "010": "Communication",
+  "040": "Humanities",
+  "070": "American and Texas Government",
+  "060": "U.S. History",
+  "080": "Social and Behavioral Sciences",
+  "020": "Mathematics",
+  "030": "Natural Science and Technology, Part I",
+  "093": "Natural Science and Technology, Part II",
+  "050": "Visual and Performing Arts",
+};
+
+function getMissingCoreRequirements(
+  sections: AuditRequirement[],
+): Partial<Record<CoreArea, number>> {
+  const coreSection = sections.find((section) => section.title === "Core Curriculum");
+  if (!coreSection) {
+    return {};
+  }
+
+  return coreSection.rule.reduce<Partial<Record<CoreArea, number>>>((missing, rule) => {
+    const coreCode = rule.text.match(/CORE \((\d{3})\)/)?.[1];
+    const coreName = coreCode ? CORE_CODE_TO_NAME[coreCode] : undefined;
+
+    if (coreName && rule.remainingHours > 0) {
+      missing[coreName] = rule.remainingHours;
+    }
+
+    return missing; // vbad
+  }, {});
+}
+
+// TODO function to get potential classes 
+// need to make sure we handle compexities of the rules (like "2 of the following 3 classes") and also the fact that some classes can satisfy multiple requirements (like a class that satisfies both a core requirement and a major requirement)
+
+
+
+
+
 
 const SidePanel = () => {
   const { sections } = useAuditContext();
@@ -12,45 +72,8 @@ const SidePanel = () => {
     section.title.toLowerCase().includes("gpa"),
   );
   const gpaRule = gpaSection?.rule[0];
+  const gpaSummary = parseGpaSummary(gpaRule?.text);
 
-  if (!gpaRule) {
-    return null;
-  }
-
-  return (
-    <div className="w-sm rounded-lg border border-gray-200 bg-white p-5 shadow-md">
-      <div className="flex items-start justify-between gap-4">
-        <h3 className="text-xl font-bold text-gray-900">GPA Totals</h3>
-        <div className="rounded-lg bg-[#4A7C59] px-4 py-2 text-lg font-semibold text-white">
-          {gpaRule.appliedHours.toFixed(4)}
-        </div>
-      </div>
-
-      <div className="mt-4 flex gap-6">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-gray-500">Required</span>
-          <div className="rounded-lg border border-gray-300 px-4 py-2">
-            <span className="text-lg font-semibold">
-              {gpaRule.requiredHours.toFixed(4)}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-gray-500">Remaining</span>
-          <div className="rounded-lg border border-gray-300 px-4 py-2">
-            <span className="text-lg font-semibold">
-              {Math.max(gpaRule.remainingHours, 0).toFixed(4)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-4 text-sm text-gray-600">{gpaRule.text}</p>
-    </div>
-  );
-};
-
-const SidePanel = () => {
   return (
     <VStack
       fill
@@ -60,12 +83,14 @@ const SidePanel = () => {
     >
       <SimpleDegreeCompletionDonut size={300} />
       <VStack gap={4} className="w-sm mt-10">
-        <GPATotalsCard
-          required={gpaRule?.requiredHours ?? 2.0}
-          counted={gpaRule?.appliedHours ?? 0.0}
-          hoursUsed={80}
-          points={320}
-        />
+        {gpaRule ? (
+          <GPATotalsCard
+            required={gpaRule.requiredHours}
+            counted={gpaRule.appliedHours}
+            hoursUsed={gpaSummary?.hoursUsed ?? 0}
+            points={gpaSummary?.points ?? 0}
+          />
+        ) : null}
         <CreditHourTotalsCard
           requirements={[
             {
@@ -115,6 +140,12 @@ const MainContent = () => {
 };
 
 const DegreeAuditPage = () => {
+  const { sections } = useAuditContext();
+
+  useEffect(() => {
+    console.log("[DegreeAuditPage] Missing core requirements:", getMissingCoreRequirements(sections));
+  }, [sections]);
+
   return (
     <HStack fill x="between" className="h-full w-full" gap={8}>
       <MainContent />

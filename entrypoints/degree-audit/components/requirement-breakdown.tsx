@@ -14,8 +14,9 @@ import {
   PlusCircleIcon,
 } from "@phosphor-icons/react";
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
-import { CheckIcon, MinusIcon, XIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
+import { FramedStatusIcon } from "./gpa-credit-cards";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 
@@ -34,21 +35,6 @@ const getRequirementCompletionState = (
   return "in-progress";
 };
 
-const requirementStatusStyles = {
-  completed: {
-    icon: CheckIcon,
-    className: "bg-[#67B44A] text-white",
-  },
-  "not-started": {
-    icon: XIcon,
-    className: "bg-[#425466] text-white",
-  },
-  "in-progress": {
-    icon: MinusIcon,
-    className: "bg-[#B7C6D1] text-white",
-  },
-} as const;
-
 const StatusIcon = ({
   current,
   total,
@@ -57,18 +43,8 @@ const StatusIcon = ({
   total: number;
 }) => {
   const state = getRequirementCompletionState(current, total);
-  const { icon: Icon, className } = requirementStatusStyles[state];
 
-  return (
-    <div
-      className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-md shadow-sm",
-        className,
-      )}
-    >
-      <Icon className="h-6 w-6" strokeWidth={3} />
-    </div>
-  );
+  return <FramedStatusIcon state={state} />;
 };
 
 // Hours badge component
