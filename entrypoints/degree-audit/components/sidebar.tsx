@@ -1,9 +1,9 @@
 import DegreeAuditCard from "@/entrypoints/components/audit-card";
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import dapLogo from "@/public/dap-logo.png";
 import lhdLogo from "@/public/icon/LHD Logo.png";
+import logo from "@/public/logo.png";
 import {
-  ArrowSquareOut,
+  ArrowUpRight,
   DiscordLogo,
   Gear,
   GithubLogo,
@@ -43,7 +43,7 @@ const Sidebar = () => {
       className={clsx(
         "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[var(--color-dap-border)] overflow-hidden whitespace-nowrap transition-[width] duration-300 ease-out",
         {
-          "w-[375px]": sidebarIsOpen,
+          "w-[325px]": sidebarIsOpen,
           "w-0 pointer-events-none": !sidebarIsOpen,
         },
       )}
@@ -53,7 +53,7 @@ const Sidebar = () => {
       {/* Header */}
       <div className="px-8 pb-4 flex items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-2">
-          <img src={dapLogo} alt="DAP Logo" className="w-12 h-12" />
+          <img src={logo} alt="DAP Logo" className="w-12 h-12" /> 
           <span className="text-dap-orange font-semibold text-xl">
             Degree Audit Plus
           </span>
@@ -119,25 +119,29 @@ const Sidebar = () => {
             href="#"
             className="text-[var(--color-dap-orange)] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            UT Core Requirements <ArrowSquareOut size={14} />
+            {/* CHANGED THIS: Replaced ArrowSquareOut with ArrowUpRight */}
+            UT Core Requirements <ArrowUpRight size={14} />
           </a>
           <a
             href="#"
             className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            UT Degree Plans <ArrowSquareOut size={14} />
+            {/* CHANGED THIS: Replaced ArrowSquareOut with ArrowUpRight */}
+            UT Degree Plans <ArrowUpRight size={14} />
           </a>
           <a
             href="#"
             className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            Registration Info Sheet (RIS) <ArrowSquareOut size={14} />
+            {/* CHANGED THIS: Replaced ArrowSquareOut with ArrowUpRight */}
+            Registration Info Sheet (RIS) <ArrowUpRight size={14} />
           </a>
           <a
             href="#"
             className="text-[#bf5700] text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            Register for Courses <ArrowSquareOut size={14} />
+            {/* CHANGED THIS: Replaced ArrowSquareOut with ArrowUpRight */}
+            Register for Courses <ArrowUpRight size={14} />
           </a>
         </div>
 
@@ -149,14 +153,15 @@ const Sidebar = () => {
           href="#"
           className="text-[var(--color-dap-orange)] font-semibold hover:underline flex items-center gap-1"
         >
-          Send us Feedback! <ArrowSquareOut size={14} />
+          {/* CHANGED THIS: Replaced ArrowSquareOut with ArrowUpRight */}
+          Send us Feedback! <ArrowUpRight size={14} />
         </a>
       </div>
 
       {/* Footer */}
       <div className="px-8 pt-6 pb-4">
         <div className="flex items-center gap-2 mb-4">
-          <img src={lhdLogo} alt="Longhorn Developers" className="w-6 h-6" />
+          <img src={logo} alt="Longhorn Developers" className="w-12 h-12" />
           <div className="text-sm">
             <span className="text-[var(--color-dap-orange)] font-semibold">
               MADE WITH LOVE, BY
@@ -167,7 +172,8 @@ const Sidebar = () => {
             </span>
           </div>
         </div>
-        <div className="flex items-center justify-start gap-4 text-[var(--color-dap-dark)]">
+        {/* CHANGED THIS: Swapped justify-start for w-full to allow ml-auto to work */}
+        <div className="flex items-center w-full gap-4 text-[var(--color-dap-dark)]">
           <a href="#" aria-label="Discord">
             <DiscordLogo size={24} />
           </a>
@@ -180,7 +186,8 @@ const Sidebar = () => {
           <a href="#" aria-label="GitHub">
             <GithubLogo size={24} />
           </a>
-          <a href="#" aria-label="Dark Mode">
+          {/* CHANGED THIS: Added ml-auto to push Moon and Settings to the right */}
+          <a href="#" aria-label="Dark Mode" className="ml-auto">
             <Moon size={24} />
           </a>
           <a href="#" aria-label="Settings">

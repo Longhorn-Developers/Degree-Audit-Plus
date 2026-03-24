@@ -1,0 +1,373 @@
+parseMajor validation results
+Source catalog: https://catalog.utexas.edu/undergraduate/the-university/degree-programs/
+Total cases: 503
+Passed: 503
+Failed: 0
+
+Regression and realistic audit spot checks:
+- PASS | B.F.A Design -> Design | expected: Design
+- PASS | B.S. Computer Science -> Computer Science | expected: Computer Science
+- PASS | B.A. Economics -> Economics | expected: Economics
+- PASS | B S in Communication and Leadership -> Communication and Leadership | expected: Communication and Leadership
+- PASS | BSGS, Climate System Science -> Climate System Science | expected: Climate System Science
+- PASS |   B   A   Design   -> Design | expected: Design
+- PASS | Major: B A Design -> Design | expected: Design
+- PASS | B A Design - Credential: Elements of Computing (completed) -> Design | expected: Design
+- PASS | BMusic Music performance (Students may major in voice) -> Music performance | expected: Music performance
+- PASS | Major: B A Design - Credential: Bridging Disciplines Program (active) -> Design | expected: Design
+- PASS | BSCompSci Computer science - Credential: Applied Statistical Modeling (pending) -> Computer science | expected: Computer science
+- PASS | BFA Studio art -> Studio art | expected: Studio art
+- PASS | BSEnvirSci Geographical sciences -> Geographical sciences | expected: Geographical sciences
+- PASS | Bachelor of Social Work - Honors -> Social Work | expected: Social Work
+- PASS | Undergraduate - Undeclared -> Undeclared | expected: Undeclared
+- PASS | PharmD -> Pharmacy | expected: Pharmacy
+- PASS | PharmD, Research Honors in Pharmacy -> Pharmacy | expected: Pharmacy
+- PASS | B A, Informatics -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Cultural Heritage Informatics -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Cultural Heritage Informatics, Hn -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Human-Centered Data Science -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Human-Centered Data Science, Hnr -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Health Informatics -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Health Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Social Informatics -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Social Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Social Justice Informatics -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; Social Justice Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; User Experience Design -> Informatics | expected: Informatics
+- PASS | B A, major in Informatics; User Experience Design, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Cultural Heritage Informatics -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Cultural Heritage Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Human-Centered Data Science -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Human-Centered Data Science, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Health Informatics -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Health Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Social Informatics -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Social Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Social Justice Informatics -> Informatics | expected: Informatics
+- PASS | B S in Informatics; Social Justice Informatics, Hnr -> Informatics | expected: Informatics
+- PASS | B S in Informatics; User Experience Design -> Informatics | expected: Informatics
+- PASS | B S in Informatics; User Experience Design, Hnr -> Informatics | expected: Informatics
+- PASS | BS ED, Generic All-Level Special Education -> Education | expected: Education
+- PASS | BS ED, EC-6 ESL Bilingual Generalist Certification -> Education | expected: Education
+- PASS | BS ED, EC-6 ESL Generalist Certification -> Education | expected: Education
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, Cultural Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, Coaching, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, Coaching, Disability Stud -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, Coaching, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, Coaching, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Coaching, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Cultural Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Coaching -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, w/ Early Child, Disability Stud -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS, Early Childhood, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Strength/Cond Coach -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Early Child, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Coaching -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Strength/Cond Coach -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ ELP, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Cultural Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Coaching -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Disability Stud -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Strength/Cond Coach -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, PAE track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Phys Ed, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Cultural Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Coaching -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Disability Stud -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Strength/Cond Coach -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Spec Pop, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Urban Teachers, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Urban Teachers, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Urban Teachers, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, MN/CT -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Science track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Cultural Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Education track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Coaching -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Comm Hlth/Well -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Disability Stud -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Health Fit Inst -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Med Fit & Rehab -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Strength/Cond Coach -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, Social Studies track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, E/LA track -> Youth and community studies | expected: Youth and community studies
+- PASS | BS ED, YCS w/ Yth/Soc Serv, SOC/S W track -> Youth and community studies | expected: Youth and community studies
+- PASS | B S in Athletic Training -> Athletic training | expected: Athletic training
+- PASS | B S in Athletic Training with Coaching -> Athletic training | expected: Athletic training
+- PASS | B S in Athletic Training with Comm Hlth/Well -> Athletic training | expected: Athletic training
+- PASS | B S in Athletic Training with Health Fit Inst -> Athletic training | expected: Athletic training
+- PASS | B S in Athletic Training with Med Fit & Rehab -> Athletic training | expected: Athletic training
+- PASS | B S in Athletic Training with Strength/Cond Coach -> Athletic training | expected: Athletic training
+- PASS | B S KHE, AMS w/ Science track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Cultural Studies track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Coaching -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Comm Hlth/Well -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Education track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Health Fit Inst -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Med Fit & Rehab -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ MN/CT -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Phys Ed track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Social Studies track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ Strength/Cond Coach -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ E/LA track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, AMS w/ SOC/S W track -> Applied movement science | expected: Applied movement science
+- PASS | B S KHE, ES w/ Science track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Cultural Studies track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Coaching -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Comm Hlth/Well -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Education track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Health Fit Inst -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Med Fit & Rehab -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ MN/CT -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Phys Ed track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Social Studies track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ Strength/Cond Coach -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ E/LA track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, ES w/ SOC/S W track -> Exercise science | expected: Exercise science
+- PASS | B S KHE, HPBS w/ Science track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Cultural Studies track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Coaching -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Comm Hlth/Well -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Education track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Health Fit Inst -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Med Fit & Rehab -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ MN/CT -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Phys Ed track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Social Studies track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ Strength/Cond Coach -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ E/LA track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, HPBS w/ SOC/S W track -> Health promotion and behavioral science | expected: Health promotion and behavioral science
+- PASS | B S KHE, PCSS w/ Science track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Cultural Studies track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Coaching -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Comm Hlth/Well -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Education track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Health Fit Inst -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Med Fit & Rehab -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ MN/CT -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Phys Ed track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Social Studies track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ Strength/Cond Coach -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ E/LA track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, PCSS w/ SOC/S W track -> Physical culture and sports studies | expected: Physical culture and sports studies
+- PASS | B S KHE, SM w/ Science track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Cultural Studies track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Coaching -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Comm Hlth/Well -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Education track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Health Fit Inst -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Med Fit & Rehab -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ MN/CT -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Phys Ed track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Social Studies track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ Strength/Cond Coach -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ E/LA track -> Sport management | expected: Sport management
+- PASS | B S KHE, SM w/ SOC/S W track -> Sport management | expected: Sport management
+- PASS | B A, major Asian Cultrs & Langs, Malayalam-Dept Hnrs -> Asian cultures and languages | expected: Asian cultures and languages
+- PASS | B A, major Astronomy -> Astronomy | expected: Astronomy
+- PASS | B A, major Mathematics, Teaching Option, Midl Grde -> Mathematics | expected: Mathematics
+- PASS | Natural Sciences B A * Undeclared * Incomplete * -> Undeclared | expected: Undeclared
+- PASS | BSA Biology* INCOMPLETE -> Biology | expected: Biology
+- PASS | BSA Biology, Option: Biochemistry Concentration -> Biology | expected: Biology
+- PASS | BSA Biology, Ecol, Evol, and Biodiversity Concentration -> Biology | expected: Biology
+- PASS | BSA Biology, Organismal Biology and Physiology Honors -> Biology | expected: Biology
+- PASS | BSA Computer Science, Honors -> Computer Science | expected: Computer Science
+- PASS | ENTRY-LEVEL requirements, Environmental Science -> Environmental Science | expected: Environmental Science
+- PASS | BS in Statistics and Data Sciences, Entry-Level -> Statistics and Data Sciences | expected: Statistics and Data Sciences
+- PASS | B S Biology, Cell and Molecular Biology -> Biology | expected: Biology
+- PASS | B S Environmental Science, Biological Sciences -> Environmental Science | expected: Environmental Science
+- PASS | BS Chemistry, Focus Area III: Materials Chemistry -> Chemistry | expected: Chemistry
+- PASS | B S HDFS, Honors in Advanced HDFS -> Human Development and Family Sciences | expected: Human Development and Family Sciences
+- PASS | B S Mathematics, Actuarial Science option -> Mathematics | expected: Mathematics
+- PASS | B S in Neuroscience, Neuroscience Scholars -> Neuroscience | expected: Neuroscience
+- PASS | B S Nutrition, Dietetics, Didactic Program -> Nutrition | expected: Nutrition
+- PASS | BS Public Health, Advanced Program -> Public Health | expected: Public Health
+- PASS | B S Public Health; Public Health Honors -> Public Health | expected: Public Health
+- PASS | B S Physics, Option VII: Biophysics -> Physics | expected: Physics
+- PASS | B S Textiles & Apparel -> Textiles & Apparel | expected: Textiles & Apparel
+- PASS | B S Aerospace Engineering, Atmospheric Flight -> Aerospace Engineering | expected: Aerospace Engineering
+- PASS | B S Aerospace Engineering, Space Flight -> Aerospace Engineering | expected: Aerospace Engineering
+- PASS | B S Biomedical Engineering, IV: Biomechanics -> Biomedical Engineering | expected: Biomedical Engineering
+- PASS | B S Biomedical Engineering, I: Imaging/Instrument -> Biomedical Engineering | expected: Biomedical Engineering
+- PASS | B S Chemical Engr, Process Systems & Product Engr -> Chemical Engr | expected: Chemical Engr
+- PASS | B S Chemical Engr, Energy Technologies -> Chemical Engr | expected: Chemical Engr
+- PASS | B S Chem Engr I: Mtrls Engr II: EnergyTec -> Chem Engr | expected: Chem Engr
+- PASS | B S Chem Engr I: Env Engr II: Engr Econ -> Chem Engr | expected: Chem Engr
+- PASS | BSECE(incomplete)* -> Electrical and Computer Engr | expected: Electrical and Computer Engr
+- PASS | BSECE, Data Science & Info Processing -> Electrical and Computer Engr | expected: Electrical and Computer Engr
+- PASS | BSECE, Bus & ECE Hon, Software Engineering and Design -> Electrical and Computer Engr | expected: Electrical and Computer Engr
+- PASS | BSECE, Honors, Energy Systems & Renewable Energy -> Electrical and Computer Engr | expected: Electrical and Computer Engr
+- PASS | B S Mech Engr, Career Gateway Elective -> Mech Engr | expected: Mech Engr
+- PASS | B S Petroleum Engineering * -> Petroleum Engineering | expected: Petroleum Engineering
+- PASS | B S Geosystems Engineering -> Geosystems Engineering | expected: Geosystems Engineering
+- PASS | B A, Art History -> Art History | expected: Art History
+- PASS | B A, Studio Art -> Studio Art | expected: Studio Art
+- PASS | B A, Design -> Design | expected: Design
+- PASS | B A in Music; Emphasis in Composition, Bassoon -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Clarinet -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Double Bass -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Euphonium -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, French Horn -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Flute -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Guitar -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Harp -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Harpsichord -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Oboe -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Organ -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Piano -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Percussion -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Saxophone -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Trombone -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Trumpet -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Tuba -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Viola -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Violoncello -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Violin -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Composition, Voice -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Bassoon -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Clarinet -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Double Bass -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Euphonium -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, French Horn -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Flute -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Guitar -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Harp -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Harpsichord -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Oboe -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Organ -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Piano -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Percussion -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Saxophone -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Trombone -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Trumpet -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Tuba -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Viola -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Violoncello -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Violin -> Music | expected: Music
+- PASS | B A in Music; Emphasis in Music, Voice -> Music | expected: Music
+- PASS | B A in Theatre and Dance -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, Dance -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, Design and Tech -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, His, Lit, and Drama -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, Playwriting and Directing -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, Performer's Process -> Theatre and Dance | expected: Theatre and Dance
+- PASS | BA in Theatre and Dance, Theatre for Youth and Communities -> Theatre and Dance | expected: Theatre and Dance
+- PASS | B F A, Art Education -> Art Education | expected: Art Education
+- PASS | B F A, Studio Art -> Studio Art | expected: Studio Art
+- PASS | B F A, Design -> Design | expected: Design
+- PASS | B F A, Acting -> Acting | expected: Acting
+- PASS | B F A, Dance, Dance Option -> Dance | expected: Dance
+- PASS | B F A, Dance, Dance Education Option -> Dance | expected: Dance
+- PASS | B F A, Theatre Education -> Theatre Education | expected: Theatre Education
+- PASS | B M, Composition, Traditional, Bassoon -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Clarinet -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Double Bass -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Euphonium -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, French Horn -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Flute -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Guitar -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Harp -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Harpsichord -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Oboe -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Organ -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Piano -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Percussion -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Saxophone -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Trombone -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Trumpet -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Tuba -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Viola -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Violoncello -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Violin -> Composition | expected: Composition
+- PASS | B M, Composition, Traditional, Voice -> Composition | expected: Composition
+- PASS | B M, Harp Performance -> Harp Performance | expected: Harp Performance
+- PASS | B M, Jazz, Double Bass -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Drum Set -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Guitar -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Piano -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Saxophone -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Trombone -> Jazz | expected: Jazz
+- PASS | B M, Jazz, Trumpet -> Jazz | expected: Jazz
+- PASS | B M, Music Studies, Choral, Piano -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Choral, Voice -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Bassoon -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Clarinet -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Double Bass -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Euphonium -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, French Horn -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Flute -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Guitar -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Harp -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Harpsichord -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Oboe -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Organ -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Piano -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Percussion -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Saxophone -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Trombone -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Trumpet -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Tuba -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Viola -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Violoncello -> Music Studies | expected: Music Studies
+- PASS | B M, Music Studies, Instrumental, Violin -> Music Studies | expected: Music Studies
+- PASS | B M, Organ or Harpsichord Performance -> Organ or Harpsichord Performance | expected: Organ or Harpsichord Performance
+- PASS | B M, Orch. Instrument, Traditional, Bassoon -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Clarinet -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Double Bass -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Euphonium -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, French Horn -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Flute -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Guitar -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Oboe -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Percussion -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Saxophone -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Trombone -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Trumpet -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Tuba -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Viola -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Violoncello -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Orch. Instrument, Traditional, Violin -> Orch. Instrument | expected: Orch. Instrument
+- PASS | B M, Piano Performance -> Piano Performance | expected: Piano Performance
+- PASS | B M, Voice Performance -> Voice Performance | expected: Voice Performance
+- PASS | B S in Arts and Entertainment Tech -> Arts and Entertainment Tech | expected: Arts and Entertainment Tech
+
+Catalog corpus failures:
+- None

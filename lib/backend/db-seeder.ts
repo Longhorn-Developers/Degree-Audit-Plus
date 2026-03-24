@@ -1,8 +1,9 @@
 import coursesData from "@/assets/ut-courses.json";
+import type { CatalogCourse } from "../general-types";
 import { db } from "./db";
 
 const STORAGE_KEY = "db_seed_version";
-const CURRENT_VERSION = "20259-v1"; // Incremented manually when json changes
+const CURRENT_VERSION = "20269-fall"; // manually increment when updating json
 
 export async function seedDatabase() {
   // Check if we've already seeded this version
@@ -14,10 +15,7 @@ export async function seedDatabase() {
     console.log(`[DB] Seeding database (Version: ${CURRENT_VERSION})...`);
 
     try {
-      const courses = (coursesData as any[]).map((c) => ({
-        ...c,
-        id: c.id ?? crypto.randomUUID(),
-      }));
+      const courses = coursesData as CatalogCourse[];
       await db.courses.clear();
       await db.courses.bulkPut(courses);
       localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);

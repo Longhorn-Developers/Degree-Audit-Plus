@@ -89,6 +89,18 @@ export type AuditRequirement = {
   rules: RequirementRule[];
 };
 
+export type CoreArea =
+  | "First-Year Signature Course"
+  | "Communication"
+  | "Humanities"
+  | "American and Texas Government"
+  | "U.S. History"
+  | "Social and Behavioral Sciences"
+  | "Mathematics"
+  | "Natural Science and Technology, Part I"
+  | "Natural Science and Technology, Part II"
+  | "Visual and Performing Arts";
+
 export type SemesterSeason = "Fall" | "Spring" | "Summer";
 export type Year = number;
 
@@ -117,6 +129,57 @@ export type Course = {
   grade?: string;
   status: PlannableStatus;
   type: CourseCompletionMethod;
+};
+
+/**
+ * A course instructor entry from the UT course catalog export.
+ */
+export type CatalogInstructor = {
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  middleInitial?: string;
+};
+
+/**
+ * A single meeting time/location entry from the UT course catalog export.
+ */
+export type CatalogCourseScheduleEntry = {
+  days: string;
+  hours: string;
+  location: string;
+};
+
+/**
+ * Semester metadata from the UT course catalog export.
+ */
+export type CatalogSemester = {
+  year: Year;
+  season: SemesterSeason;
+  code: string;
+};
+
+/**
+ * The full catalog-course JSON shape stored in assets/ut-courses.json and persisted to IndexedDB.
+ */
+export type CatalogCourse = {
+  uniqueId: number;
+  fullName: string;
+  courseName: string;
+  department: string;
+  number: string;
+  creditHours: number;
+  status: string;
+  isReserved: boolean;
+  instructionMode: string;
+  instructors: CatalogInstructor[];
+  schedule: CatalogCourseScheduleEntry[];
+  flags: string[];
+  core: string[];
+  url: string;
+  description: string[];
+  semester: CatalogSemester;
+  scrapedAt: number;
 };
 
 export interface DegreeAuditCardProps {

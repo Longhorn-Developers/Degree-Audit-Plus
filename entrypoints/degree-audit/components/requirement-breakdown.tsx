@@ -11,35 +11,49 @@ import { cn } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
-  CheckCircleIcon,
-  HourglassIcon,
-  MinusCircleIcon,
   PlusCircleIcon,
-  QuestionMarkIcon,
 } from "@phosphor-icons/react";
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
+import { FramedStatusIcon } from "./gpa-credit-cards";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 
-// Status icon component for requirements
-const StatusIcon = ({ status }: { status: Status }) => {
-  if (status === "Completed") {
-    return <CheckCircleIcon weight="fill" className="w-6 h-6 text-green-600" />;
+type RequirementCompletionState = "completed" | "not-started" | "in-progress";
+
+const getRequirementCompletionState = (
+  current: number,
+  total: number,
+): RequirementCompletionState => {
+  if (total > 0 && current >= total) {
+    return "completed";
   }
-  if (status === "Not Started") {
-    return <MinusCircleIcon weight="fill" className="w-6 h-6 text-red-500" />;
+  if (current <= 0) {
+    return "not-started";
   }
-  return <MinusCircleIcon weight="fill" className="w-6 h-6 text-yellow-500" />;
+  return "in-progress";
+};
+
+const StatusIcon = ({
+  current,
+  total,
+}: {
+  current: number;
+  total: number;
+}) => {
+  const state = getRequirementCompletionState(current, total);
+
+  return <FramedStatusIcon state={state} />;
 };
 
 // Hours badge component
 const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   const isComplete = current >= total;
+  const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
   return (
     <span className="text-sm text-gray-600 border border-gray-300 rounded-full px-3 py-1">
-      {isComplete ? `${total} hours` : `${current} / ${total} hours`}
+      {isComplete ? formatHours(total) : `${current} / ${formatHours(total)}`}
     </span>
   );
 };
@@ -58,29 +72,23 @@ const statusIcons = {
     color: "bg-[var(--color-course-applied)]",
   },
   "In Progress": {
-    icon: (
-      <HourglassIcon
-        weight="fill"
-        className="-ml-1 text-white w-5 h-5 bg-yellow-500 rounded-full p-1"
-      />
-    ),
+    icon: null, 
     color: "bg-[var(--color-course-in-progress)]",
   },
-  // TODO: make sure this is valid
+// TODO: make sure this is valid
   "Not Started": {
-    icon: (
-      <QuestionMarkIcon className="-ml-1 text-white w-5 h-5 bg-gray-500 rounded-full p-1" />
-    ),
+    icon: null, 
     color: "bg-[var(--color-course-unknown)]",
   },
 } as const satisfies Record<
   PlannableStatus,
-  { icon: React.ReactNode; color: string }
+  { icon: React.ReactNode | null; color: string }
 >;
 
 // Course pill component matching Figma design
 const CoursePill = ({ course }: { course: Course }) => {
   const isApplied = course.status === "Completed";
+  const isValidSemester = course.semester && course.semester.length < 30;
 
   return (
     <div
@@ -89,15 +97,13 @@ const CoursePill = ({ course }: { course: Course }) => {
         statusIcons[course.status].color,
       )}
     >
-      {statusIcons[course.status].icon /* Chip specifying status of course */}
       <span className="font-semibold min-w-[80px]">{course.code}</span>
       <span className="flex-1">
         {course.name}
-        {course.code && ` (${course.code})`}
       </span>
       <span className="text-gray-700">
-        {course.semester}
-        {isApplied && course.grade && ` - Grade: ${course.grade}`}
+        {isValidSemester ? course.semester : ''}
+        {isApplied && course.grade && `${isValidSemester ? ' - ' : ''}Grade: ${course.grade}`}
       </span>
     </div>
   );
@@ -136,7 +142,10 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
         className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <StatusIcon status={requirement.status} />
+        <StatusIcon
+          current={requirement.appliedHours}
+          total={requirement.requiredHours}
+        />
         <VStack gap={0} className="flex-1 text-left">
           <span className="font-bold text-base">{code}</span>
           <span className="text-sm text-gray-500">{description}</span>

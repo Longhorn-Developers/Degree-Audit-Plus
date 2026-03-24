@@ -6,6 +6,26 @@ import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
 import CourseCard from "./course-card";
 
+interface CatalogCourse {
+  id: string;
+  uniqueId: number;
+  fullName: string;
+  courseName: string;
+  department: string;
+  number: string;
+  creditHours: number;
+  status: string;
+  isReserved: boolean;
+  instructionMode: string;
+  instructors: string[];
+  schedule: string[];
+  flags: string[];
+  core: string[];
+  url: string;
+  description: string[];
+  scrapedAt: number;
+}
+
 interface CourseAddModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -265,7 +285,7 @@ export function CourseSearchContent({
 }
 
 interface CourseSearchResultsProps {
-  courses: CourseId[];
+  courses: CatalogCourse[];
   onBack: () => void;
 }
 
@@ -284,7 +304,7 @@ export function CourseSearchResults({
       </button>
       <div className="space-y-2">
         {courses.map((course) => (
-          <CourseCard key={course} courseId={course} />
+          <CourseCard key={course.id} courseId={course.id} />
         ))}
       </div>
     </div>
