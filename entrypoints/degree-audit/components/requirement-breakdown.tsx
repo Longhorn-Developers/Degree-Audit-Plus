@@ -63,22 +63,22 @@ const statusIcons = {
     icon: (
       <CheckIcon className="-ml-1 text-white w-5 h-5 bg-green-500 rounded-full p-1" />
     ),
-    color: "bg-[var(--color-course-applied)]",
+    color: "bg-lime-100 border-lime-200",
   },
   Planned: {
     icon: (
       <CalendarBlankIcon className="-ml-1 text-white w-5 h-5 bg-blue-500 rounded-full p-1" />
     ),
-    color: "bg-[var(--color-course-applied)]",
+    color: "bg-[var(--color-course-applied)] border-gray-200",
   },
   "In Progress": {
     icon: null, 
-    color: "bg-[var(--color-course-in-progress)]",
+    color: "bg-[var(--color-course-in-progress)] border-gray-200",
   },
 // TODO: make sure this is valid
   "Not Started": {
     icon: null, 
-    color: "bg-[var(--color-course-unknown)]",
+    color: "bg-[var(--color-course-unknown)] border-gray-200",
   },
 } as const satisfies Record<
   PlannableStatus,
@@ -93,15 +93,15 @@ const CoursePill = ({ course }: { course: Course }) => {
   return (
     <div
       className={cn(
-        "flex items-center gap-6 px-4 py-3 rounded-lg text-sm w-[80%] border border-gray-200",
+        "flex items-center justify-between px-4 py-3 rounded-lg text-sm w-full border",
         statusIcons[course.status].color,
       )}
     >
-      <span className="font-semibold min-w-[80px]">{course.code}</span>
-      <span className="flex-1">
+      <span className="font-semibold flex-1 text-left">{course.code}</span>
+      <span className="flex-1 text-center font-medium">
         {course.name}
       </span>
-      <span className="text-gray-700">
+      <span className="flex-1 text-right text-gray-800">
         {isValidSemester ? course.semester : ''}
         {isApplied && course.grade ? ` - Grade: ${course.grade}` : ''}
       </span>
@@ -126,6 +126,8 @@ const parseRequirementCode = (
 // Individual requirement row with expandable courses
 const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   const { getCourseById } = useAuditContext();
+  const { openModal } = useCourseModalContext();
+  
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
   );
@@ -163,13 +165,22 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
         </HStack>
       </button>
 
-      {/* Expanded courses */}
-      {isExpanded && requirement.courses.length > 0 && (
-        <VStack gap={2} className="pl-11 pr-4 pb-3 bg-white">
+      {/* Expanded courses and add button */}
+      {isExpanded && requirement.courses.length > 0 &&(
+        <div className="flex flex-col items-center gap-3 px-4 pb-4 bg-white">
           {courses.map((course, idx) => (
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
-        </VStack>
+          
+          <Button
+            fill="solid"
+            className="bg-[var(--color-dap-orange)] hover:opacity-90 text-white border-none w-max px-6 py-2 rounded-md font-semibold flex items-center justify-center gap-2 mt-2"
+            onClick={openModal}
+          >
+            <PlusCircleIcon className="w-5 h-5" />
+            Add Planned Course
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -230,7 +241,6 @@ type RequirementBreakdownProps = {
   colorIndex?: number;
 };
 const RequirementBreakdown = (props: RequirementBreakdownProps) => {
-  const { openModal } = useCourseModalContext();
   const { title, hours, requirements, colorIndex = 0 } = props;
   const [isOpen, setIsOpen] = useState(false);
   const borderColor = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
@@ -242,7 +252,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
     >
       {/* Main header */}
       <button
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white" 
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={1}>
@@ -276,19 +286,6 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
                 requirement={requirement}
               />
             ))}
-          </div>
-
-          {/* Add course button */}
-          <div className="px-4 pb-4">
-            <Button
-              color="black"
-              fill="solid"
-              className="w-full text-base font-semibold py-3 px-6"
-              onClick={openModal}
-            >
-              <PlusCircleIcon className="w-5 h-5" />
-              Add Hypothetical Course
-            </Button>
           </div>
         </div>
       )}
