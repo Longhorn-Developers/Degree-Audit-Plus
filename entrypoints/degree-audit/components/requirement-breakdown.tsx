@@ -5,7 +5,6 @@ import {
   PlannableStatus,
   Progress,
   RequirementRule,
-  Status,
 } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
 import {
@@ -16,9 +15,9 @@ import {
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
-import { FramedStatusIcon } from "./gpa-credit-cards";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
+import { FramedStatusIcon } from "./gpa-credit-cards";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 
@@ -35,13 +34,7 @@ const getRequirementCompletionState = (
   return "in-progress";
 };
 
-const StatusIcon = ({
-  current,
-  total,
-}: {
-  current: number;
-  total: number;
-}) => {
+const StatusIcon = ({ current, total }: { current: number; total: number }) => {
   const state = getRequirementCompletionState(current, total);
 
   return <FramedStatusIcon state={state} />;
@@ -50,10 +43,14 @@ const StatusIcon = ({
 // Hours badge component
 const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   const isComplete = current >= total;
-  const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
+  const formatHours = (h: number) => `${h} hour${h === 1 ? "" : "s"}`;
   return (
     <span className="text-sm text-gray-600 border border-gray-300 rounded-full px-3 py-1">
-      {isComplete ? formatHours(total) : `${current} / ${formatHours(total)}`}
+      {isComplete
+        ? formatHours(total)
+        : current == 0
+          ? formatHours(0)
+          : `${current} / ${formatHours(total)}`}
     </span>
   );
 };
@@ -72,12 +69,12 @@ const statusIcons = {
     color: "bg-[var(--color-course-applied)]",
   },
   "In Progress": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-in-progress)]",
   },
-// TODO: make sure this is valid
+  // TODO: make sure this is valid
   "Not Started": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-unknown)]",
   },
 } as const satisfies Record<
@@ -98,12 +95,12 @@ const CoursePill = ({ course }: { course: Course }) => {
       )}
     >
       <span className="font-semibold min-w-[80px]">{course.code}</span>
-      <span className="flex-1">
-        {course.name}
-      </span>
+      <span className="flex-1">{course.name}</span>
       <span className="text-gray-700">
-        {isValidSemester ? course.semester : ''}
-        {isApplied && course.grade && `${isValidSemester ? ' - ' : ''}Grade: ${course.grade}`}
+        {isValidSemester ? course.semester : ""}
+        {isApplied &&
+          course.grade &&
+          `${isValidSemester ? " - " : ""}Grade: ${course.grade}`}
       </span>
     </div>
   );
