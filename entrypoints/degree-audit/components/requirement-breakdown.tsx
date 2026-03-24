@@ -93,7 +93,7 @@ const CoursePill = ({ course }: { course: Course }) => {
   return (
     <div
       className={cn(
-        "flex items-center gap-6 px-4 py-3 rounded-lg text-sm w-[80%]",
+        "flex items-center gap-6 px-4 py-3 rounded-lg text-sm w-[80%] border border-gray-200",
         statusIcons[course.status].color,
       )}
     >
@@ -103,7 +103,7 @@ const CoursePill = ({ course }: { course: Course }) => {
       </span>
       <span className="text-gray-700">
         {isValidSemester ? course.semester : ''}
-        {isApplied && course.grade && `${isValidSemester ? ' - ' : ''}Grade: ${course.grade}`}
+        {isApplied && course.grade ? ` - Grade: ${course.grade}` : ''}
       </span>
     </div>
   );
@@ -136,10 +136,10 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   );
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
+    <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
       {/* Requirement header */}
       <button
-        className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors"
+        className="w-full py-3 px-2 flex items-start gap-3 hover:bg-gray-50 transition-colors bg-white"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <StatusIcon
@@ -165,7 +165,7 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
 
       {/* Expanded courses */}
       {isExpanded && requirement.courses.length > 0 && (
-        <VStack gap={2} className="pl-11 pr-4 pb-3">
+        <VStack gap={2} className="pl-11 pr-4 pb-3 bg-white">
           {courses.map((course, idx) => (
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
@@ -237,15 +237,12 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
 
   return (
     <div
-      className="w-full bg-gray-50 rounded-md border border-gray-200 overflow-hidden border-l-8"
+      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-8"
       style={{ borderLeftColor: borderColor.tailwind }}
     >
       {/* Main header */}
       <button
-        className={cn(
-          "w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors",
-          isOpen && "bg-gray-50",
-        )}
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={1}>
@@ -270,9 +267,9 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
 
       {/* Expanded content */}
       {isOpen && (
-        <div className="border-t border-gray-200">
+        <div className="bg-white">
           {/* Requirement rows */}
-          <div className="px-4 py-2">
+          <div className="px-4 py-4">
             {requirements.map((requirement, idx) => (
               <RequirementRow
                 key={`${requirement.text.slice(0, 20)}-${idx}`}
