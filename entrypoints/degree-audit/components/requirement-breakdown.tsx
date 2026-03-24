@@ -65,7 +65,11 @@ const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
   return (
     <span className="text-sm text-gray-900 border border-gray-800 rounded-full px-3 py-0.5 font-medium">
-      {isComplete ? formatHours(total) : `${current} / ${formatHours(total)}`}
+      {isComplete
+        ? formatHours(total)
+        : current === 0
+          ? formatHours(0)
+          : `${current} / ${formatHours(total)}`}
     </span>
   );
 };
@@ -134,7 +138,7 @@ const parseRequirementCode = (
 const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   const { getCourseById } = useAuditContext();
   const { openModal } = useCourseModalContext();
-  
+
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
   );
@@ -178,7 +182,7 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
           {courses.map((course, idx) => (
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
-          
+
           <div className="w-full flex justify-center mt-2">
             <Button
               fill="solid"
