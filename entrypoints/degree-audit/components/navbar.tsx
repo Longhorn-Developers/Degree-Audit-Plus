@@ -1,10 +1,9 @@
-import {
-  IconButton,
-} from "@/entrypoints/components/common/button";
+import { IconButton } from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { useAuditContext } from "@/entrypoints/degree-audit/providers/audit-provider";
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import { ExportIcon, PencilIcon } from "@phosphor-icons/react";
+import { ExportIcon, PencilIcon, PencilSimpleLineIcon } from "@phosphor-icons/react";
+import { PencilLineIcon } from "lucide-react";
 
 const MAJOR_TAG_STYLES = [
   "bg-[#18a770] text-[#f3fff8]",
@@ -45,7 +44,7 @@ const Navbar = () => {
         </h1>
         {majors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
+            <span className="shrink-0 text-[15px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
               MAJOR
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">
@@ -65,7 +64,7 @@ const Navbar = () => {
 
         {minors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
+            <span className="shrink-0 text-[15px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
               MINOR/CERT
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">
@@ -95,7 +94,9 @@ const Navbar = () => {
           >
             <span
               className={`inline-block h-[12px] w-[12px] transform rounded-full bg-[#97a7b4] transition-transform duration-200 ease-in-out ${
-                viewMode === "planner" ? "translate-x-[18px]" : "translate-x-[3px]"
+                viewMode === "planner"
+                  ? "translate-x-[18px]"
+                  : "translate-x-[3px]"
               }`}
             />
           </button>
@@ -104,13 +105,13 @@ const Navbar = () => {
           </span>
         </HStack>
         <IconButton
-          icon={<PencilIcon className="w-4 h-4" />}
+          icon={<PencilSimpleLineIcon className="w-5 h-5" />}
           label="Edit Audit"
           onClick={() => void toggleSidebar()}
           className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
         />
         <IconButton
-          icon={<ExportIcon className="w-4 h-4" />}
+          icon={<ExportIcon className="w-5 h-5" />}
           label="Share"
           className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
         />
