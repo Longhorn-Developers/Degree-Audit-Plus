@@ -19,10 +19,10 @@ const App = () => {
     <PreferencesProvider>
       <AuditContextProvider>
         <CourseModalContextProvider>
-        <HStack fill className="w-screen" gap={0}>
-          <Sidebar />
-          <MainContent />
-        </HStack>
+          <HStack fill className="w-screen" gap={0}>
+            <Sidebar />
+            <MainContent />
+          </HStack>
         </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>
@@ -32,7 +32,7 @@ const App = () => {
 const MainContent = () => {
   const { sidebarIsOpen, viewMode } = usePreferences();
 
-  return ( 
+  return (
     <VStack
       fill
       x="center"

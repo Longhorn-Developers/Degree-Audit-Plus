@@ -1,4 +1,3 @@
-import CourseAddModal from "@/entrypoints/components/course-add-modal";
 import { createContext, useContext, useState } from "react";
 
 // Context for sharing audit data betw sidebar and main
@@ -29,7 +28,7 @@ export const CourseModalContextProvider = ({
     >
       {children}
 
-      <CourseAddModal
+      {/* <CourseAddModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         // TODO: Implement course search functionality
@@ -37,7 +36,7 @@ export const CourseModalContextProvider = ({
           console.log("Search data:", searchData);
           setIsOpen(false);
         }}
-      />
+      /> */}
     </CourseModalContext.Provider>
   );
 };

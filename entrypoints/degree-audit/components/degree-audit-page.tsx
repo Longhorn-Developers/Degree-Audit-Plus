@@ -13,7 +13,9 @@ function parseGpaSummary(text: string | undefined) {
     return null;
   }
 
-  const match = text.match(/(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i);
+  const match = text.match(
+    /(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i,
+  );
   if (!match) {
     return null;
   }
@@ -41,37 +43,37 @@ const CORE_CODE_TO_NAME: Partial<Record<string, CoreArea>> = {
 function getMissingCoreRequirements(
   sections: AuditRequirement[],
 ): Partial<Record<CoreArea, number>> {
-  const coreSection = sections.find((section) => section.title === "Core Curriculum");
+  const coreSection = sections.find(
+    (section) => section.title === "Core Curriculum",
+  );
   if (!coreSection) {
     return {};
   }
 
-  return coreSection.rule.reduce<Partial<Record<CoreArea, number>>>((missing, rule) => {
-    const coreCode = rule.text.match(/CORE \((\d{3})\)/)?.[1];
-    const coreName = coreCode ? CORE_CODE_TO_NAME[coreCode] : undefined;
+  return coreSection.rules.reduce<Partial<Record<CoreArea, number>>>(
+    (missing, rule) => {
+      const coreCode = rule.text.match(/CORE \((\d{3})\)/)?.[1];
+      const coreName = coreCode ? CORE_CODE_TO_NAME[coreCode] : undefined;
 
-    if (coreName && rule.remainingHours > 0) {
-      missing[coreName] = rule.remainingHours;
-    }
+      if (coreName && rule.remainingHours > 0) {
+        missing[coreName] = rule.remainingHours;
+      }
 
-    return missing; // vbad
-  }, {});
+      return missing; // vbad
+    },
+    {},
+  );
 }
 
-// TODO function to get potential classes 
+// TODO function to get potential classes
 // need to make sure we handle compexities of the rules (like "2 of the following 3 classes") and also the fact that some classes can satisfy multiple requirements (like a class that satisfies both a core requirement and a major requirement)
-
-
-
-
-
 
 const SidePanel = () => {
   const { sections } = useAuditContext();
   const gpaSection = sections.find((section) =>
     section.title.toLowerCase().includes("gpa"),
   );
-  const gpaRule = gpaSection?.rule[0];
+  const gpaRule = gpaSection?.rules[0];
   const gpaSummary = parseGpaSummary(gpaRule?.text);
 
   return (
@@ -120,7 +122,9 @@ const MainContent = () => {
     <VStack fill className="w-full">
       <Title text="Degree Progress Overview" />
       {nonGPASections.map((section) => {
-        const originalIdx = sections.findIndex((s) => s.title === section.title);
+        const originalIdx = sections.findIndex(
+          (s) => s.title === section.title,
+        );
         const sectionProgress = progresses.sections[originalIdx];
 
         return (
@@ -129,7 +133,7 @@ const MainContent = () => {
               key={section.title || `section-${originalIdx}`}
               title={section.title}
               hours={sectionProgress.progress}
-              requirements={section.rule ?? []}
+              requirements={section.rules ?? []}
               colorIndex={originalIdx}
             />
           )
@@ -143,7 +147,10 @@ const DegreeAuditPage = () => {
   const { sections } = useAuditContext();
 
   useEffect(() => {
-    console.log("[DegreeAuditPage] Missing core requirements:", getMissingCoreRequirements(sections));
+    console.log(
+      "[DegreeAuditPage] Missing core requirements:",
+      getMissingCoreRequirements(sections),
+    );
   }, [sections]);
 
   return (

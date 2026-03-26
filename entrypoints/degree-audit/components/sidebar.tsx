@@ -84,7 +84,6 @@ const Sidebar = () => {
           ) : (
             history.audits.map((audit, index) => {
               const id = audit.auditId || String(index);
-              console.log("[Sidebar] Audit ID:", id);
               return (
                 <DegreeAuditCard
                   key={id}

@@ -1,14 +1,15 @@
 import { CourseId } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
+import { useDraggable } from "@dnd-kit/core";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 export type CourseCardProps = {
   courseId: CourseId;
-  // fullName: string;
-  // courseName: string;
   color?: "orange" | "indigo";
+  className?: string;
+  showDots?: boolean;
 };
 
 const colorMap = {
@@ -16,17 +17,22 @@ const colorMap = {
   indigo: "bg-dap-indigo",
 };
 
-const CourseCard = forwardRef<
+const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const { courseId, color: propColor, className, ...rest } = props;
+  const {
+    courseId,
+    color = "orange",
+    className,
+    showDots = false,
+    ...rest
+  } = props;
   const {
     name: fullName,
     code: courseName,
     status,
   } = useAuditContext().getCourseById(courseId);
-  const color = (propColor ?? status === "Completed") ? "orange" : "indigo";
 
   return (
     <div
@@ -40,7 +46,9 @@ const CourseCard = forwardRef<
       <div
         className={`w-6 flex items-center justify-center ${colorMap[color]} rounded-l-sm border-r-2 border-dap-border`}
       >
-        <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
+        {showDots ? (
+          <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
+        ) : null}
       </div>
       <div className="py-3 px-3">
         <p className="text-gray-900 font-semibold text-sm">{fullName}</p>
@@ -50,6 +58,56 @@ const CourseCard = forwardRef<
   );
 });
 
-CourseCard.displayName = "CourseCard";
+CourseCardVisual.displayName = "CourseCardVisual";
+
+const DraggableCourseCard = ({
+  courseId,
+  color,
+  className,
+}: CourseCardProps) => {
+  const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
+    id: courseId,
+  });
+
+  return (
+    <CourseCardVisual
+      {...attributes}
+      {...listeners}
+      courseId={courseId}
+      color={color}
+      showDots
+      className={cn(
+        isDragging ? "opacity-50" : "opacity-100",
+        "cursor-grab",
+        className,
+      )}
+      ref={setNodeRef}
+    />
+  );
+};
+
+const CourseCard = ({
+  courseId,
+  className,
+  color,
+  draggable,
+  showDots = false,
+}: CourseCardProps & { draggable?: boolean }) => {
+  return draggable ? (
+    <DraggableCourseCard
+      courseId={courseId}
+      color={color}
+      className={className}
+      showDots={showDots}
+    />
+  ) : (
+    <CourseCardVisual
+      courseId={courseId}
+      className={className}
+      color={color}
+      showDots={showDots}
+    />
+  );
+};
 
 export default CourseCard;
