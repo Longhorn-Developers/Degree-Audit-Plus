@@ -104,13 +104,13 @@ const Navbar = () => {
           </span>
         </HStack>
         <IconButton
-          icon={<PencilIcon className="w-4 h-4" />}
+          icon={<PencilIcon className="w-5 h-5" />}
           label="Edit Audit"
           onClick={() => void toggleSidebar()}
           className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
         />
         <IconButton
-          icon={<ExportIcon className="w-4 h-4" />}
+          icon={<ExportIcon className="w-5 h-5" />}
           label="Share"
           className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
         />

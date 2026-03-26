@@ -37,7 +37,7 @@ const MainContent = () => {
       fill
       x="center"
       className={clsx("w-full transition-[margin-left] duration-300 ease-out", {
-        "ml-[375px]": sidebarIsOpen,
+        "ml-[325px]": sidebarIsOpen,
         "ml-0": !sidebarIsOpen,
       })}
     >
