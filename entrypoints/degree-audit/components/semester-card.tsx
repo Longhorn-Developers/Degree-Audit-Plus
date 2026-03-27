@@ -16,6 +16,15 @@ export interface SemesterCardProps {
   courses: Course[];
 }
 
+function sortCoursesByDepartment(a: Course, b: Course) {
+  const [aDepartment, aNumber] = a.code.split(" ");
+  const [bDepartment, bNumber] = b.code.split(" ");
+  if (aDepartment !== bDepartment) {
+    return aDepartment.localeCompare(bDepartment);
+  }
+  return Number(aNumber) - Number(bNumber);
+}
+
 const SemesterCardVisual = forwardRef<
   HTMLDivElement,
   SemesterCardProps & React.HTMLAttributes<HTMLDivElement>
@@ -38,14 +47,16 @@ const SemesterCardVisual = forwardRef<
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
         <VStack fill className="w-full" gap={4}>
           {courses.length > 0 ? (
-            courses.map((course) => (
-              <CourseCard
-                key={course.code}
-                draggable={course.status !== "Completed"}
-                courseId={course.id}
-                className="w-full"
-              />
-            ))
+            courses
+              .sort(sortCoursesByDepartment)
+              .map((course) => (
+                <CourseCard
+                  key={course.code}
+                  draggable={course.status !== "Completed"}
+                  courseId={course.id}
+                  className="w-full"
+                />
+              ))
           ) : (
             <VStack
               centered
