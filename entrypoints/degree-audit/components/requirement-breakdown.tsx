@@ -283,7 +283,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
         </VStack>
         <HStack y="middle" gap={2}>
           <span className="text-gray-900 font-medium text-sm">
-            {hours.current.toString().padStart(2, "0")} / {hours.total} hours
+            {hours.current} / {hours.total} hours
           </span>
           {isOpen ? (
             <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />

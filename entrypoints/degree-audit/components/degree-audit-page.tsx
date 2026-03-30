@@ -1,9 +1,11 @@
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
-import { AuditRequirement, CoreArea } from "@/lib/general-types";
+import { searchCores } from "@/lib/backend/db";
+import { AuditRequirement, CatalogCourse, CoreArea } from "@/lib/general-types";
 import { useEffect } from "react";
 import { useAuditContext } from "../providers/audit-provider";
+import { useCourseModalContext } from "../providers/course-modal-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown from "./requirement-breakdown";
@@ -40,6 +42,9 @@ const CORE_CODE_TO_NAME: Partial<Record<string, CoreArea>> = {
   "050": "Visual and Performing Arts",
 };
 
+// TODO function to get potential classes
+// need to make sure we handle compexities of the rules (like "2 of the following 3 classes") and also the fact that some classes can satisfy multiple requirements (like a class that satisfies both a core requirement and a major requirement)
+
 function getMissingCoreRequirements(
   sections: AuditRequirement[],
 ): Partial<Record<CoreArea, number>> {
@@ -59,14 +64,59 @@ function getMissingCoreRequirements(
         missing[coreName] = rule.remainingHours;
       }
 
-      return missing; // vbad
+      return missing;
     },
     {},
   );
 }
 
-// TODO function to get potential classes
-// need to make sure we handle compexities of the rules (like "2 of the following 3 classes") and also the fact that some classes can satisfy multiple requirements (like a class that satisfies both a core requirement and a major requirement)
+
+// gets a few core classes to suggest, tries to do one from each missing core first
+async function getSuggestedCoreCourses(
+  sections: AuditRequirement[],
+  maxSuggestions = 3,
+): Promise<CatalogCourse[]> {
+  const suggestionCount = Math.max(0, Math.floor(maxSuggestions));
+  const missingCoreEntries = Object.entries(getMissingCoreRequirements(sections))
+    .filter((entry): entry is [CoreArea, number] => entry[1] > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (suggestionCount === 0 || missingCoreEntries.length === 0) {
+    return [];
+  }
+
+  const courseBuckets = await Promise.all(
+    missingCoreEntries.map(([core]) => searchCores(suggestionCount, core)),
+  );
+
+  const suggestions: CatalogCourse[] = [];
+  const seenCourseIds = new Set<number>();
+
+  while (
+    suggestions.length < suggestionCount &&
+    courseBuckets.some((bucket) => bucket.length > 0)
+  ) {
+    for (const bucket of courseBuckets) {
+      while (bucket.length > 0 && seenCourseIds.has(bucket[0].uniqueId)) {
+        bucket.shift();
+      }
+
+      if (bucket.length === 0) {
+        continue;
+      }
+
+      const nextCourse = bucket.shift()!;
+      suggestions.push(nextCourse);
+      seenCourseIds.add(nextCourse.uniqueId);
+
+      if (suggestions.length === suggestionCount) {
+        break;
+      }
+    }
+  }
+
+  return suggestions;
+}
 
 const SidePanel = () => {
   const { sections } = useAuditContext();
@@ -145,13 +195,26 @@ const MainContent = () => {
 
 const DegreeAuditPage = () => {
   const { sections } = useAuditContext();
+  const { setRecommendedCourses } = useCourseModalContext();
 
   useEffect(() => {
-    console.log(
-      "[DegreeAuditPage] Missing core requirements:",
-      getMissingCoreRequirements(sections),
-    );
-  }, [sections]);
+    async function logCoreSuggestions() {
+      const suggestedCourses = await getSuggestedCoreCourses(sections);
+      setRecommendedCourses(suggestedCourses);
+      console.log(
+        "[DegreeAuditPage] Missing core requirements:",
+        getMissingCoreRequirements(sections),
+      );
+      console.log(
+        "[DegreeAuditPage] Suggested core courses:",
+        suggestedCourses,
+      );
+    }
+
+    logCoreSuggestions().catch((error) => {
+      console.error("[DegreeAuditPage] Failed to load core suggestions:", error);
+    });
+  }, [sections, setRecommendedCourses]);
 
   return (
     <HStack fill x="between" className="h-full w-full" gap={8}>

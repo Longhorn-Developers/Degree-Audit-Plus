@@ -248,7 +248,7 @@ export default function App() {
           <span className="font-semibold text-[16px] text-dap-primary leading-none">
             Degree Audit
             <br />
-            Plus??
+            Plus
           </span>
         </div>
 
@@ -262,7 +262,7 @@ export default function App() {
             ) : (
               <div className="flex items-center space-x-2">
                 <PlusIcon size={24} />
-                <p className="text-lg font-bold">Run New Audit!!!!</p>
+                <p className="text-lg font-bold">Run New Audit</p>
               </div>
             )}
           </Button>
