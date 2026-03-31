@@ -2,7 +2,7 @@
 
 An unofficial Chrome extension designed to enhance and modernize the degree planning experience for students at the University of Texas at Austin.
 
-## The Problem
+## The Problem 
 
 The official degree audit system is powerful but can be difficult to read, non-interactive, and challenging for long-term planning. Degree Audit Plus aims to solve this by transforming the static audit page into a dynamic, interactive, and user-friendly dashboard through an extension.
 
