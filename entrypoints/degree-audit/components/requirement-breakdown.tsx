@@ -5,9 +5,8 @@ import {
   PlannableStatus,
   Progress,
   RequirementRule,
-  Status,
 } from "@/lib/general-types";
-import { cn } from "@/lib/utils";
+import { CATEGORY_COLORS, cn } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -16,9 +15,9 @@ import {
 import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
-import { FramedStatusIcon } from "./gpa-credit-cards";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
+import { FramedStatusIcon } from "./gpa-credit-cards";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 
@@ -35,13 +34,7 @@ const getRequirementCompletionState = (
   return "in-progress";
 };
 
-const StatusIcon = ({
-  current,
-  total,
-}: {
-  current: number;
-  total: number;
-}) => {
+const StatusIcon = ({ current, total }: { current: number; total: number }) => {
   const state = getRequirementCompletionState(current, total);
 
   return <FramedStatusIcon state={state} />;
@@ -50,7 +43,7 @@ const StatusIcon = ({
 // Hours badge component
 const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   const isComplete = current >= total;
-  const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
+  const formatHours = (h: number) => `${h} hour${h === 1 ? "" : "s"}`;
   return (
     <span className="text-sm text-gray-600 border border-gray-300 rounded-full px-3 py-1">
       {isComplete ? formatHours(total) : `${current} / ${formatHours(total)}`}
@@ -72,12 +65,12 @@ const statusIcons = {
     color: "bg-[var(--color-course-applied)]",
   },
   "In Progress": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-in-progress)]",
   },
-// TODO: make sure this is valid
+  // TODO: make sure this is valid
   "Not Started": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-unknown)]",
   },
 } as const satisfies Record<
@@ -98,12 +91,12 @@ const CoursePill = ({ course }: { course: Course }) => {
       )}
     >
       <span className="font-semibold min-w-[80px]">{course.code}</span>
-      <span className="flex-1">
-        {course.name}
-      </span>
+      <span className="flex-1">{course.name}</span>
       <span className="text-gray-700">
-        {isValidSemester ? course.semester : ''}
-        {isApplied && course.grade && `${isValidSemester ? ' - ' : ''}Grade: ${course.grade}`}
+        {isValidSemester ? course.semester : ""}
+        {isApplied &&
+          course.grade &&
+          `${isValidSemester ? " - " : ""}Grade: ${course.grade}`}
       </span>
     </div>
   );
@@ -174,31 +167,6 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
     </div>
   );
 };
-
-export const CATEGORY_COLORS = [
-  {
-    name: "orange",
-    tailwind: "var(--color-dap-orange)",
-    rgb: "rgb(191, 87, 0)",
-  },
-  { name: "teal", tailwind: "var(--color-dap-teal)", rgb: "rgb(0, 169, 183)" },
-  {
-    name: "yellow",
-    tailwind: "var(--color-dap-yellow)",
-    rgb: "rgb(255, 214, 0)",
-  },
-  {
-    name: "indigo",
-    tailwind: "var(--color-dap-indigo)",
-    rgb: "rgb(99, 102, 241)",
-  },
-  { name: "pink", tailwind: "var(--color-dap-pink)", rgb: "rgb(236, 72, 153)" },
-  {
-    name: "green",
-    tailwind: "var(--color-dap-green)",
-    rgb: "rgb(5, 150, 105)",
-  },
-] as const satisfies { name: string; tailwind: string; rgb: string }[];
 
 // Progress bar for the header showing hours
 const ProgressBar = ({
