@@ -2,6 +2,7 @@ import "@/entrypoints/styles/content.css";
 import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { seedDatabase } from "@/lib/backend/db-seeder";
 import { HStack, VStack } from "../components/common/helperdivs";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";
 import Navbar from "./components/navbar";
@@ -49,11 +50,20 @@ const MainContent = () => {
   );
 };
 
-const root = ReactDOM.createRoot(
-  document.getElementById("degree-audit-plus-page-root-container")!,
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+async function bootstrap() {
+  await seedDatabase();
+
+  const root = ReactDOM.createRoot(
+    document.getElementById("degree-audit-plus-page-root-container")!,
+  );
+
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}
+
+bootstrap().catch((error) => {
+  console.error("[Degree Audit] Failed to initialize app:", error);
+});

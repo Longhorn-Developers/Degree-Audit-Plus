@@ -1,35 +1,24 @@
-import { CourseId } from "@/lib/general-types";
+import type {
+  CatalogCourse,
+  Course,
+  CourseCode,
+  CourseId,
+  StringSemester,
+} from "@/lib/general-types";
+import { searchCatalogCourses } from "@/lib/backend/db";
 import { CaretLeftIcon, GraduationCap } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
 import CourseCard from "./course-card";
-
-interface CatalogCourse {
-  id: string;
-  uniqueId: number;
-  fullName: string;
-  courseName: string;
-  department: string;
-  number: string;
-  creditHours: number;
-  status: string;
-  isReserved: boolean;
-  instructionMode: string;
-  instructors: string[];
-  schedule: string[];
-  flags: string[];
-  core: string[];
-  url: string;
-  description: string[];
-  scrapedAt: number;
-}
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 interface CourseAddModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSearch: (searchData: CourseSearchData) => void;
+  recommendedCourses?: CatalogCourse[];
   isLoading?: boolean;
   hasSearched?: boolean;
   resultsCount?: number;
@@ -68,14 +57,43 @@ const DEPARTMENTS = [
 //   },
 // ];
 
-function SearchCourses(searchData: CourseSearchData) {
-  // TODO: Implement course search logic
+async function SearchCourses(
+  searchData: CourseSearchData,
+): Promise<CatalogCourse[]> {
+  // Pass the modal form data into the DB search helper and return the results.
+  return searchCatalogCourses(searchData);
 }
 
 interface CourseSearchContentProps {
-  recommendedCourses?: CourseId[];
-  onSearchSubmit?: (formData: CourseSearchData) => void;
+  recommendedCourses?: CatalogCourse[];
+  onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
   isLoading?: boolean;
+}
+
+function getCatalogCourseId(course: CatalogCourse): CourseId {
+  return `catalog-course-${course.uniqueId}`;
+}
+
+function syncCatalogCourseForCard(
+  courseMap: Record<CourseId, Course>,
+  course: CatalogCourse,
+): CourseId {
+  const courseId = getCatalogCourseId(course);
+
+  if (!courseMap[courseId]) {
+    courseMap[courseId] = {
+      id: courseId,
+      code: `${course.department} ${course.number}` as CourseCode,
+      name: course.fullName,
+      hours: course.creditHours,
+      semester:
+        `${course.semester.season} ${course.semester.year}` as StringSemester,
+      status: "Planned",
+      type: "In-Residence",
+    };
+  }
+
+  return courseId;
 }
 
 export function CourseSearchContent({
@@ -83,6 +101,7 @@ export function CourseSearchContent({
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
+  const { courseMap } = useAuditContext();
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -127,8 +146,12 @@ export function CourseSearchContent({
           Recommended
         </p>
         <div className="space-y-2">
-          {recommendedCourses.map((course, index) => (
-            <CourseCard key={index} courseId={course} />
+          {recommendedCourses.map((course) => (
+            <CourseCard
+              key={course.uniqueId}
+              courseId={syncCatalogCourseForCard(courseMap, course)}
+              type="add"
+            />
           ))}
         </div>
       </div>
@@ -293,6 +316,8 @@ export function CourseSearchResults({
   courses,
   onBack,
 }: CourseSearchResultsProps) {
+  const { courseMap } = useAuditContext();
+
   return (
     <div>
       <button
@@ -302,9 +327,14 @@ export function CourseSearchResults({
         <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
         {courses.map((course) => (
-          <CourseCard key={course.id} courseId={course.id} />
+          <CourseCard
+            key={course.uniqueId}
+            courseId={syncCatalogCourseForCard(courseMap, course)}
+            className="w-full"
+            type="add"
+          />
         ))}
       </div>
     </div>
@@ -315,87 +345,17 @@ export default function CourseAddModal({
   isOpen,
   onClose,
   onSearch,
+  recommendedCourses = [],
   isLoading = false,
 }: CourseAddModalProps) {
   const [view, setView] = useState<boolean>(false);
-  const [courses, setCourses] = useState<CatalogCourse[]>([
-    {
-      id: crypto.randomUUID(),
-      uniqueId: 1,
-      fullName: "HIS 314K",
-      courseName: "HISTORY OF MEXICAN AMERS IN US",
-      department: "HIS",
-      number: "314K",
-      creditHours: 3,
-      status: "Open",
-      isReserved: false,
-      instructionMode: "Face to Face",
-      instructors: [],
-      schedule: [],
-      flags: [],
-      core: [],
-      url: "",
-      description: [],
-      scrapedAt: 0,
-    },
-    {
-      id: crypto.randomUUID(),
-      uniqueId: 2,
-      fullName: "HIS 315G",
-      courseName: "INTRO TO AMERICAN STUDIES",
-      department: "HIS",
-      number: "315G",
-      creditHours: 3,
-      status: "Open",
-      isReserved: false,
-      instructionMode: "Face to Face",
-      instructors: [],
-      schedule: [],
-      flags: [],
-      core: [],
-      url: "",
-      description: [],
-      scrapedAt: 0,
-    },
-    {
-      id: crypto.randomUUID(),
-      uniqueId: 3,
-      fullName: "HIS 315K",
-      courseName: "THE UNITED STATES, 1492-1865",
-      department: "HIS",
-      number: "315K",
-      creditHours: 3,
-      status: "Open",
-      isReserved: false,
-      instructionMode: "Face to Face",
-      instructors: [],
-      schedule: [],
-      flags: [],
-      core: [],
-      url: "",
-      description: [],
-      scrapedAt: 0,
-    },
-    {
-      id: crypto.randomUUID(),
-      uniqueId: 4,
-      fullName: "HIS 315L",
-      courseName: "THE UNITED STATES SINCE 1865",
-      department: "HIS",
-      number: "315L",
-      creditHours: 3,
-      status: "Open",
-      isReserved: false,
-      instructionMode: "Face to Face",
-      instructors: [],
-      schedule: [],
-      flags: [],
-      core: [],
-      url: "",
-      description: [],
-      scrapedAt: 0,
-    },
-  ]);
+  const [courses, setCourses] = useState<CatalogCourse[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setView(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -409,7 +369,7 @@ export default function CourseAddModal({
     >
       <div
         className={cn(
-          "bg-white rounded-md border-2 border-dap-border shadow-2xl w-full max-w-[400px] mx-4 transform transition-all duration-200",
+          "bg-white rounded-md border-2 border-dap-border shadow-2xl w-full max-w-[480px] max-h-[80vh] mx-4 transform transition-all duration-200",
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0",
         )}
         onClick={(e) => e.stopPropagation()}
@@ -418,8 +378,14 @@ export default function CourseAddModal({
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Add courses</h2>
           {!view ? (
             <CourseSearchContent
+              recommendedCourses={recommendedCourses}
               isLoading={isLoading}
-              onSearchSubmit={() => setView(true)}
+              onSearchSubmit={async (formData) => {
+                const matchingCourses = await SearchCourses(formData);
+                setCourses(matchingCourses);
+                onSearch(formData);
+                setView(true);
+              }}
             />
           ) : (
             <CourseSearchResults
