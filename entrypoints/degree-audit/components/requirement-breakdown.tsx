@@ -312,3 +312,72 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
 };
 
 export default RequirementBreakdown;
+
+type UnifiedDegreeCardSection = {
+  title: string;
+  hours: Progress;
+  requirements: RequirementRule[];
+};
+
+type UnifiedDegreeCardProps = {
+  degreeTitle: string;
+  sections: UnifiedDegreeCardSection[];
+};
+
+export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardProps) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const totalCurrent = sections.reduce((sum, s) => sum + s.hours.current, 0);
+  const totalTotal = sections.reduce((sum, s) => sum + s.hours.total, 0);
+  const greenColor = CATEGORY_COLORS[5]; // green
+
+  return (
+    <div
+      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-4"
+      style={{ borderLeftColor: greenColor.tailwind }}
+    >
+      {/* Header */}
+      <button
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <VStack gap={2}>
+          <span className="font-bold text-base text-gray-900">{degreeTitle}</span>
+          <ProgressBar current={totalCurrent} total={totalTotal} colorIndex={5} />
+        </VStack>
+        <HStack y="middle" gap={2}>
+          <span className="text-gray-900 font-medium text-sm">
+            {totalCurrent} / {totalTotal} hours
+          </span>
+          {isOpen ? (
+            <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
+          ) : (
+            <CaretDownIcon className="w-5 h-5 text-gray-900" weight="bold" />
+          )}
+        </HStack>
+      </button>
+
+      {/* Expanded: sections with green labels */}
+      {isOpen && (
+        <div className="bg-white px-4 pt-4 pb-4">
+          {sections.map((section, idx) => (
+            <div key={section.title || idx} className={idx > 0 ? "mt-4" : ""}>
+              <span
+                className="text-sm font-semibold mb-4 block"
+                style={{ color: greenColor.tailwind }}
+              >
+                {section.title}
+              </span>
+              {section.requirements.map((requirement, rIdx) => (
+                <RequirementRow
+                  key={`${requirement.text.slice(0, 20)}-${rIdx}`}
+                  requirement={requirement}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
