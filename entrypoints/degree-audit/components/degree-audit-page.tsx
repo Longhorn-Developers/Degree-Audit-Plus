@@ -8,7 +8,7 @@ import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
-import RequirementBreakdown from "./requirement-breakdown";
+import RequirementBreakdown, { UnifiedDegreeCard } from "./requirement-breakdown";
 
 function parseGpaSummary(text: string | undefined) {
   if (!text) {
@@ -162,33 +162,67 @@ const SidePanel = () => {
   );
 };
 
+const isStandaloneSection = (title: string) => {
+  const t = title.toLowerCase();
+  return t.includes("core") || t.includes("credit");
+};
+
+const isPreUnifiedSection = (title: string) => title.toLowerCase().includes("core");
+const isPostUnifiedSection = (title: string) => title.toLowerCase().includes("credit");
+
 const MainContent = () => {
-  const { progresses, sections } = useAuditContext();
+  const { progresses, sections, history, currentAuditId } = useAuditContext();
   const nonGPASections = sections.filter(
     (section) => !section.title.toLowerCase().includes("gpa"),
   );
 
+  const currentAudit = history.audits.find((a) => a.auditId === currentAuditId);
+  const degreeTitle =
+    currentAudit?.majors?.join("; ") ?? currentAudit?.title ?? "Degree Audit";
+
+  const preUnifiedSections = nonGPASections.filter((s) => isPreUnifiedSection(s.title));
+  const postUnifiedSections = nonGPASections.filter((s) => isPostUnifiedSection(s.title));
+  const unifiedSectionInputs = nonGPASections.filter((s) => !isStandaloneSection(s.title));
+
+  const unifiedSections = unifiedSectionInputs
+    .map((section) => {
+      const originalIdx = sections.findIndex((s) => s.title === section.title);
+      const sectionProgress = progresses.sections[originalIdx];
+      if (!sectionProgress || sectionProgress.progress.total <= 0) return null;
+      return {
+        title: section.title,
+        hours: sectionProgress.progress,
+        requirements: section.rules ?? [],
+      };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  const renderStandalone = (section: (typeof nonGPASections)[0], colorIndex: number) => {
+    const originalIdx = sections.findIndex((s) => s.title === section.title);
+    const sectionProgress = progresses.sections[originalIdx];
+    return (
+      sectionProgress?.progress.total > 0 && (
+        <RequirementBreakdown
+          key={section.title}
+          title={section.title}
+          hours={sectionProgress.progress}
+          requirements={section.rules ?? []}
+          colorIndex={colorIndex}
+        />
+      )
+    );
+  };
+
   return (
     <VStack fill className="w-full">
       <Title text="Degree Progress Overview" />
-      {nonGPASections.map((section) => {
-        const originalIdx = sections.findIndex(
-          (s) => s.title === section.title,
-        );
-        const sectionProgress = progresses.sections[originalIdx];
-
-        return (
-          sectionProgress?.progress.total > 0 && (
-            <RequirementBreakdown
-              key={section.title || `section-${originalIdx}`}
-              title={section.title}
-              hours={sectionProgress.progress}
-              requirements={section.rules ?? []}
-              colorIndex={originalIdx}
-            />
-          )
-        );
-      })}
+      {preUnifiedSections.map((section, idx) => renderStandalone(section, idx))}
+      {unifiedSections.length > 0 && (
+        <UnifiedDegreeCard degreeTitle={degreeTitle} sections={unifiedSections} />
+      )}
+      {postUnifiedSections.map((section, idx) =>
+        renderStandalone(section, preUnifiedSections.length + idx),
+      )}
     </VStack>
   );
 };
