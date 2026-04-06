@@ -1,3 +1,4 @@
+import { searchCatalogCourses } from "@/lib/backend/db";
 import type {
   CatalogCourse,
   Course,
@@ -5,14 +6,17 @@ import type {
   CourseId,
   StringSemester,
 } from "@/lib/general-types";
-import { searchCatalogCourses } from "@/lib/backend/db";
-import { CaretLeftIcon, GraduationCap } from "@phosphor-icons/react";
+import {
+  CaretLeftIcon,
+  ChalkboardTeacherIcon,
+  GraduationCapIcon,
+} from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
 import CourseCard from "./course-card";
-import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 interface CourseAddModalProps {
   isOpen: boolean;
@@ -142,6 +146,220 @@ export function CourseSearchContent({
     <div>
       {/* Recommended Section */}
       <div className="mb-6">
+        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
+        <div className="space-y-2">
+          {recommendedCourses.map((course) => (
+            <CourseCard
+              key={course.uniqueId}
+              courseId={syncCatalogCourseForCard(courseMap, course)}
+              type="add"
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Search Section */}
+      <form onSubmit={handleSearch}>
+        {/* Search Input */}
+        <input
+          type="text"
+          name="searchQuery"
+          value={formData.searchQuery}
+          onChange={handleInputChange}
+          placeholder="Search for a specific course"
+          disabled={isLoading}
+          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+
+        <div className="flex items-center gap-3 my-4" />
+
+        {/* Requirement Dropdown */}
+        <div className="mb-4">
+          <SelectDropdown
+            icon={<GraduationCapIcon size={28} />}
+            placeholder="Requirement"
+            options={DEPARTMENTS}
+            value={formData.department}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, department: value }))
+            }
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Department Dropdown */}
+        <div className="mb-4">
+          <SelectDropdown
+            icon={<ChalkboardTeacherIcon size={28} />}
+            placeholder="Department"
+            options={DEPARTMENTS}
+            value={formData.department}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, department: value }))
+            }
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Toggle Switches */}
+        <div className="space-y-3 mb-6">
+          {/* Lower Division Toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleToggle("lowerDivision")}
+              disabled={isLoading}
+              className={cn(
+                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
+                formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+                  formData.lowerDivision
+                    ? "translate-x-[24px]"
+                    : "translate-x-1",
+                )}
+              />
+            </button>
+            <span className="text-base text-gray-900">
+              Lower Division Courses
+            </span>
+          </div>
+
+          {/* Upper Division Toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleToggle("upperDivision")}
+              disabled={isLoading}
+              className={cn(
+                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
+                formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
+              )}
+            >
+              <div
+                className={cn(
+                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+                  formData.upperDivision
+                    ? "translate-x-[24px]"
+                    : "translate-x-1",
+                )}
+              />
+            </button>
+            <span className="text-base text-gray-900">
+              Upper Division Courses
+            </span>
+          </div>
+        </div>
+
+        {/* Validation Error */}
+        {validationError && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl mb-4">
+            <svg
+              className="w-5 h-5 text-red-600 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <p className="text-sm text-red-700">{validationError}</p>
+          </div>
+        )}
+
+        {/* Search Button */}
+        <Button
+          type="submit"
+          color="orange"
+          fill="solid"
+          disabled={isSearchDisabled}
+          className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>Searching...</span>
+            </div>
+          ) : (
+            "Search"
+          )}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export function CourseSuggestionContent({
+  recommendedCourses = [],
+  onSearchSubmit,
+  isLoading = false,
+}: CourseSearchContentProps) {
+  const { courseMap } = useAuditContext();
+  const [formData, setFormData] = useState<CourseSearchData>({
+    searchQuery: "",
+    requirement: "",
+    catalogYear: "",
+    department: "",
+    lowerDivision: true,
+    upperDivision: true,
+  });
+  const [validationError, setValidationError] = useState("");
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggle = (field: "lowerDivision" | "upperDivision") => {
+    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.lowerDivision && !formData.upperDivision) {
+      setValidationError(
+        "Please select at least one course division (Lower or Upper)",
+      );
+      return;
+    }
+    setValidationError("");
+    onSearchSubmit?.(formData);
+  };
+
+  const isSearchDisabled =
+    (!formData.lowerDivision && !formData.upperDivision) || isLoading;
+
+  return (
+    <div>
+      {/* Recommended Section */}
+      <div className="mb-6">
         <p className="text-dap-orange font-semibold text-sm uppercase tracking-wide mb-3">
           Recommended
         </p>
@@ -158,10 +376,6 @@ export function CourseSearchContent({
 
       {/* Search Section */}
       <form onSubmit={handleSearch}>
-        <p className="text-dap-orange font-semibold text-sm uppercase tracking-wide mb-3">
-          Search
-        </p>
-
         {/* Search Input */}
         <input
           type="text"
@@ -183,7 +397,7 @@ export function CourseSearchContent({
         {/* Department Dropdown */}
         <div className="mb-4">
           <SelectDropdown
-            icon={<GraduationCap size={28} />}
+            icon={<ChalkboardTeacherIcon size={28} />}
             placeholder="Department"
             options={DEPARTMENTS}
             value={formData.department}
@@ -377,7 +591,7 @@ export default function CourseAddModal({
         <div className="px-6 pt-6 pb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Add courses</h2>
           {!view ? (
-            <CourseSearchContent
+            <CourseSuggestionContent
               recommendedCourses={recommendedCourses}
               isLoading={isLoading}
               onSearchSubmit={async (formData) => {

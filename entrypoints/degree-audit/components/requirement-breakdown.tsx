@@ -6,16 +6,15 @@ import {
   Progress,
   RequirementRule,
 } from "@/lib/general-types";
-import { cn } from "@/lib/utils";
+import { CATEGORY_COLORS, cn } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
-  PlusIcon,
   Check,
   Minus,
+  PlusIcon,
   X,
 } from "@phosphor-icons/react";
-import { CalendarBlankIcon } from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
@@ -35,7 +34,13 @@ const getRequirementCompletionState = (
   return "in-progress";
 };
 
-const RequirementStatusIcon = ({ current, total }: { current: number; total: number }) => {
+const RequirementStatusIcon = ({
+  current,
+  total,
+}: {
+  current: number;
+  total: number;
+}) => {
   const state = getRequirementCompletionState(current, total);
 
   if (state === "completed") {
@@ -62,7 +67,7 @@ const RequirementStatusIcon = ({ current, total }: { current: number; total: num
 // Hours badge component
 const HoursBadge = ({ current, total }: { current: number; total: number }) => {
   const isComplete = current >= total;
-  const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
+  const formatHours = (h: number) => `${h} hour${h === 1 ? "" : "s"}`;
   return (
     <span className="text-sm text-gray-900 border border-gray-800 rounded-full px-3 py-0.5 font-medium">
       {isComplete
@@ -84,11 +89,11 @@ const statusIcons = {
     color: "bg-[var(--color-course-applied)] border-gray-200",
   },
   "In Progress": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-in-progress)] border-gray-200",
   },
   "Not Started": {
-    icon: null, 
+    icon: null,
     color: "bg-[var(--color-course-unknown)] border-gray-200",
   },
 } as const satisfies Record<
@@ -108,13 +113,13 @@ const CoursePill = ({ course }: { course: Course }) => {
         statusIcons[course.status].color,
       )}
     >
-      <span className="font-bold text-gray-900 text-left">{course.code}</span>
-      <span className="text-left font-medium text-gray-900">
-        {course.name}
-      </span>
-      <span className="text-right text-gray-800">
-        {isValidSemester ? course.semester : ''}
-        {isApplied && course.grade ? ` - Grade: ${course.grade}` : ''}
+      <span className="font-semibold min-w-[80px]">{course.code}</span>
+      <span className="flex-1">{course.name}</span>
+      <span className="text-gray-700">
+        {isValidSemester ? course.semester : ""}
+        {isApplied &&
+          course.grade &&
+          `${isValidSemester ? " - " : ""}Grade: ${course.grade}`}
       </span>
     </div>
   );
@@ -199,31 +204,6 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
   );
 };
 
-export const CATEGORY_COLORS = [
-  {
-    name: "orange",
-    tailwind: "var(--color-dap-orange)",
-    rgb: "rgb(191, 87, 0)",
-  },
-  { name: "teal", tailwind: "var(--color-dap-teal)", rgb: "rgb(0, 169, 183)" },
-  {
-    name: "yellow",
-    tailwind: "var(--color-dap-yellow)",
-    rgb: "rgb(255, 214, 0)",
-  },
-  {
-    name: "indigo",
-    tailwind: "var(--color-dap-indigo)",
-    rgb: "rgb(99, 102, 241)",
-  },
-  { name: "pink", tailwind: "var(--color-dap-pink)", rgb: "rgb(236, 72, 153)" },
-  {
-    name: "green",
-    tailwind: "var(--color-dap-green)",
-    rgb: "rgb(5, 150, 105)",
-  },
-] as const satisfies { name: string; tailwind: string; rgb: string }[];
-
 // Progress bar for the header showing hours
 const ProgressBar = ({
   current,
@@ -236,14 +216,14 @@ const ProgressBar = ({
 }) => {
   const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
   const percentage = Math.min((current / total) * 100, 100);
-  
-  const trackColor = color.rgb.replace("rgb", "rgba").replace(")", ", 0.2)"); 
+
+  const trackColor = color.rgb.replace("rgb", "rgba").replace(")", ", 0.2)");
 
   return (
-    <div 
-      className="w-40 h-2 rounded-full overflow-hidden" 
+    <div
+      className="w-40 h-2 rounded-full overflow-hidden"
       style={{ backgroundColor: trackColor }}
-    > 
+    >
       <div
         className="h-full rounded-full transition-all"
         style={{ width: `${percentage}%`, backgroundColor: color.tailwind }}
@@ -270,7 +250,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
     >
       {/* Main header */}
       <button
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white" 
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={2}>

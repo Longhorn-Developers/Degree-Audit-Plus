@@ -355,7 +355,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
     return (
       <div
         ref={ref}
-        className={cn("grid", className, {
+        className={cn("grid ", className, {
           "w-full": fill,
           "grid-cols-1": direction === "column",
           "grid-cols-2": direction === "row",
