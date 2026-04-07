@@ -69,6 +69,12 @@ async function SearchCourses(
   return searchCatalogCourses(searchData);
 }
 
+function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
 interface CourseSearchContentProps {
   recommendedCourses?: CatalogCourse[];
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
@@ -146,6 +152,7 @@ export function CourseSearchContent({
 
     try {
       setIsSubmitting(true);
+      await waitForNextPaint();
       await onSearchSubmit(formData);
     } finally {
       setIsSubmitting(false);
@@ -354,6 +361,7 @@ export function CourseSuggestionContent({
 
     try {
       setIsSubmitting(true);
+      await waitForNextPaint();
       await onSearchSubmit(formData);
     } finally {
       setIsSubmitting(false);
