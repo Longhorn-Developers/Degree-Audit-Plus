@@ -4,7 +4,7 @@ import {
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { useAuditContext } from "@/entrypoints/degree-audit/providers/audit-provider";
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import { ExportIcon, PencilIcon } from "@phosphor-icons/react";
+import { ExportIcon, PencilIcon, Sidebar as SidebarIcon } from "@phosphor-icons/react";
 
 const MAJOR_TAG_STYLES = [
   "bg-[#18a770] text-[#f3fff8]",
@@ -20,7 +20,7 @@ const MINOR_TAG_STYLES = [
 ];
 
 const Navbar = () => {
-  const { toggleSidebar, toggleViewMode, viewMode } = usePreferences();
+  const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } = usePreferences();
   const { history, currentAuditId } = useAuditContext();
 
   const currentAudit = history?.audits?.find(
@@ -39,6 +39,15 @@ const Navbar = () => {
       y="middle"
       className="border-b border-gray-200 px-10 pt-4 pb-5"
     >
+      {!sidebarIsOpen && (
+        <button
+          className="p-1 hover:bg-black/5 rounded shrink-0"
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+        >
+          <SidebarIcon size={24} className="text-[var(--color-dap-dark-alt)]" />
+        </button>
+      )}
       <VStack gap={2} className="min-w-0 flex-1 pb-1">
         <h1 className="text-2xl font-bold text-black leading-tight truncate">
           {title}
@@ -106,7 +115,6 @@ const Navbar = () => {
         <IconButton
           icon={<PencilIcon className="w-5 h-5" />}
           label="Edit Audit"
-          onClick={() => void toggleSidebar()}
           className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
         />
         <IconButton

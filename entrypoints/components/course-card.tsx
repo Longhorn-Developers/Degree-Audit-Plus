@@ -1,10 +1,10 @@
-import { CourseCode, CourseId } from "@/lib/general-types";
-import { cn } from "@/lib/utils";
+import { CourseId } from "@/lib/general-types";
+import { cn, getColorByCourseCode } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
-import { DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
+import { DotsSixVerticalIcon } from "@phosphor-icons/react";
+import { PlusCircleIcon } from "lucide-react";
 import { forwardRef } from "react";
 import { useAuditContext } from "../degree-audit/providers/audit-provider";
-import { PlusCircleIcon } from "lucide-react";
 
 export type CourseCardProps = {
   courseId: CourseId;
@@ -13,34 +13,13 @@ export type CourseCardProps = {
   type?: "add";
 };
 
-const colorMap = [
-  "bg-dap-orange",
-  "bg-dap-teal",
-  "bg-dap-yellow",
-  "bg-dap-indigo",
-  "bg-dap-pink",
-  "bg-dap-green",
-  "bg-dap-purple",
-  "bg-dap-red",
-] as const satisfies string[];
-
-function getColor(code: CourseCode) {
-  const [department, id] = code.split(" ");
-  const departmentSum = department
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colorMap[departmentSum % colorMap.length];
-}
-
 const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
   const { courseId, className, showDots = false, type, ...rest } = props;
-  const {
-    name: fullName,
-    code: courseName,
-  } = useAuditContext().getCourseById(courseId);
+  const { name: fullName, code: courseName } =
+    useAuditContext().getCourseById(courseId);
 
   return (
     <div
@@ -52,7 +31,7 @@ const CourseCardVisual = forwardRef<
       )}
     >
       <div
-        className={`w-6 flex items-center justify-center ${getColor(courseName)} rounded-l-sm border-r-2 border-dap-border`}
+        className={`w-6 flex items-center justify-center ${getColorByCourseCode(courseName).className} rounded-l-sm border-r-2 border-dap-border`}
       >
         {showDots ? (
           <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
@@ -106,6 +85,7 @@ const CourseCard = ({
       courseId={courseId}
       className={className}
       showDots={showDots}
+      type={type}
     />
   ) : (
     <CourseCardVisual

@@ -4,16 +4,18 @@ import MultiDonutGraph, {
   GraphStyleProps,
 } from "@/entrypoints/degree-audit/components/graph";
 import { PlanableProgress } from "@/lib/general-types";
+import { CATEGORY_COLORS } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
-import { CATEGORY_COLORS } from "./requirement-breakdown";
 
 const isStandaloneSection = (title: string) => {
   const t = title.toLowerCase();
   return t.includes("core") || t.includes("credit");
 };
 
-const isPreUnifiedSection = (title: string) => title.toLowerCase().includes("core");
-const isPostUnifiedSection = (title: string) => title.toLowerCase().includes("credit");
+const isPreUnifiedSection = (title: string) =>
+  title.toLowerCase().includes("core");
+const isPostUnifiedSection = (title: string) =>
+  title.toLowerCase().includes("credit");
 
 function buildDonutBars(
   sections: { title: string; progress: PlanableProgress }[],
@@ -53,7 +55,9 @@ function buildDonutBars(
     if (section.progress.total > 0) {
       bars.push({
         title: section.title,
-        color: CATEGORY_COLORS[(preUnified.length + idx) % CATEGORY_COLORS.length].rgb,
+        color:
+          CATEGORY_COLORS[(preUnified.length + idx) % CATEGORY_COLORS.length]
+            .rgb,
         percentage: section.progress,
       });
     }
@@ -64,11 +68,11 @@ function buildDonutBars(
 
 const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses, history, currentAuditId } = useAuditContext();
-
   const currentAudit = history?.audits?.find(
     (a, i) => (a.auditId || String(i)) === currentAuditId,
   );
-  const unifiedTitle = currentAudit?.majors?.join("; ") ?? "Degree Requirements";
+  const unifiedTitle =
+    currentAudit?.majors?.join("; ") ?? "Degree Requirements";
   const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
   const overallPercentage =
@@ -117,25 +121,58 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
 
 export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses, history, currentAuditId } = useAuditContext();
-
   const currentAudit = history?.audits?.find(
     (a, i) => (a.auditId || String(i)) === currentAuditId,
   );
-  const unifiedTitle = currentAudit?.majors?.join("; ") ?? "Degree Requirements";
+  const unifiedTitle =
+    currentAudit?.majors?.join("; ") ?? "Degree Requirements";
   const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
   const overallPercentage =
     (currentAudit?.percentage ??
       Math.round((progresses.total.current / progresses.total.total) * 100)) ||
     0;
-
-  const strokeWidth = styleProps.strokeWidth ?? 10;
-  const gap = styleProps.gap ?? 1;
-  const startRadius = 55 + (bars.length - 1) * (strokeWidth + gap);
-
   return (
-    <MultiDonutGraph {...styleProps} bars={bars} startRadius={startRadius}>
-      <div className="text-2xl font-bold">{overallPercentage}%</div>
+    <MultiDonutGraph
+      {...styleProps}
+      gap={0}
+      barEndRounding="square"
+      bars={bars}
+      darkeningFactor={0.9}
+      plannedOpacity={0.8}
+      bgOpacity={0.2}
+      tooltipCorner="top-left"
+      tooltipContent={(bar) => (
+        <VStack
+          className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
+          style={{ borderColor: bar.color, color: bar.color }}
+        >
+          <HStack
+            x="between"
+            y="middle"
+            fill
+            className="whitespace-nowrap text-xl font-bold"
+          >
+            <p>{bar.title}</p>
+            <p>
+              {Math.round(
+                (bar.percentage.current / bar.percentage.total) * 100,
+              )}
+              %
+            </p>
+          </HStack>
+          <div className="text-sm">
+            ({bar.percentage.current}/{bar.percentage.total}) courses completed
+          </div>
+        </VStack>
+      )}
+    >
+      <VStack centered gap={0}>
+        <div className="text-2xl font-bold">{overallPercentage}%</div>
+        <div className="text-lg leading-tight text-center w-[80%]">
+          Degree Completion
+        </div>
+      </VStack>
     </MultiDonutGraph>
   );
 };

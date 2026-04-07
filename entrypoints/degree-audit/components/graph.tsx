@@ -14,6 +14,11 @@ export type GraphStyleProps = {
   gap?: number;
   startRadius?: number;
   animationDuration?: number;
+  barEndRounding?: "round" | "square";
+  darkeningFactor?: number;
+  plannedOpacity?: number;
+  bgOpacity?: number;
+  tooltipCorner?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
 };
 export type GraphProps = GraphStyleProps & {
   innerContent?: React.ReactNode;
@@ -33,25 +38,144 @@ function lowerOpacityColor(
   return `rgb(${colorValues[0]}, ${colorValues[1]}, ${colorValues[2]}, ${opacity})`;
 }
 
-const InnerDonutGraph = ({
-  bar,
-  radius,
-  color,
-  animatedProgress,
-  animatedPlannedProgress,
-  strokeWidth,
-  ...other
-}: {
+type InnerDonutGraphStylingProps = {
+  barEndRounding: "round" | "square";
+  color: `rgb(${number}, ${number}, ${number})`;
+  strokeWidth: number;
+  radius: number;
+  darkeningFactor: number;
+  plannedOpacity: number;
+  bgOpacity: number;
+};
+
+type InnerDonutGraphProps = {
   bar: Bar;
   index: number;
-  radius: number;
-  color: `rgb(${number}, ${number}, ${number})`;
   animatedProgress: number;
   animatedPlannedProgress: number;
-  strokeWidth: number;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-}) => {
+} & InnerDonutGraphStylingProps;
+
+function getInitialTooltipPositionX(
+  tooltipCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left",
+  amount: number,
+) {
+  return {
+    right: tooltipCorner.split("-")[1] === "right" ? amount : undefined,
+    left: tooltipCorner.split("-")[1] === "left" ? amount : undefined,
+  };
+}
+
+function getInitialTooltipPositionY(
+  tooltipCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left",
+  amount: number,
+) {
+  return {
+    top: tooltipCorner.split("-")[0] === "top" ? amount : undefined,
+    bottom: tooltipCorner.split("-")[0] === "bottom" ? amount : undefined,
+  };
+}
+
+function getInitialTooltipPosition(
+  tooltipCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left",
+  amount: number,
+) {
+  return {
+    ...getInitialTooltipPositionX(tooltipCorner, amount),
+    ...getInitialTooltipPositionY(tooltipCorner, amount),
+  };
+}
+
+type TooltipCorner = NonNullable<GraphStyleProps["tooltipCorner"]>;
+
+/** Slide distance (px) for tooltip enter/exit, along the diagonal from the corner. */
+const TOOLTIP_SLIDE = 12;
+
+function getTooltipSlideMotion(corner: TooltipCorner) {
+  switch (corner) {
+    case "top-right":
+      return { x: TOOLTIP_SLIDE, y: -TOOLTIP_SLIDE };
+    case "top-left":
+      return { x: -TOOLTIP_SLIDE, y: -TOOLTIP_SLIDE };
+    case "bottom-right":
+      return { x: TOOLTIP_SLIDE, y: TOOLTIP_SLIDE };
+    case "bottom-left":
+      return { x: -TOOLTIP_SLIDE, y: TOOLTIP_SLIDE };
+  }
+}
+
+/** Places the tooltip outside the graph at the given corner (anchor is graph corner). */
+function getTooltipBoxTransform(corner: TooltipCorner): string {
+  switch (corner) {
+    case "top-right":
+      return "translate(100%, -100%)";
+    case "top-left":
+      return "translate(-100%, -100%)";
+    case "bottom-right":
+      return "translate(100%, 100%)";
+    case "bottom-left":
+      return "translate(-100%, 100%)";
+  }
+}
+
+/** Line from ring (toward corner) to outer corner; coords in container pixels (SVG user space). */
+function getTooltipLineCoords(
+  corner: TooltipCorner,
+  size: number,
+  ringRadiusPx: number,
+): { x1: number; y1: number; x2: number; y2: number } {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = ringRadiusPx;
+  const k = r / Math.SQRT2;
+
+  switch (corner) {
+    case "top-right":
+      return {
+        x1: cx + k,
+        y1: cy - k,
+        x2: size,
+        y2: 0,
+      };
+    case "top-left":
+      return {
+        x1: cx - k,
+        y1: cy - k,
+        x2: 0,
+        y2: 0,
+      };
+    case "bottom-right":
+      return {
+        x1: cx + k,
+        y1: cy + k,
+        x2: size,
+        y2: size,
+      };
+    case "bottom-left":
+      return {
+        x1: cx - k,
+        y1: cy + k,
+        x2: 0,
+        y2: size,
+      };
+  }
+}
+
+const InnerDonutGraph = (props: InnerDonutGraphProps) => {
+  const {
+    bar,
+    radius,
+    barEndRounding,
+    color,
+    animatedProgress,
+    animatedPlannedProgress,
+    strokeWidth,
+    darkeningFactor = 0.6,
+    plannedOpacity = 0.4,
+    bgOpacity = 0.1,
+    ...other
+  } = props;
   // Calculate stroke-dasharray for circular progress
   const svgRef = useRef<SVGSVGElement>(null);
   const circumference = 2 * Math.PI * radius;
@@ -66,9 +190,6 @@ const InnerDonutGraph = ({
     .substring(4, color.length - 1)
     .split(",")
     .map((s) => Number(s.trim()));
-  const darkeningFactor = 0.6;
-  const plannedOpacity = 0.4;
-  const bgOpacity = 0.1;
   const backgroundColor = `rgba(${colorValues[0] * darkeningFactor}, ${
     colorValues[1] * darkeningFactor
   }, ${colorValues[2] * darkeningFactor}, ${bgOpacity})`;
@@ -112,7 +233,7 @@ const InnerDonutGraph = ({
         fill="none"
         stroke={lowerOpacityColor(color, plannedOpacity)}
         strokeWidth={strokeWidth}
-        strokeLinecap="round"
+        strokeLinecap={barEndRounding}
         strokeDasharray={plannedDashArray}
         transform="rotate(-90 100 100)"
         style={{
@@ -128,7 +249,7 @@ const InnerDonutGraph = ({
         fill="none"
         stroke={color}
         strokeWidth={strokeWidth}
-        strokeLinecap="round"
+        strokeLinecap={barEndRounding}
         strokeDasharray={dashArray}
         transform="rotate(-90 100 100)"
         style={{
@@ -139,24 +260,25 @@ const InnerDonutGraph = ({
   );
 };
 
-const MultiDonutGraph = ({
-  bars,
-  innerContent,
-  children,
-  tooltipContent,
-  size = 362,
-  strokeWidth = 10,
-  gap = 1,
-  startRadius = 95,
-  animationDuration = 750,
-}: GraphProps) => {
-  const [hoveredBar, setHoveredBar] = useState<Bar | null>(bars[0] || null);
-  const ref = useRef<HTMLDivElement>(null);
+const MultiDonutGraph = (props: GraphProps) => {
+  const {
+    size = 362,
+    strokeWidth = 10,
+    gap = 1,
+    startRadius = 95,
+    animationDuration = 750,
+    darkeningFactor = 0.6,
+    plannedOpacity = 0.4,
+    bgOpacity = 0.1,
+    tooltipCorner = "top-right",
+    ...extraProps
+  } = props;
+  const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
 
   // State to track animated progress for each bar
   const [animatedProgress, setAnimatedProgress] = useState<
     { current: number; planned: number }[]
-  >(bars.map(() => ({ current: 0, planned: 0 })));
+  >(extraProps.bars.map(() => ({ current: 0, planned: 0 })));
 
   useEffect(() => {
     // Animate each bar from its current displayed value to the new target
@@ -171,7 +293,7 @@ const MultiDonutGraph = ({
       const easedProgress = 1 - Math.pow(1 - progress, 3);
 
       setAnimatedProgress(
-        bars.map((bar, i) => {
+        extraProps.bars.map((bar, i) => {
           const start = startValues[i] ?? { current: 0, planned: 0 };
           const targetCurrent = bar.percentage.current;
           const targetPlanned = bar.percentage.planned;
@@ -190,11 +312,12 @@ const MultiDonutGraph = ({
     };
 
     requestAnimationFrame(animate);
-  }, [bars]);
+  }, [extraProps.bars]);
+
+  const tooltipSlide = getTooltipSlideMotion(tooltipCorner);
 
   return (
     <div
-      ref={ref}
       style={{
         height: size,
         aspectRatio: "1",
@@ -205,74 +328,85 @@ const MultiDonutGraph = ({
         {hoveredBar && (
           <>
             <motion.div
-              initial={{ opacity: 0, right: 10 }}
-              animate={{ opacity: 1, right: 0 }}
-              exit={{ opacity: 0, right: -10 }}
+              initial={{
+                opacity: 0,
+                x: tooltipSlide.x,
+                y: tooltipSlide.y,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                x: tooltipSlide.x,
+                y: tooltipSlide.y,
+              }}
               transition={{ duration: 0.2 }}
               style={{
                 position: "absolute",
-                top: 0,
-                right: 0,
+                ...getInitialTooltipPosition(tooltipCorner, 0),
                 zIndex: 1000,
-                transform: "translate(100%, -50%)",
               }}
+              className="pointer-events-none"
             >
-              {tooltipContent?.(hoveredBar)}
+              <div
+                style={{
+                  transform: getTooltipBoxTransform(tooltipCorner),
+                }}
+              >
+                {extraProps.tooltipContent?.(hoveredBar)}
+              </div>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, right: 10 }}
-              animate={{ opacity: 1, right: 0 }}
-              exit={{ opacity: 0, right: -10 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-0 right-0 w-full h-full pointer-events-none"
+              className="absolute inset-0 pointer-events-none"
               style={{
                 zIndex: 800,
               }}
             >
-              {/* Dashed line from tooltip box to highlighted circle */}
-              {tooltipContent && (
+              {/* Dashed line from highlighted ring toward the chosen corner (tooltip sits at corner) */}
+              {extraProps.tooltipContent && (
                 <svg
-                  className="pointer-events-none absolute top-0 right-0"
+                  className="pointer-events-none absolute inset-0"
                   width="100%"
                   height="100%"
+                  viewBox={`0 0 ${size} ${size}`}
+                  preserveAspectRatio="xMidYMid meet"
                   style={{
                     overflow: "visible",
                     pointerEvents: "none",
-                    zIndex: 800,
                   }}
                 >
                   {(() => {
-                    // Parameters used in donut placement
-                    const svgSize = typeof size === "number" ? size : 200;
-
-                    // Find the hovered bar index and its geometry
-                    const index = bars.findIndex((bar) => bar === hoveredBar);
-
-                    // const radius =
-                    // 	size / 2 - Math.sqrt(2) * (strokeWidth + gap) * index;
-                    // const displacement = radius / Math.sqrt(2);
-                    const displacement =
-                      size / 2 - (strokeWidth + gap) * 2 * index;
-
-                    // The center of the circle
-                    const cx = svgSize / 2;
-                    const cy = svgSize / 2;
+                    const index = extraProps.bars.findIndex(
+                      (bar) => bar === hoveredBar,
+                    );
+                    const ringRadiusView =
+                      startRadius - index * (strokeWidth + gap);
+                    const ringRadiusPx = (ringRadiusView / 200) * size;
+                    const { x1, y1, x2, y2 } = getTooltipLineCoords(
+                      tooltipCorner,
+                      size,
+                      ringRadiusPx,
+                    );
 
                     return (
                       <line
-                        x1={cx + size / 2}
-                        y1={cy - size / 2}
-                        x2={cx + displacement / Math.sqrt(2)}
-                        y2={cy - displacement / Math.sqrt(2)}
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
                         stroke={hoveredBar?.color || "#000"}
                         strokeWidth={4}
                         strokeLinecap="round"
                         strokeDasharray="5,5"
-                        style={{
-                          zIndex: 800,
-                          pointerEvents: "none",
-                        }}
+                        vectorEffect="non-scaling-stroke"
                       />
                     );
                   })()}
@@ -282,7 +416,7 @@ const MultiDonutGraph = ({
           </>
         )}
       </AnimatePresence>
-      {bars.map((bar, index) => {
+      {extraProps.bars.map((bar, index) => {
         return (
           <InnerDonutGraph
             key={index}
@@ -295,10 +429,14 @@ const MultiDonutGraph = ({
             onMouseEnter={() => setHoveredBar(bar)}
             onMouseLeave={() => setHoveredBar(null)}
             strokeWidth={strokeWidth}
+            barEndRounding={extraProps.barEndRounding ?? "round"}
+            darkeningFactor={darkeningFactor}
+            plannedOpacity={plannedOpacity}
+            bgOpacity={bgOpacity}
           />
         );
       })}
-      {(innerContent || children) && (
+      {(extraProps.innerContent || extraProps.children) && (
         <div
           style={{
             position: "absolute",
@@ -307,7 +445,7 @@ const MultiDonutGraph = ({
             transform: "translate(-50%, -50%)",
           }}
         >
-          {innerContent || children}
+          {extraProps.innerContent || extraProps.children}
         </div>
       )}
     </div>
