@@ -22,7 +22,8 @@ import LoadingPage from "../components/loading-page";
 
 // Context for sharing audit data betw sidebar and main
 type SemesterInfo = Record<StringSemester, Course[]>;
-type RequirementRuleLike = Omit<RequirementRule, "courses"> & {
+type RequirementRuleLike = Omit<RequirementRule, "courses" | "progressUnit"> & {
+  progressUnit?: RequirementRule["progressUnit"];
   courses?: Array<CourseId | Course>;
 };
 type AuditRequirementLike = Omit<AuditRequirement, "rule"> & {
@@ -83,6 +84,7 @@ function normalizeRequirements(
     ...section,
     rule: (section.rule ?? section.rules ?? []).map((rule) => ({
       ...rule,
+      progressUnit: rule.progressUnit ?? "hours",
       courses: (rule.courses ?? [])
         .map((courseRef) =>
           typeof courseRef === "object" && courseRef !== null
@@ -111,7 +113,7 @@ export const AuditContextProvider = ({
 
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections ?? [], courseDict),
-    [sections],
+    [sections, courseDict],
   );
   const semesters = useMemo(() => {
     const a = Object.values(courseDict).reduce((acc, course) => {
@@ -264,6 +266,7 @@ export const AuditContextProvider = ({
               ...section,
               rules: section.rules.map((rule) => ({
                 ...rule,
+                progressUnit: rule.progressUnit ?? "hours",
                 courses: rule.courses,
               })),
             })),

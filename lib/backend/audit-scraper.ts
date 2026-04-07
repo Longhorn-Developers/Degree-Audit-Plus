@@ -6,8 +6,10 @@ import type {
   AuditRequirement,
   Course,
   CourseCompletionMethod,
+  CourseCode,
   CourseId,
   PlannableStatus,
+  RequirementProgressUnit,
   RequirementRule,
   Status,
   StringSemester,
@@ -18,6 +20,16 @@ import type {
 export function parseHours(text: string): number {
   const match = text.match(/\d+/);
   return match ? parseInt(match[0], 10) : 0;
+}
+
+export function parseRequirementProgress(text: string): {
+  value: number;
+  unit: RequirementProgressUnit;
+} {
+  return {
+    value: parseHours(text),
+    unit: /course/i.test(text) ? "courses" : "hours",
+  };
 }
 
 export function getCurrentSemester(): StringSemester {
@@ -112,7 +124,7 @@ export function scrapeCourseworkTable(
     results[courseId] = {
       id: courseId,
       status: getStatus(cells[0]),
-      code: cells[0]?.textContent?.trim(),
+      code: cells[0]?.textContent?.trim() as CourseCode,
       name: cells[1]?.textContent?.trim(),
       grade: cells[2]?.textContent?.trim(),
       type: cells[4]?.textContent?.trim() as CourseCompletionMethod,
@@ -160,11 +172,22 @@ export function scrapeRequirementSections(
       const cells = row.querySelectorAll("td");
       if (cells.length < 6) continue;
 
+      const requiredProgress = parseRequirementProgress(
+        (cells[3] as HTMLElement).innerText,
+      );
+      const appliedProgress = parseRequirementProgress(
+        (cells[4] as HTMLElement).innerText,
+      );
+      const remainingProgress = parseRequirementProgress(
+        (cells[5] as HTMLElement).innerText,
+      );
+
       const rule: RequirementRule = {
         text: (cells[2] as HTMLElement).innerText.trim(),
-        requiredHours: parseHours((cells[3] as HTMLElement).innerText),
-        appliedHours: parseHours((cells[4] as HTMLElement).innerText),
-        remainingHours: parseHours((cells[5] as HTMLElement).innerText),
+        requiredHours: requiredProgress.value,
+        appliedHours: appliedProgress.value,
+        remainingHours: remainingProgress.value,
+        progressUnit: requiredProgress.unit,
         status: getRuleStatus(row.classList),
         courses: [],
       };

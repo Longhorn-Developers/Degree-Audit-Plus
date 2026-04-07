@@ -4,6 +4,7 @@ import {
   Course,
   PlannableStatus,
   Progress,
+  RequirementProgressUnit,
   RequirementRule,
 } from "@/lib/general-types";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,41 @@ import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
+type ProgressLabelUnit = RequirementProgressUnit | "progress";
+
+const pluralizeUnit = (
+  value: number,
+  unit: RequirementProgressUnit,
+): string => {
+  const singular = unit === "courses" ? "course" : "hour";
+  return `${value} ${singular}${value === 1 ? "" : "s"}`;
+};
+
+const getSharedProgressUnit = (
+  requirements: RequirementRule[],
+): ProgressLabelUnit => {
+  const units = new Set(
+    requirements.map((requirement) => requirement.progressUnit ?? "hours"),
+  );
+
+  if (units.size === 1) {
+    return requirements[0]?.progressUnit ?? "hours";
+  }
+
+  return "progress";
+};
+
+const formatProgressSummary = (
+  current: number,
+  total: number,
+  unit: ProgressLabelUnit,
+): string => {
+  if (unit === "progress") {
+    return `${current} / ${total} progress`;
+  }
+
+  return `${current} / ${pluralizeUnit(total, unit)}`;
+};
 
 const getRequirementCompletionState = (
   current: number,
@@ -59,17 +95,23 @@ const RequirementStatusIcon = ({ current, total }: { current: number; total: num
   );
 };
 
-// Hours badge component
-const HoursBadge = ({ current, total }: { current: number; total: number }) => {
+const RequirementBadge = ({
+  current,
+  total,
+  unit,
+}: {
+  current: number;
+  total: number;
+  unit: RequirementProgressUnit;
+}) => {
   const isComplete = current >= total;
-  const formatHours = (h: number) => `${h} hour${h === 1 ? '' : 's'}`;
   return (
     <span className="text-sm text-gray-900 border border-gray-800 rounded-full px-3 py-0.5 font-medium">
       {isComplete
-        ? formatHours(total)
+        ? pluralizeUnit(total, unit)
         : current === 0
-          ? formatHours(0)
-          : `${current} / ${formatHours(total)}`}
+          ? pluralizeUnit(0, unit)
+          : `${current} / ${pluralizeUnit(total, unit)}`}
     </span>
   );
 };
@@ -164,9 +206,10 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
           <span className="text-sm text-gray-600 mt-0.5">{description}</span>
         </VStack>
         <HStack y="middle" gap={3}>
-          <HoursBadge
+          <RequirementBadge
             current={requirement.appliedHours}
             total={requirement.requiredHours}
+            unit={requirement.progressUnit ?? "hours"}
           />
           {isExpanded ? (
             <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
@@ -262,6 +305,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
   const { title, hours, requirements, colorIndex = 0 } = props;
   const [isOpen, setIsOpen] = useState(false);
   const borderColor = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+  const progressUnit = getSharedProgressUnit(requirements);
 
   return (
     <div
@@ -283,7 +327,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
         </VStack>
         <HStack y="middle" gap={2}>
           <span className="text-gray-900 font-medium text-sm">
-            {hours.current} / {hours.total} hours
+            {formatProgressSummary(hours.current, hours.total, progressUnit)}
           </span>
           {isOpen ? (
             <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
@@ -329,6 +373,9 @@ export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardPr
 
   const totalCurrent = sections.reduce((sum, s) => sum + s.hours.current, 0);
   const totalTotal = sections.reduce((sum, s) => sum + s.hours.total, 0);
+  const totalProgressUnit = getSharedProgressUnit(
+    sections.flatMap((section) => section.requirements),
+  );
   const greenColor = CATEGORY_COLORS[5]; // green
 
   return (
@@ -347,7 +394,7 @@ export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardPr
         </VStack>
         <HStack y="middle" gap={2}>
           <span className="text-gray-900 font-medium text-sm">
-            {totalCurrent} / {totalTotal} hours
+            {formatProgressSummary(totalCurrent, totalTotal, totalProgressUnit)}
           </span>
           {isOpen ? (
             <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
