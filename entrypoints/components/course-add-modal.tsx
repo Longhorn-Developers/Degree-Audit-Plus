@@ -9,6 +9,7 @@ import type {
 import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,
+  CircleNotchIcon,
   GraduationCapIcon,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
@@ -68,6 +69,12 @@ async function SearchCourses(
   return searchCatalogCourses(searchData);
 }
 
+function waitForNextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
 interface CourseSearchContentProps {
   recommendedCourses?: CatalogCourse[];
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
@@ -115,6 +122,9 @@ export function CourseSearchContent({
     upperDivision: true,
   });
   const [validationError, setValidationError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isSearching = isLoading || isSubmitting;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -127,7 +137,7 @@ export function CourseSearchContent({
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.lowerDivision && !formData.upperDivision) {
       setValidationError(
@@ -136,11 +146,21 @@ export function CourseSearchContent({
       return;
     }
     setValidationError("");
-    onSearchSubmit?.(formData);
+    if (!onSearchSubmit) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await waitForNextPaint();
+      await onSearchSubmit(formData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isLoading;
+    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
 
   return (
     <div>
@@ -167,7 +187,7 @@ export function CourseSearchContent({
           value={formData.searchQuery}
           onChange={handleInputChange}
           placeholder="Search for a specific course"
-          disabled={isLoading}
+          disabled={isSearching}
           className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
@@ -183,7 +203,7 @@ export function CourseSearchContent({
             onChange={(value) =>
               setFormData((prev) => ({ ...prev, department: value }))
             }
-            disabled={isLoading}
+            disabled={isSearching}
           />
         </div>
 
@@ -197,7 +217,7 @@ export function CourseSearchContent({
             onChange={(value) =>
               setFormData((prev) => ({ ...prev, department: value }))
             }
-            disabled={isLoading}
+            disabled={isSearching}
           />
         </div>
 
@@ -208,7 +228,7 @@ export function CourseSearchContent({
             <button
               type="button"
               onClick={() => handleToggle("lowerDivision")}
-              disabled={isLoading}
+              disabled={isSearching}
               className={cn(
                 "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
                 formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
@@ -233,7 +253,7 @@ export function CourseSearchContent({
             <button
               type="button"
               onClick={() => handleToggle("upperDivision")}
-              disabled={isLoading}
+              disabled={isSearching}
               className={cn(
                 "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
                 formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
@@ -282,27 +302,9 @@ export function CourseSearchContent({
           disabled={isSearchDisabled}
           className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
         >
-          {isLoading ? (
+          {isSearching ? (
             <div className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
+              <CircleNotchIcon className="h-5 w-5 animate-spin" />
               <span>Searching...</span>
             </div>
           ) : (
@@ -329,6 +331,9 @@ export function CourseSuggestionContent({
     upperDivision: true,
   });
   const [validationError, setValidationError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isSearching = isLoading || isSubmitting;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -341,7 +346,7 @@ export function CourseSuggestionContent({
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.lowerDivision && !formData.upperDivision) {
       setValidationError(
@@ -350,11 +355,21 @@ export function CourseSuggestionContent({
       return;
     }
     setValidationError("");
-    onSearchSubmit?.(formData);
+    if (!onSearchSubmit) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await waitForNextPaint();
+      await onSearchSubmit(formData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isLoading;
+    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
 
   return (
     <div>
@@ -383,7 +398,7 @@ export function CourseSuggestionContent({
           value={formData.searchQuery}
           onChange={handleInputChange}
           placeholder="Search with name or unique"
-          disabled={isLoading}
+          disabled={isSearching}
           className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
@@ -404,7 +419,7 @@ export function CourseSuggestionContent({
             onChange={(value) =>
               setFormData((prev) => ({ ...prev, department: value }))
             }
-            disabled={isLoading}
+            disabled={isSearching}
           />
         </div>
 
@@ -415,7 +430,7 @@ export function CourseSuggestionContent({
             <button
               type="button"
               onClick={() => handleToggle("lowerDivision")}
-              disabled={isLoading}
+              disabled={isSearching}
               className={cn(
                 "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
                 formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
@@ -440,7 +455,7 @@ export function CourseSuggestionContent({
             <button
               type="button"
               onClick={() => handleToggle("upperDivision")}
-              disabled={isLoading}
+              disabled={isSearching}
               className={cn(
                 "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
                 formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
@@ -489,27 +504,9 @@ export function CourseSuggestionContent({
           disabled={isSearchDisabled}
           className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? (
+          {isSearching ? (
             <div className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
+              <CircleNotchIcon className="h-5 w-5 animate-spin" />
               <span>Searching...</span>
             </div>
           ) : (

@@ -69,6 +69,8 @@ export type Status = "Completed" | "In Progress" | "Not Started";
  */
 export type PlannableStatus = Status | "Planned";
 
+export type RequirementProgressUnit = "hours" | "courses";
+
 /**
  * A specific rule within a larger requirement section.
  */
@@ -77,6 +79,7 @@ export type RequirementRule = {
   requiredHours: number;
   appliedHours: number;
   remainingHours: number;
+  progressUnit: RequirementProgressUnit;
   status: Status;
   courses: CourseId[];
 };

@@ -13,6 +13,7 @@
     "zip:firefox": "bun run wxt zip -b firefox",
     "compile": "bun run tsc --noEmit",
     "test:parse-major": "bun run tests/validate-parse-major.ts",
+    "test:requirement-progress": "bun run tests/validate-requirement-progress.ts",
     "postinstall": "bun run wxt prepare",
     "prepare": "husky",
     "tailwind:init": "bun run tailwindcss init -p"

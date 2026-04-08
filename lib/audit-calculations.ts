@@ -26,13 +26,29 @@ export function calculateWeightedDegreeCompletion(
 
     section.rules.forEach((rule) => {
       sectionProgress.progress.current += rule.appliedHours;
+      let plannedContribution = 0;
+
       rule.courses.forEach((courseId) => {
-        const hours = courses[courseId].hours;
-        if (courses[courseId].status === "Planned") {
-          results.total.planned += hours;
-          sectionProgress.progress.planned += hours;
+        const course = courses[courseId];
+        if (!course || course.status !== "Planned") {
+          return;
+        }
+
+        if (rule.progressUnit === "courses") {
+          plannedContribution += 1;
+        } else {
+          plannedContribution += course.hours;
         }
       });
+
+      const remainingForRule = Math.max(0, rule.remainingHours);
+      const cappedPlannedContribution = Math.min(
+        plannedContribution,
+        remainingForRule,
+      );
+
+      results.total.planned += cappedPlannedContribution;
+      sectionProgress.progress.planned += cappedPlannedContribution;
     });
 
     results.sections.push(sectionProgress);

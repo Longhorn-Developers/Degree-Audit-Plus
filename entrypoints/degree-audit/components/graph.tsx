@@ -18,7 +18,7 @@ export type GraphStyleProps = {
   darkeningFactor?: number;
   plannedOpacity?: number;
   bgOpacity?: number;
-  tooltipCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left";
+  tooltipCorner?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
 };
 export type GraphProps = GraphStyleProps & {
   innerContent?: React.ReactNode;
@@ -87,7 +87,7 @@ function getInitialTooltipPosition(
   };
 }
 
-type TooltipCorner = GraphStyleProps["tooltipCorner"];
+type TooltipCorner = NonNullable<GraphStyleProps["tooltipCorner"]>;
 
 /** Slide distance (px) for tooltip enter/exit, along the diagonal from the corner. */
 const TOOLTIP_SLIDE = 12;
@@ -270,6 +270,7 @@ const MultiDonutGraph = (props: GraphProps) => {
     darkeningFactor = 0.6,
     plannedOpacity = 0.4,
     bgOpacity = 0.1,
+    tooltipCorner = "top-right",
     ...extraProps
   } = props;
   const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
@@ -313,7 +314,7 @@ const MultiDonutGraph = (props: GraphProps) => {
     requestAnimationFrame(animate);
   }, [extraProps.bars]);
 
-  const tooltipSlide = getTooltipSlideMotion(extraProps.tooltipCorner);
+  const tooltipSlide = getTooltipSlideMotion(tooltipCorner);
 
   return (
     <div
@@ -345,14 +346,14 @@ const MultiDonutGraph = (props: GraphProps) => {
               transition={{ duration: 0.2 }}
               style={{
                 position: "absolute",
-                ...getInitialTooltipPosition(extraProps.tooltipCorner, 0),
+                ...getInitialTooltipPosition(tooltipCorner, 0),
                 zIndex: 1000,
               }}
               className="pointer-events-none"
             >
               <div
                 style={{
-                  transform: getTooltipBoxTransform(extraProps.tooltipCorner),
+                  transform: getTooltipBoxTransform(tooltipCorner),
                 }}
               >
                 {extraProps.tooltipContent?.(hoveredBar)}
@@ -390,7 +391,7 @@ const MultiDonutGraph = (props: GraphProps) => {
                       startRadius - index * (strokeWidth + gap);
                     const ringRadiusPx = (ringRadiusView / 200) * size;
                     const { x1, y1, x2, y2 } = getTooltipLineCoords(
-                      extraProps.tooltipCorner,
+                      tooltipCorner,
                       size,
                       ringRadiusPx,
                     );
