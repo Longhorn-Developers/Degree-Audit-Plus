@@ -8,8 +8,7 @@ import SemesterDropdowns from "./semester-dropdowns";
 const SidePanel = () => {
   return (
     <VStack
-      fill
-      className="h-full sticky top-[75px] z-20 bg-white"
+      className="self-start sticky top-0 z-20 bg-white"
       y="stretch"
       x="center"
     >
@@ -23,7 +22,7 @@ const SidePanel = () => {
 
 const MainContent = () => {
   return (
-    <VStack fill className="w-full">
+    <VStack className="w-full">
       <Title text="Degree Planner" />
       <SemesterDropdowns />
     </VStack>
@@ -32,7 +31,7 @@ const MainContent = () => {
 
 const DegreePlannerPage = () => {
   return (
-    <HStack fill x="between" className="h-full">
+    <HStack fill x="between">
       <MainContent />
       <SidePanel />
     </HStack>
