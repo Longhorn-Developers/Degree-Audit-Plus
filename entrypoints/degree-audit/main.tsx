@@ -37,7 +37,7 @@ const MainContent = () => {
     <VStack
       x="center"
       className={clsx("w-full h-screen overflow-hidden transition-[margin-left] duration-300 ease-out", {
-        "ml-[325px]": sidebarIsOpen,
+        "ml-[350px]": sidebarIsOpen,
         "ml-0": !sidebarIsOpen,
       })}
     >
