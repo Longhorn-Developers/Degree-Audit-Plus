@@ -1,4 +1,10 @@
 import type { DegreeAuditCardProps } from "@/lib/general-types";
+import {
+  CopySimple,
+  DotsThree,
+  PencilSimpleLine,
+  Trash,
+} from "@phosphor-icons/react";
 import React from "react";
 
 /**
@@ -14,14 +20,25 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   onToggle,
   onMenuClick,
 }) => {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isSelected) {
+      setMenuOpen(false);
+    }
+  }, [isSelected]);
+
   return (
     <div
-      className={`!rounded px-3 py-[12px] w-full transition-all duration-200 cursor-pointer ${
+      className={`relative rounded-[8px] px-4 py-[12px] w-full transition-all duration-200 cursor-pointer ${
         isSelected
           ? "bg-[var(--color-dap-orange)] border border-[var(--color-dap-orange)]"
           : "bg-[#FAFAF9] border border-[var(--color-dap-border)]"
       }`}
-      onClick={onToggle}
+      onClick={() => {
+        setMenuOpen(false);
+        onToggle?.();
+      }}
     >
       <div className="flex items-center justify-between">
         {/* Title */}
@@ -33,21 +50,56 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
           {title}
         </div>
 
-        {/* Percentage Badge */}
-        <div
-          className={`rounded-md px-3 py-2 flex items-center justify-center ${
-            isSelected ? "bg-white" : "bg-[var(--color-dap-orange)]"
-          }`}
-        >
-          <span
-            className={`text-base font-bold leading-tight ${
-              isSelected ? "text-[var(--color-dap-orange)]" : "text-white"
+        <div className="flex items-center gap-2">
+          {/* Percentage Badge */}
+          <div
+            className={`rounded-[8px] px-3 py-2 flex items-center justify-center ${
+              isSelected ? "bg-white" : "bg-[var(--color-dap-orange)]"
             }`}
           >
-            {percentage}%
-          </span>
+            <span
+              className={`text-base font-bold leading-tight ${
+                isSelected ? "text-[var(--color-dap-orange)]" : "text-white"
+              }`}
+            >
+              {percentage}%
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className={isSelected ? "text-white" : "text-[var(--color-dap-orange)]"}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+              onMenuClick?.();
+            }}
+            aria-label="Audit options"
+          >
+            <DotsThree size={22} weight="bold" />
+          </button>
+
         </div>
       </div>
+      {menuOpen && (
+        <div
+          className="absolute left-2 top-full mt-2 z-20 min-w-[180px] rounded-[8px] border border-[var(--color-dap-border)] bg-white p-2 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[var(--color-dap-dark-alt)] hover:bg-gray-50">
+            <PencilSimpleLine size={20} />
+            <span>Rename</span>
+          </button>
+          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[var(--color-dap-dark-alt)] hover:bg-gray-50">
+            <CopySimple size={20} />
+            <span>Duplicate</span>
+          </button>
+          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[#c63636] hover:bg-red-50">
+            <Trash size={20} />
+            <span>Delete Audit</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
