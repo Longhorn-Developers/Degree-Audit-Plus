@@ -37,7 +37,7 @@ const Navbar = () => {
       gap={8}
       x="between"
       y="middle"
-      className="border-b border-gray-200 px-10 pt-4 pb-5"
+      className="sticky top-0 z-10 bg-white border-b border-gray-200 px-10 pt-4 pb-5"
     >
       {!sidebarIsOpen && (
         <button

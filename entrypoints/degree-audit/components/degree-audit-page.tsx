@@ -128,8 +128,7 @@ const SidePanel = () => {
 
   return (
     <VStack
-      fill
-      className="h-full sticky top-[75px] z-20 bg-white"
+      className="self-start sticky top-0 z-20 bg-white"
       y="stretch"
       x="center"
     >
@@ -214,7 +213,7 @@ const MainContent = () => {
   };
 
   return (
-    <VStack fill className="w-full">
+    <VStack className="w-full">
       <Title text="Degree Progress Overview" />
       {preUnifiedSections.map((section, idx) => renderStandalone(section, idx))}
       {unifiedSections.length > 0 && (
@@ -251,7 +250,7 @@ const DegreeAuditPage = () => {
   }, [sections, setRecommendedCourses]);
 
   return (
-    <HStack fill x="between" className="h-full w-full" gap={8}>
+    <HStack fill x="between" className="w-full" gap={8}>
       <MainContent />
       <SidePanel />
     </HStack>
