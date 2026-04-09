@@ -78,24 +78,24 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
           >
             <DotsThree size={22} weight="bold" />
           </button>
-
         </div>
       </div>
+
       {menuOpen && (
         <div
-          className="absolute left-2 top-full mt-2 z-20 min-w-[180px] rounded-[8px] border border-[var(--color-dap-border)] bg-white p-2 shadow-lg"
+          className="absolute right-0 top-full z-30 mt-2 min-w-[180px] rounded-[8px] border border-[var(--color-dap-border)] bg-white p-2 shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[var(--color-dap-dark-alt)] hover:bg-gray-50">
-            <PencilSimpleLine size={20} />
+            <PencilSimpleLine size={20} className="shrink-0" />
             <span>Rename</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[var(--color-dap-dark-alt)] hover:bg-gray-50">
-            <CopySimple size={20} />
+            <CopySimple size={20} className="shrink-0" />
             <span>Duplicate</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[#c63636] hover:bg-red-50">
-            <Trash size={20} />
+            <Trash size={20} className="shrink-0" />
             <span>Delete Audit</span>
           </button>
         </div>
