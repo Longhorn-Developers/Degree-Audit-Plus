@@ -43,7 +43,7 @@ const Sidebar = () => {
       className={clsx(
         "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 bg-white border-r border-[var(--color-dap-border)] overflow-hidden whitespace-nowrap transition-[width] duration-300 ease-out",
         {
-          "w-[325px]": sidebarIsOpen,
+          "w-[365px]": sidebarIsOpen,
           "w-0 pointer-events-none": !sidebarIsOpen,
         },
       )}
