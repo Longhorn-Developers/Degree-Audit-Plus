@@ -143,7 +143,7 @@ export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
       darkeningFactor={0.9}
       plannedOpacity={0.8}
       bgOpacity={0.2}
-      tooltipCorner="top-left"
+      tooltipCorner="bottom-left"
       tooltipContent={(bar) => (
         <VStack
           className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
