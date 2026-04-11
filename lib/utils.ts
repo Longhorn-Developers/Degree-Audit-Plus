@@ -87,3 +87,7 @@ export function getColorBySectionTitle(title: string) {
 export function getColorByIndex(index: number) {
   return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 }
+
+export function formatMajorLabel(major: string): string {
+  return major;
+}
