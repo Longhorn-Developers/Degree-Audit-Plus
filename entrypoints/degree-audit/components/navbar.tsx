@@ -2,7 +2,7 @@ import { IconButton } from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { useAuditContext } from "@/entrypoints/degree-audit/providers/audit-provider";
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import { cn } from "@/lib/utils";
+import { cn, formatMajorLabel } from "@/lib/utils";
 import {
   ExportIcon,
   PencilIcon,
@@ -25,11 +25,7 @@ const MINOR_TAG_STYLES = [
 const Navbar = () => {
   const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } =
     usePreferences();
-  const { history, currentAuditId } = useAuditContext();
-
-  const currentAudit = history?.audits?.find(
-    (a, i) => (a.auditId || String(i)) === currentAuditId,
-  );
+  const { currentAudit } = useAuditContext();
 
   const title = currentAudit?.title ?? "Degree Audit Plus";
   const majors = currentAudit?.majors ?? [];
@@ -64,12 +60,12 @@ const Navbar = () => {
             <HStack gap={2} y="middle" className="flex-wrap">
               {majors.map((m, i) => (
                 <span
-                  key={`${m}-${i}`}
+                  key={`${formatMajorLabel(m)}-${i}`}
                   className={`inline-flex items-center rounded-[6px] px-2.5 py-[3px] text-[12px] font-medium leading-none ${
                     MAJOR_TAG_STYLES[i % MAJOR_TAG_STYLES.length]
                   }`}
                 >
-                  {m}
+                  {formatMajorLabel(m)}
                 </span>
               ))}
             </HStack>

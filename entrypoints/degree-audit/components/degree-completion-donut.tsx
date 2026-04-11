@@ -4,7 +4,7 @@ import MultiDonutGraph, {
   GraphStyleProps,
 } from "@/entrypoints/degree-audit/components/graph";
 import { PlanableProgress } from "@/lib/general-types";
-import { CATEGORY_COLORS } from "@/lib/utils";
+import { CATEGORY_COLORS, formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
 
 const isStandaloneSection = (title: string) => {
@@ -72,7 +72,8 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
     (a, i) => (a.auditId || String(i)) === currentAuditId,
   );
   const unifiedTitle =
-    currentAudit?.majors?.join("; ") ?? "Degree Requirements";
+    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
+    "Degree Requirements";
   const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
   const overallPercentage =
@@ -125,7 +126,8 @@ export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
     (a, i) => (a.auditId || String(i)) === currentAuditId,
   );
   const unifiedTitle =
-    currentAudit?.majors?.join("; ") ?? "Degree Requirements";
+    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
+    "Degree Requirements";
   const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
   const overallPercentage =

@@ -3,6 +3,7 @@ import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
 import { searchCores } from "@/lib/backend/db";
 import { AuditRequirement, CatalogCourse, CoreArea } from "@/lib/general-types";
+import { formatMajorLabel } from "@/lib/utils";
 import { useEffect } from "react";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
@@ -177,7 +178,9 @@ const MainContent = () => {
 
   const currentAudit = history.audits.find((a) => a.auditId === currentAuditId);
   const degreeTitle =
-    currentAudit?.majors?.join("; ") ?? currentAudit?.title ?? "Degree Audit";
+    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
+    currentAudit?.title ??
+    "Degree Audit";
 
   const preUnifiedSections = nonGPASections.filter((s) => isPreUnifiedSection(s.title));
   const postUnifiedSections = nonGPASections.filter((s) => isPostUnifiedSection(s.title));

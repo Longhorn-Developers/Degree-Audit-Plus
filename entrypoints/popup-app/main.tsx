@@ -1,5 +1,6 @@
 import { getAuditHistory } from "@/lib/backend/storage";
 import type { DegreeAuditCardProps } from "@/lib/general-types";
+import { formatMajorLabel } from "@/lib/utils";
 import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
@@ -190,7 +191,7 @@ export default function App() {
 
             {(audit.majors ?? []).map((m, i) => (
               <span
-                key={`${m}-${i}`}
+                key={`${formatMajorLabel(m)}-${i}`}
                 className="
                   inline-flex items-center
                   rounded-[6px]
@@ -201,7 +202,7 @@ export default function App() {
                   text-white
                 "
               >
-                {m}
+                {formatMajorLabel(m)}
               </span>
             ))}
           </div>

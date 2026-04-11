@@ -13,6 +13,7 @@ import {
   Course,
   CourseId,
   CurrentAuditProgress,
+  DegreeAuditCardProps,
   PlannedCourseOutline,
   RequirementRule,
   StringSemester,
@@ -36,6 +37,7 @@ interface AuditContextType {
   courses: Course[];
   history: AuditHistoryData;
   currentAuditId: string;
+  currentAudit: DegreeAuditCardProps;
   setCurrentAuditId: (id: string) => void;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
@@ -228,6 +230,10 @@ export const AuditContextProvider = ({
     return numRemoved;
   }
 
+  const currentAudit = useMemo(() => {
+    return history?.audits.find((a) => a.auditId === currentAuditId) ?? {};
+  }, [history, currentAuditId]);
+
   // Load audit data from cache (scraped upfront when user visits UT Direct)
   useEffect(() => {
     setLoaded(false);
@@ -297,6 +303,7 @@ export const AuditContextProvider = ({
         history: history!,
         semesters,
         currentAuditId,
+        currentAudit,
         setCurrentAuditId: (id) => {
           window.history.pushState({}, "", `?auditId=${id}`);
           setCurrentAuditId(id);
