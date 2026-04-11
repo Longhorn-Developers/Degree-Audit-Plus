@@ -34,7 +34,7 @@ const SemesterCardVisual = forwardRef<
       {...props}
       ref={ref}
       className={cn(
-        "w-sm p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]",
+        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]",
         className,
       )}
       gap={6}

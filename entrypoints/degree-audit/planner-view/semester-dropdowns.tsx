@@ -1,5 +1,5 @@
 import Button from "@/entrypoints/components/common/button";
-import { Wrap } from "@/entrypoints/components/common/helperdivs";
+import { Grid } from "@/entrypoints/components/common/helperdivs";
 import CourseCard from "@/entrypoints/components/course-card";
 import {
   CourseId,
@@ -14,7 +14,7 @@ import {
   pointerWithin,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import SemesterCard from "../components/semester-card";
 import { useAuditContext } from "../providers/audit-provider";
 
@@ -44,7 +44,7 @@ function nextSemester(semester: StringSemester): StringSemester {
     case "Spring":
       return `Summer ${year}` as StringSemester;
     case "Fall":
-      return `Spring ${year + 1}` as StringSemester;
+      return `Spring ${Number(year) + 1}` as StringSemester;
     case "Summer":
       return `Fall ${year}` as StringSemester;
   }
@@ -104,7 +104,7 @@ const SemesterDropdowns = () => {
         })
       }
     >
-      <Wrap maxCols={2}>
+      <Grid className="w-full" maxCols={2}>
         {Object.entries(combined)
           .sort((a, b) =>
             sortSemesters(a[0] as StringSemester, b[0] as StringSemester),
@@ -117,7 +117,7 @@ const SemesterDropdowns = () => {
             />
           ))}
         <Button
-          className="w-sm bg-[#579D42] text-white font-bold"
+          className="w-full bg-[#579D42] text-white font-bold"
           onClick={() => {
             console.log(
               "adding future semester",
@@ -138,7 +138,7 @@ const SemesterDropdowns = () => {
           <Plus />
           Add Future Semester
         </Button>
-      </Wrap>
+      </Grid>
       <DragOverlay>
         {activeDragId ? (
           <CourseCard

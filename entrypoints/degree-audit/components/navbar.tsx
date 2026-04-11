@@ -1,10 +1,13 @@
-import {
-  IconButton,
-} from "@/entrypoints/components/common/button";
+import { IconButton } from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import { useAuditContext } from "@/entrypoints/degree-audit/providers/audit-provider";
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import { ExportIcon, PencilIcon, Sidebar as SidebarIcon } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
+import {
+  ExportIcon,
+  PencilIcon,
+  Sidebar as SidebarIcon,
+} from "@phosphor-icons/react";
 
 const MAJOR_TAG_STYLES = [
   "bg-[#18a770] text-[#f3fff8]",
@@ -20,7 +23,8 @@ const MINOR_TAG_STYLES = [
 ];
 
 const Navbar = () => {
-  const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } = usePreferences();
+  const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } =
+    usePreferences();
   const { history, currentAuditId } = useAuditContext();
 
   const currentAudit = history?.audits?.find(
@@ -100,12 +104,20 @@ const Navbar = () => {
             role="switch"
             aria-checked={viewMode === "planner"}
             onClick={() => void toggleViewMode()}
-            className="relative inline-flex h-5 w-9 items-center rounded-full border border-[#cfd5de] bg-white shadow-sm"
+            className={cn(
+              "relative inline-flex h-5 w-9 items-center rounded-full border shadow-sm transition-all duration-200 ease-in-out border-gray-200",
+              viewMode === "planner"
+                ? "bg-dap-primary border-white"
+                : "bg-white border-[#97a7b4]",
+            )}
           >
             <span
-              className={`inline-block h-[12px] w-[12px] transform rounded-full bg-[#97a7b4] transition-transform duration-200 ease-in-out ${
-                viewMode === "planner" ? "translate-x-[18px]" : "translate-x-[3px]"
-              }`}
+              className={cn(
+                "inline-block h-[12px] w-[12px] transform rounded-full transition-transform duration-200 ease-in-out",
+                viewMode === "planner"
+                  ? "bg-white translate-x-[18px]"
+                  : "bg-[#97a7b4] translate-x-[3px]",
+              )}
             />
           </button>
           <span className="text-sm font-medium text-[#363f43] whitespace-nowrap">
