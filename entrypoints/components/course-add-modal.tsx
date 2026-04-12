@@ -107,12 +107,28 @@ function syncCatalogCourseForCard(
   return courseId;
 }
 
+function dedupeCatalogCoursesByCode(courses: CatalogCourse[]): CatalogCourse[] {
+  const seenCourseCodes = new Set<string>();
+
+  return courses.filter((course) => {
+    const courseCode = `${course.department} ${course.number}`.trim();
+    if (seenCourseCodes.has(courseCode)) {
+      return false;
+    }
+
+    seenCourseCodes.add(courseCode);
+    return true;
+  });
+}
+
 export function CourseSearchContent({
   recommendedCourses = [],
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
   const { courseMap } = useAuditContext();
+  const dedupedRecommendedCourses =
+    dedupeCatalogCoursesByCode(recommendedCourses);
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -168,7 +184,7 @@ export function CourseSearchContent({
       <div className="mb-6">
         <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
         <div className="space-y-2">
-          {recommendedCourses.map((course) => (
+          {dedupedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
               courseId={syncCatalogCourseForCard(courseMap, course)}
@@ -322,6 +338,8 @@ export function CourseSuggestionContent({
   isLoading = false,
 }: CourseSearchContentProps) {
   const { courseMap } = useAuditContext();
+  const dedupedRecommendedCourses =
+    dedupeCatalogCoursesByCode(recommendedCourses);
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -379,7 +397,7 @@ export function CourseSuggestionContent({
           Recommended
         </p>
         <div className="space-y-2">
-          {recommendedCourses.map((course) => (
+          {dedupedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
               courseId={syncCatalogCourseForCard(courseMap, course)}
