@@ -68,7 +68,9 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
 
           <button
             type="button"
-            className={isSelected ? "text-white" : "text-[var(--color-dap-orange)]"}
+            className={
+              isSelected ? "text-white" : "text-[var(--color-dap-orange)]"
+            }
             onClick={(e) => {
               e.stopPropagation();
               setMenuOpen((prev) => !prev);

@@ -11,22 +11,76 @@ import {
 type ParseMajorCase = ParseMajorFixtureCase;
 
 const regressionCases: ParseMajorCase[] = [
-  { input: "B.F.A Design", expected: "Design", source: "Linear regression: dotted BFA format" },
-  { input: "B.S. Computer Science", expected: "Computer Science", source: "Linear regression: dotted BS format" },
-  { input: "B.A. Economics", expected: "Economics", source: "Linear regression: dotted BA format" },
-  { input: "B S in Communication and Leadership", expected: "Communication and Leadership", source: "Linear regression: BA/BS with in" },
-  { input: "BSGS, Climate System Science", expected: "Climate System Science", source: "Linear regression: code-first format" },
-  { input: "  B   A   Design  ", expected: "Design", source: "Whitespace normalization" },
-  { input: "Major: B A Design", expected: "Design", source: "Leading major label" },
-  { input: "B A Design - Credential: Elements of Computing (completed)", expected: "Design", source: "Credential suffix delimiter" },
-  { input: "BMusic Music performance (Students may major in voice)", expected: "Music performance", source: "Parenthetical suffix" },
+  {
+    input: "B.F.A Design",
+    expected: "Design",
+    source: "Linear regression: dotted BFA format",
+  },
+  {
+    input: "B.S. Computer Science",
+    expected: "Computer Science",
+    source: "Linear regression: dotted BS format",
+  },
+  {
+    input: "B.A. Economics",
+    expected: "Economics",
+    source: "Linear regression: dotted BA format",
+  },
+  {
+    input: "B S in Communication and Leadership",
+    expected: "Communication and Leadership",
+    source: "Linear regression: BA/BS with in",
+  },
+  {
+    input: "BSGS, Climate System Science",
+    expected: "Climate System Science",
+    source: "Linear regression: code-first format",
+  },
+  {
+    input: "  B   A   Design  ",
+    expected: "Design",
+    source: "Whitespace normalization",
+  },
+  {
+    input: "Major: B A Design",
+    expected: "Design",
+    source: "Leading major label",
+  },
+  {
+    input: "B A Design - Credential: Elements of Computing (completed)",
+    expected: "Design",
+    source: "Credential suffix delimiter",
+  },
+  {
+    input: "BMusic Music performance (Students may major in voice)",
+    expected: "Music performance",
+    source: "Parenthetical suffix",
+  },
 ];
 
 const realisticAuditCases: ParseMajorCase[] = [
-  { input: "Major: B A Design - Credential: Bridging Disciplines Program (active)", expected: "Design", source: "UT Direct-like major with credential" },
-  { input: "BSCompSci Computer science - Credential: Applied Statistical Modeling (pending)", expected: "Computer science", source: "Compact degree code with credential" },
-  { input: "BFA Studio art", expected: "Studio art", source: "Single-word first token after compact BFA prefix" },
-  { input: "BSEnvirSci Geographical sciences", expected: "Geographical sciences", source: "Compact environmental science credential" },
+  {
+    input:
+      "Major: B A Design - Credential: Bridging Disciplines Program (active)",
+    expected: "Design",
+    source: "UT Direct-like major with credential",
+  },
+  {
+    input:
+      "BSCompSci Computer science - Credential: Applied Statistical Modeling (pending)",
+    expected: "Computer science",
+    source: "Compact degree code with credential",
+  },
+  {
+    input: "BFA Studio art",
+    expected: "Studio art",
+    source: "Single-word first token after compact BFA prefix",
+  },
+  {
+    input: "BSEnvirSci Geographical sciences",
+    expected: "Geographical sciences",
+    source: "Compact environmental science credential",
+  },
 ];
 
 const catalogCases: ParseMajorCase[] = utDegreeProgramCases.map((testCase) => ({

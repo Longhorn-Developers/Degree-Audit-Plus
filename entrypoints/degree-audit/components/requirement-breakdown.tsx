@@ -357,7 +357,10 @@ type UnifiedDegreeCardProps = {
   sections: UnifiedDegreeCardSection[];
 };
 
-export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardProps) => {
+export const UnifiedDegreeCard = ({
+  degreeTitle,
+  sections,
+}: UnifiedDegreeCardProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const totalCurrent = sections.reduce((sum, s) => sum + s.hours.current, 0);
@@ -378,8 +381,14 @@ export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardPr
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={2}>
-          <span className="font-bold text-base text-gray-900">{degreeTitle}</span>
-          <ProgressBar current={totalCurrent} total={totalTotal} colorIndex={5} />
+          <span className="font-bold text-base text-gray-900">
+            {degreeTitle}
+          </span>
+          <ProgressBar
+            current={totalCurrent}
+            total={totalTotal}
+            colorIndex={5}
+          />
         </VStack>
         <HStack y="middle" gap={2}>
           <span className="text-gray-900 font-medium text-sm">

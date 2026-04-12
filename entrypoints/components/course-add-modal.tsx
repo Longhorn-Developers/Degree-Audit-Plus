@@ -1,7 +1,5 @@
 import { searchCatalogCourses } from "@/lib/backend/db";
-import type {
-  CatalogCourse,
-} from "@/lib/general-types";
+import type { CatalogCourse } from "@/lib/general-types";
 import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,

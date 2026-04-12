@@ -53,7 +53,7 @@ const Sidebar = () => {
       {/* Header */}
       <div className="px-8 pb-4 flex items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="DAP Logo" className="w-12 h-12" /> 
+          <img src={logo} alt="DAP Logo" className="w-12 h-12" />
           <span className="text-dap-orange font-semibold text-xl">
             Degree Audit Plus
           </span>

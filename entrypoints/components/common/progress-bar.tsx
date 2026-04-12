@@ -20,6 +20,7 @@ const ProgressBar = forwardRef<
     </div>
   );
 });
+ProgressBar.displayName = "ProgressBar";
 
 type Value = {
   ammount: number;
@@ -62,5 +63,6 @@ export const MultiValueProgressBar = forwardRef<
     </div>
   );
 });
+MultiValueProgressBar.displayName = "MultiValueProgressBar";
 
 export default ProgressBar;

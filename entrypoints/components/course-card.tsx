@@ -21,10 +21,17 @@ const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const { courseId, previewCourse, className, showDots = false, type, ...rest } =
-    props;
+  const {
+    courseId,
+    previewCourse,
+    className,
+    showDots = false,
+    type,
+    ...rest
+  } = props;
   const auditContext = useAuditContext();
-  const course = previewCourse ?? (courseId ? auditContext.getCourseById(courseId) : null);
+  const course =
+    previewCourse ?? (courseId ? auditContext.getCourseById(courseId) : null);
 
   if (!course) {
     return null;
@@ -100,10 +107,7 @@ const CourseCard = ({
   type,
 }: CourseCardProps & { draggable?: boolean }) => {
   return draggable ? (
-    <DraggableCourseCard
-      courseId={courseId!}
-      className={className}
-    />
+    <DraggableCourseCard courseId={courseId!} className={className} />
   ) : (
     <CourseCardVisual
       courseId={courseId}

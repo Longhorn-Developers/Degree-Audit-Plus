@@ -18,6 +18,7 @@ export const Title = forwardRef<
     </p>
   );
 });
+Title.displayName = "Title";
 
 export const Subtitle = forwardRef<
   HTMLParagraphElement,
@@ -36,5 +37,6 @@ export const Subtitle = forwardRef<
     </p>
   );
 });
+Subtitle.displayName = "Subtitle";
 
 export default Title;
