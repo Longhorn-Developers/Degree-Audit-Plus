@@ -84,6 +84,20 @@ function mapCatalogCourseToPreview(course: CatalogCourse) {
   };
 }
 
+function dedupeCatalogCoursesByCode(courses: CatalogCourse[]): CatalogCourse[] {
+  const seenCourseCodes = new Set<string>();
+
+  return courses.filter((course) => {
+    const courseCode = `${course.department} ${course.number}`.trim();
+    if (seenCourseCodes.has(courseCode)) {
+      return false;
+    }
+
+    seenCourseCodes.add(courseCode);
+    return true;
+  });
+}
+
 export function CourseSearchContent({
   recommendedCourses,
   onSearchSubmit,
@@ -91,8 +105,9 @@ export function CourseSearchContent({
 }: CourseSearchContentProps) {
   const { recommendedCourses: sharedRecommendedCourses } =
     useCourseModalContext();
-  const displayedRecommendedCourses =
-    recommendedCourses ?? sharedRecommendedCourses;
+  const displayedRecommendedCourses = dedupeCatalogCoursesByCode(
+    recommendedCourses ?? sharedRecommendedCourses,
+  );
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -303,8 +318,9 @@ export function CourseSuggestionContent({
 }: CourseSearchContentProps) {
   const { recommendedCourses: sharedRecommendedCourses } =
     useCourseModalContext();
-  const displayedRecommendedCourses =
-    recommendedCourses ?? sharedRecommendedCourses;
+  const displayedRecommendedCourses = dedupeCatalogCoursesByCode(
+    recommendedCourses ?? sharedRecommendedCourses,
+  );
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",

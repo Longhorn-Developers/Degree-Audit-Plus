@@ -1,7 +1,6 @@
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import Title from "@/entrypoints/components/common/text";
 import "@/entrypoints/styles/content.css";
-import { AuditRequirement } from "@/lib/general-types";
 import { formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";

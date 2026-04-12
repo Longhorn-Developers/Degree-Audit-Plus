@@ -196,10 +196,7 @@ const RequirementRow = ({
     getCourseById(courseId),
   );
   const { code, description } = parseRequirementCode(requirement.text);
-  const [isExpanded, setIsExpanded] = useState(
-    requirement.status === "In Progress" ||
-      courses.some((course) => course.status === "In Progress"),
-  );
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
@@ -294,7 +291,7 @@ type RequirementBreakdownProps = {
 };
 const RequirementBreakdown = (props: RequirementBreakdownProps) => {
   const { title, hours, requirements, colorIndex = 0 } = props;
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const borderColor = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
   const progressUnit = getSharedProgressUnit(requirements);
 
