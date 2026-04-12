@@ -182,7 +182,13 @@ const parseRequirementCode = (
 };
 
 // Individual requirement row with expandable courses
-const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
+const RequirementRow = ({
+  requirement,
+  requirementTitle,
+}: {
+  requirement: RequirementRule;
+  requirementTitle: string;
+}) => {
   const { getCourseById } = useAuditContext();
   const { openModal } = useCourseModalContext();
 
@@ -232,7 +238,12 @@ const RequirementRow = ({ requirement }: { requirement: RequirementRule }) => {
             <Button
               fill="solid"
               className="bg-[var(--color-dap-orange)] hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[16px]"
-              onClick={openModal}
+              onClick={() =>
+                openModal({
+                  requirementTitle,
+                  ruleTitle: requirement.text,
+                })
+              }
             >
               <PlusIcon className="w-5 h-5" weight="bold" />
               Add Planned Course
@@ -323,6 +334,7 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
               <RequirementRow
                 key={`${requirement.text.slice(0, 20)}-${idx}`}
                 requirement={requirement}
+                requirementTitle={title}
               />
             ))}
           </div>
@@ -396,6 +408,7 @@ export const UnifiedDegreeCard = ({ degreeTitle, sections }: UnifiedDegreeCardPr
                 <RequirementRow
                   key={`${requirement.text.slice(0, 20)}-${rIdx}`}
                   requirement={requirement}
+                  requirementTitle={section.title}
                 />
               ))}
             </div>
