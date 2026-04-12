@@ -15,6 +15,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
 import { useAuditContext } from "../degree-audit/providers/audit-provider";
+import { useCourseModalContext } from "../degree-audit/providers/course-modal-provider";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
 import CourseCard from "./course-card";
@@ -108,11 +109,15 @@ function syncCatalogCourseForCard(
 }
 
 export function CourseSearchContent({
-  recommendedCourses = [],
+  recommendedCourses,
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
   const { courseMap } = useAuditContext();
+  const { recommendedCourses: sharedRecommendedCourses } =
+    useCourseModalContext();
+  const displayedRecommendedCourses =
+    recommendedCourses ?? sharedRecommendedCourses;
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -168,7 +173,7 @@ export function CourseSearchContent({
       <div className="mb-6">
         <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
         <div className="space-y-2">
-          {recommendedCourses.map((course) => (
+          {displayedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
               courseId={syncCatalogCourseForCard(courseMap, course)}
@@ -317,11 +322,15 @@ export function CourseSearchContent({
 }
 
 export function CourseSuggestionContent({
-  recommendedCourses = [],
+  recommendedCourses,
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
   const { courseMap } = useAuditContext();
+  const { recommendedCourses: sharedRecommendedCourses } =
+    useCourseModalContext();
+  const displayedRecommendedCourses =
+    recommendedCourses ?? sharedRecommendedCourses;
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
     requirement: "",
@@ -379,7 +388,7 @@ export function CourseSuggestionContent({
           Recommended
         </p>
         <div className="space-y-2">
-          {recommendedCourses.map((course) => (
+          {displayedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
               courseId={syncCatalogCourseForCard(courseMap, course)}
