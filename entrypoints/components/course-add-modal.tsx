@@ -1,10 +1,6 @@
 import { searchCatalogCourses } from "@/lib/backend/db";
 import type {
   CatalogCourse,
-  Course,
-  CourseCode,
-  CourseId,
-  StringSemester,
 } from "@/lib/general-types";
 import {
   CaretLeftIcon,
@@ -14,7 +10,6 @@ import {
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
-import { useAuditContext } from "../degree-audit/providers/audit-provider";
 import { useCourseModalContext } from "../degree-audit/providers/course-modal-provider";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
@@ -82,30 +77,11 @@ interface CourseSearchContentProps {
   isLoading?: boolean;
 }
 
-function getCatalogCourseId(course: CatalogCourse): CourseId {
-  return `catalog-course-${course.uniqueId}`;
-}
-
-function syncCatalogCourseForCard(
-  courseMap: Record<CourseId, Course>,
-  course: CatalogCourse,
-): CourseId {
-  const courseId = getCatalogCourseId(course);
-
-  if (!courseMap[courseId]) {
-    courseMap[courseId] = {
-      id: courseId,
-      code: `${course.department} ${course.number}` as CourseCode,
-      name: course.fullName,
-      hours: course.creditHours,
-      semester:
-        `${course.semester.season} ${course.semester.year}` as StringSemester,
-      status: "Planned",
-      type: "In-Residence",
-    };
-  }
-
-  return courseId;
+function mapCatalogCourseToPreview(course: CatalogCourse) {
+  return {
+    code: `${course.department} ${course.number}`,
+    name: course.fullName,
+  };
 }
 
 export function CourseSearchContent({
@@ -113,7 +89,6 @@ export function CourseSearchContent({
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
-  const { courseMap } = useAuditContext();
   const { recommendedCourses: sharedRecommendedCourses } =
     useCourseModalContext();
   const displayedRecommendedCourses =
@@ -176,7 +151,7 @@ export function CourseSearchContent({
           {displayedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
-              courseId={syncCatalogCourseForCard(courseMap, course)}
+              previewCourse={mapCatalogCourseToPreview(course)}
               type="add"
             />
           ))}
@@ -326,7 +301,6 @@ export function CourseSuggestionContent({
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
-  const { courseMap } = useAuditContext();
   const { recommendedCourses: sharedRecommendedCourses } =
     useCourseModalContext();
   const displayedRecommendedCourses =
@@ -391,7 +365,7 @@ export function CourseSuggestionContent({
           {displayedRecommendedCourses.map((course) => (
             <CourseCard
               key={course.uniqueId}
-              courseId={syncCatalogCourseForCard(courseMap, course)}
+              previewCourse={mapCatalogCourseToPreview(course)}
               type="add"
             />
           ))}
@@ -536,8 +510,6 @@ export function CourseSearchResults({
   courses,
   onBack,
 }: CourseSearchResultsProps) {
-  const { courseMap } = useAuditContext();
-
   return (
     <div>
       <button
@@ -551,7 +523,7 @@ export function CourseSearchResults({
         {courses.map((course) => (
           <CourseCard
             key={course.uniqueId}
-            courseId={syncCatalogCourseForCard(courseMap, course)}
+            previewCourse={mapCatalogCourseToPreview(course)}
             className="w-full"
             type="add"
           />

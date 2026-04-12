@@ -1,4 +1,4 @@
-import { CourseId } from "@/lib/general-types";
+import { CourseCode, CourseId } from "@/lib/general-types";
 import { cn, getColorByCourseCode } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
@@ -7,7 +7,11 @@ import { forwardRef } from "react";
 import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 export type CourseCardProps = {
-  courseId: CourseId;
+  courseId?: CourseId;
+  previewCourse?: {
+    code: string;
+    name: string;
+  };
   className?: string;
   showDots?: boolean;
   type?: "add";
@@ -17,9 +21,17 @@ const CourseCardVisual = forwardRef<
   HTMLDivElement,
   CourseCardProps & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const { courseId, className, showDots = false, type, ...rest } = props;
-  const { name: fullName, code: courseName } =
-    useAuditContext().getCourseById(courseId);
+  const { courseId, previewCourse, className, showDots = false, type, ...rest } =
+    props;
+  const auditContext = useAuditContext();
+  const course = previewCourse ?? (courseId ? auditContext.getCourseById(courseId) : null);
+
+  if (!course) {
+    return null;
+  }
+
+  const fullName = course.name;
+  const courseName = course.code;
 
   return (
     <div
@@ -31,7 +43,7 @@ const CourseCardVisual = forwardRef<
       )}
     >
       <div
-        className={`w-6 flex items-center justify-center ${getColorByCourseCode(courseName).className} rounded-l-sm border-r-2 border-dap-border`}
+        className={`w-6 flex items-center justify-center ${getColorByCourseCode(courseName as CourseCode).className} rounded-l-sm border-r-2 border-dap-border`}
       >
         {showDots ? (
           <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
@@ -52,7 +64,13 @@ const CourseCardVisual = forwardRef<
 
 CourseCardVisual.displayName = "CourseCardVisual";
 
-const DraggableCourseCard = ({ courseId, className }: CourseCardProps) => {
+const DraggableCourseCard = ({
+  courseId,
+  className,
+}: {
+  courseId: CourseId;
+  className?: string;
+}) => {
   const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
     id: courseId,
   });
@@ -75,6 +93,7 @@ const DraggableCourseCard = ({ courseId, className }: CourseCardProps) => {
 
 const CourseCard = ({
   courseId,
+  previewCourse,
   className,
   draggable,
   showDots = false,
@@ -82,14 +101,13 @@ const CourseCard = ({
 }: CourseCardProps & { draggable?: boolean }) => {
   return draggable ? (
     <DraggableCourseCard
-      courseId={courseId}
+      courseId={courseId!}
       className={className}
-      showDots={showDots}
-      type={type}
     />
   ) : (
     <CourseCardVisual
       courseId={courseId}
+      previewCourse={previewCourse}
       className={className}
       showDots={showDots}
       type={type}
