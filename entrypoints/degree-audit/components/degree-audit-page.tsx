@@ -92,6 +92,7 @@ async function getSuggestedCoreCourses(
 
   const suggestions: CatalogCourse[] = [];
   const seenCourseIds = new Set<number>();
+  const seenCourseCodes = new Set<string>();
 
   while (
     suggestions.length < suggestionCount &&
@@ -107,8 +108,15 @@ async function getSuggestedCoreCourses(
       }
 
       const nextCourse = bucket.shift()!;
+      const courseCode = `${nextCourse.department} ${nextCourse.number}`.trim();
+
+      if (seenCourseCodes.has(courseCode)) {
+        continue;
+      }
+
       suggestions.push(nextCourse);
       seenCourseIds.add(nextCourse.uniqueId);
+      seenCourseCodes.add(courseCode);
 
       if (suggestions.length === suggestionCount) {
         break;
