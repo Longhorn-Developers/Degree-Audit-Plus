@@ -59,6 +59,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
     </button>
   );
 });
+Button.displayName = "Button";
 
 export const CloseButton = forwardRef<HTMLButtonElement, ButtonProps>(
   (props, ref) => {
@@ -77,6 +78,7 @@ export const CloseButton = forwardRef<HTMLButtonElement, ButtonProps>(
     );
   },
 );
+CloseButton.displayName = "CloseButton";
 
 export const IconButton = forwardRef<
   HTMLButtonElement,
@@ -89,6 +91,7 @@ export const IconButton = forwardRef<
     </Button>
   );
 });
+IconButton.displayName = "IconButton";
 
 type ToggleSwitchProps = {
   checked?: boolean;

@@ -1,5 +1,9 @@
 import Dexie from "dexie";
-import type { AuditRequirement, CatalogCourse, CoreArea } from "../general-types";
+import type {
+  AuditRequirement,
+  CatalogCourse,
+  CoreArea,
+} from "../general-types";
 import { DEPARTMENT_MAP } from "../examples/data/department-map";
 
 export class UTDatabase extends Dexie {
@@ -85,7 +89,10 @@ export function getMissingCoreRequirements(
 
   return coreSection.rules.reduce<Partial<Record<CoreArea, number>>>(
     (missing, rule) => {
-      const coreArea = getCoreAreaFromRequirementRule(coreSection.title, rule.text);
+      const coreArea = getCoreAreaFromRequirementRule(
+        coreSection.title,
+        rule.text,
+      );
 
       if (coreArea && rule.remainingHours > 0) {
         missing[coreArea] = rule.remainingHours;
@@ -102,7 +109,9 @@ export async function getSuggestedCoreCourses(
   maxSuggestions = 3,
 ): Promise<CatalogCourse[]> {
   const suggestionCount = Math.max(0, Math.floor(maxSuggestions));
-  const missingCoreEntries = Object.entries(getMissingCoreRequirements(sections))
+  const missingCoreEntries = Object.entries(
+    getMissingCoreRequirements(sections),
+  )
     .filter((entry): entry is [CoreArea, number] => entry[1] > 0)
     .sort((a, b) => b[1] - a[1]);
 

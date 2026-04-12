@@ -2,18 +2,32 @@ const MAJOR_TERMINATOR = String.raw`(?:\s+-\s+Credential:|\(|$)`;
 const BSBA_PREFIX = /B\.?\s*[SA]\.?(?=[\s,])\s*/;
 const GENERIC_BACHELOR_PREFIX =
   /^(?:B[A-Za-z&]+|B(?:\.?\s*[A-Z&])+\.?|PharmD)(?:\s+|,\s*)/i;
-const ENTRY_LEVEL_PREFIX =
-  /^ENTRY-LEVEL requirements(?:\s+for|,\s*)\s*(.+)$/i;
+const ENTRY_LEVEL_PREFIX = /^ENTRY-LEVEL requirements(?:\s+for|,\s*)\s*(.+)$/i;
 
 function stripKnownSuffixes(candidate: string): string {
   const normalizedCandidate = candidate.trim();
 
   const specializedPatterns: Array<[RegExp, string]> = [
-    [/^(Biology),\s*(?:Cell and Molecular Biology|Computational Biology|Ecology, Evolution,? ?& Behavior|Genetics and Genomics|Human Biology|Microbiology and Infectious Diseases|Marine Sci\.?|Plant Biology)$/i, "$1"],
-    [/^(Biology),\s*(?:Ecol, Evol, and Biodiversity Concentration|Ecol, Evol, and Biodiversity Honors|Organismal Biology and Physiology Concentration|Organismal Biology and Physiology Honors)$/i, "$1"],
-    [/^(Environmental Science),\s*(?:Biological Sciences|Bio Science Honors)$/i, "$1"],
-    [/^(Nutrition),\s*(?:Dietetics.*|Nutritional Sciences Option|Nutrition and Public Health)$/i, "$1"],
-    [/^(Physics),\s*(?:Biophysics|Radiation Physics option|Computation option|Space Sciences option)$/i, "$1"],
+    [
+      /^(Biology),\s*(?:Cell and Molecular Biology|Computational Biology|Ecology, Evolution,? ?& Behavior|Genetics and Genomics|Human Biology|Microbiology and Infectious Diseases|Marine Sci\.?|Plant Biology)$/i,
+      "$1",
+    ],
+    [
+      /^(Biology),\s*(?:Ecol, Evol, and Biodiversity Concentration|Ecol, Evol, and Biodiversity Honors|Organismal Biology and Physiology Concentration|Organismal Biology and Physiology Honors)$/i,
+      "$1",
+    ],
+    [
+      /^(Environmental Science),\s*(?:Biological Sciences|Bio Science Honors)$/i,
+      "$1",
+    ],
+    [
+      /^(Nutrition),\s*(?:Dietetics.*|Nutritional Sciences Option|Nutrition and Public Health)$/i,
+      "$1",
+    ],
+    [
+      /^(Physics),\s*(?:Biophysics|Radiation Physics option|Computation option|Space Sciences option)$/i,
+      "$1",
+    ],
     [/^(Mathematics),\s*Actuarial Science option$/i, "$1"],
     [/^(Neuroscience),\s*Neuroscience Scholars$/i, "$1"],
     [/^(Aerospace Engineering),\s*(?:Atmospheric Flight|Space Flight)$/i, "$1"],
@@ -22,7 +36,10 @@ function stripKnownSuffixes(candidate: string): string {
     [/^(Chem Engr)(?:\s+I:.*|,\s*I:.*)$/i, "$1"],
     [/^(Mech Engr),\s*(?:Career Gateway Elective|\*)$/i, "$1"],
     [/^(Music);\s*Emphasis in (?:Composition|Music),\s*.+$/i, "$1"],
-    [/^(Theatre and Dance),\s*(?:Dance|Design and Tech|His, Lit, and Drama|Playwriting and Directing|Performer'?s Process|Theatre for Youth and Communities)$/i, "$1"],
+    [
+      /^(Theatre and Dance),\s*(?:Dance|Design and Tech|His, Lit, and Drama|Playwriting and Directing|Performer'?s Process|Theatre for Youth and Communities)$/i,
+      "$1",
+    ],
     [/^(Dance),\s*Dance(?: Education)? Option$/i, "$1"],
     [/^(?:in\s+)?(Informatics)(?:;\s*.+)?$/i, "$1"],
     [/^ED,\s*Generic All-Level Special Education$/i, "Education"],
@@ -41,8 +58,14 @@ function stripKnownSuffixes(candidate: string): string {
     [/^(Music Studies),\s*(?:Choral|Instrumental),\s*.+$/i, "$1"],
     [/^(Orch\. Instrument),\s*Traditional,\s*.+$/i, "$1"],
     [/^(Human Development and Family Sciences),\s*Honors$/i, "$1"],
-    [/^(HDFS),\s*Human Development and Family Sciences$/i, "Human Development and Family Sciences"],
-    [/^(HDFS),\s*Honors(?: in Advanced HDFS)?$/i, "Human Development and Family Sciences"],
+    [
+      /^(HDFS),\s*Human Development and Family Sciences$/i,
+      "Human Development and Family Sciences",
+    ],
+    [
+      /^(HDFS),\s*Honors(?: in Advanced HDFS)?$/i,
+      "Human Development and Family Sciences",
+    ],
     [/^(Public Health);\s*Public Health Honors$/i, "Public Health"],
   ];
 
@@ -110,16 +133,16 @@ export function parseMajor(programText: string): string {
   if (entryLevelMatch) return cleanExtractedMajor(entryLevelMatch[1]);
 
   const explicitMajorMatch = cleanText.match(
-    new RegExp(`${BSBA_PREFIX.source},?\\s*major\\s+(.+?)${MAJOR_TERMINATOR}`, "i"),
+    new RegExp(
+      `${BSBA_PREFIX.source},?\\s*major\\s+(.+?)${MAJOR_TERMINATOR}`,
+      "i",
+    ),
   );
   if (explicitMajorMatch) return cleanExtractedMajor(explicitMajorMatch[1]);
 
   // Pattern 1: "B S in Communication and Leadership"
   const withInMatch = cleanText.match(
-    new RegExp(
-      `${BSBA_PREFIX.source}in\\s+(.+?)${MAJOR_TERMINATOR}`,
-      "i",
-    ),
+    new RegExp(`${BSBA_PREFIX.source}in\\s+(.+?)${MAJOR_TERMINATOR}`, "i"),
   );
   if (withInMatch) return cleanExtractedMajor(withInMatch[1]);
 

@@ -7,6 +7,7 @@ This document describes the upfront audit scraping system that ensures audit dat
 ## Problem Solved
 
 Previously, when a user clicked an audit card from the popup without being authenticated to UT Direct, the scraping would fail because:
+
 1. The hidden tab would load a login page instead of the audit data
 2. No cached data existed for that audit
 3. User would see a loading spinner indefinitely
@@ -14,6 +15,7 @@ Previously, when a user clicked an audit card from the popup without being authe
 ## Solution
 
 We now scrape **all audit details upfront** when the user visits the UT Direct audits page (when they are authenticated). This ensures:
+
 - All audit data is cached before the user needs it
 - Clicking any audit from popup/sidebar loads instantly from cache
 - No authentication issues since scraping happens during an authenticated session
@@ -71,21 +73,27 @@ We now scrape **all audit details upfront** when the user visits the UT Direct a
 ## Files Modified
 
 ### 1. `lib/general-types.ts`
+
 Added `scrapedAuditIds` field to `AuditHistoryData` interface:
+
 ```typescript
 export interface AuditHistoryData {
   audits: DegreeAuditCardProps[];
   timestamp: number;
   error?: string;
   auditNumber?: number;
-  scrapedAuditIds?: string[];  // NEW: Track which audits have been scraped
+  scrapedAuditIds?: string[]; // NEW: Track which audits have been scraped
 }
 ```
 
 ### 2. `lib/storage.ts`
+
 Added helper function to find uncached audits:
+
 ```typescript
-export async function getUncachedAuditIds(auditIds: string[]): Promise<string[]> {
+export async function getUncachedAuditIds(
+  auditIds: string[],
+): Promise<string[]> {
   const uncached: string[] = [];
   for (const id of auditIds) {
     const cached = await getAuditData(id);
@@ -96,25 +104,32 @@ export async function getUncachedAuditIds(auditIds: string[]): Promise<string[]>
 ```
 
 ### 3. `entrypoints/background.ts`
+
 Added batch scraping infrastructure:
+
 - `scrapeAuditById(auditId)` - Reusable function to scrape a single audit
 - `SCRAPE_ALL_AUDITS` message handler - Orchestrates sequential scraping
 - `AUDIT_SCRAPE_ERROR` message handler - Handles scrape failures
 - `pendingScrapes` map - Tracks promises for async resolution
 
 ### 4. `entrypoints/content.tsx`
+
 Modified `fetchAndStoreAuditHistory()` to trigger batch scraping:
+
 - Gets list of audit IDs from history
 - Filters to only uncached IDs
 - Sends `SCRAPE_ALL_AUDITS` message to background
 
 Enhanced `RUN_SCRAPER` handler:
+
 - Detects login page (auth failure)
 - Passes `auditId` in response messages
 - Added comprehensive console logging
 
 ### 5. `entrypoints/degree-audit/main.tsx`
+
 Simplified audit loading:
+
 - Removed on-demand scraping (`SCRAPE_AUDIT` message)
 - Removed `AUDIT_RESULTS` listener
 - Shows error with link to UT Direct if audit not cached
@@ -123,33 +138,37 @@ Simplified audit loading:
 
 ## Message Types
 
-| Message | Sender | Receiver | Purpose |
-|---------|--------|----------|---------|
-| `SCRAPE_ALL_AUDITS` | content.tsx | background.ts | Start batch scraping |
-| `RUN_SCRAPER` | background.ts | content.tsx | Scrape current page |
-| `AUDIT_RESULTS` | content.tsx | background.ts | Return scraped data |
-| `AUDIT_SCRAPE_ERROR` | content.tsx | background.ts | Report scrape failure |
+| Message              | Sender        | Receiver      | Purpose               |
+| -------------------- | ------------- | ------------- | --------------------- |
+| `SCRAPE_ALL_AUDITS`  | content.tsx   | background.ts | Start batch scraping  |
+| `RUN_SCRAPER`        | background.ts | content.tsx   | Scrape current page   |
+| `AUDIT_RESULTS`      | content.tsx   | background.ts | Return scraped data   |
+| `AUDIT_SCRAPE_ERROR` | content.tsx   | background.ts | Report scrape failure |
 
 ---
 
 ## Error Handling
 
 ### Authentication Expired
+
 - **Detection**: Content script checks for login form on page
 - **Response**: Sends `AUDIT_SCRAPE_ERROR` with `AUTH_REQUIRED`
 - **Result**: Audit marked as failed, continues to next
 
 ### Table Not Found
+
 - **Detection**: `#coursework table.results` selector fails
 - **Response**: Sends `AUDIT_SCRAPE_ERROR` with `TABLE_NOT_FOUND`
 - **Result**: Audit marked as failed, continues to next
 
 ### Timeout
+
 - **Detection**: Page doesn't load within 30 seconds
 - **Response**: Tab closed automatically, promise rejected
 - **Result**: Audit marked as failed, continues to next
 
 ### Partial Failures
+
 - Each audit is scraped independently
 - Failed audits don't affect successful ones
 - On next visit to UT Direct, uncached audits will be retried
@@ -160,15 +179,16 @@ Simplified audit loading:
 
 All scraping activity is logged with prefixes for easy filtering:
 
-| Prefix | Location | Purpose |
-|--------|----------|---------|
-| `[Content]` | content.tsx | History fetch & batch trigger |
-| `[Scraper]` | content.tsx | Individual page scraping |
-| `[Batch Scraper]` | background.ts | Batch orchestration |
-| `[Background]` | background.ts | Tab management |
-| `[Main]` | main.tsx | Audit loading |
+| Prefix            | Location      | Purpose                       |
+| ----------------- | ------------- | ----------------------------- |
+| `[Content]`       | content.tsx   | History fetch & batch trigger |
+| `[Scraper]`       | content.tsx   | Individual page scraping      |
+| `[Batch Scraper]` | background.ts | Batch orchestration           |
+| `[Background]`    | background.ts | Tab management                |
+| `[Main]`          | main.tsx      | Audit loading                 |
 
 ### Example Console Output
+
 ```
 [Content] Fetching audit history...
 [Content] Successfully fetched 3 audits
@@ -220,14 +240,14 @@ browser.storage.local["auditData_12345"] = {
 
 This implementation maximizes code reuse:
 
-| Existing Code | Reused For |
-|---------------|------------|
+| Existing Code                | Reused For                         |
+| ---------------------------- | ---------------------------------- |
 | `SCRAPE_AUDIT` handler logic | Extracted into `scrapeAuditById()` |
-| `RUN_SCRAPER` content script | Works unchanged |
-| `AUDIT_RESULTS` listener | Extended to handle `auditId` |
-| `saveAuditData()` | Called by existing flow |
-| `getAuditData()` | Used to check cache |
-| Tab creation/cleanup | Same pattern, called sequentially |
+| `RUN_SCRAPER` content script | Works unchanged                    |
+| `AUDIT_RESULTS` listener     | Extended to handle `auditId`       |
+| `saveAuditData()`            | Called by existing flow            |
+| `getAuditData()`             | Used to check cache                |
+| Tab creation/cleanup         | Same pattern, called sequentially  |
 
 ---
 

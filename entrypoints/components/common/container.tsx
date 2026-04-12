@@ -19,5 +19,6 @@ const Container = forwardRef<
     </div>
   );
 });
+Container.displayName = "Container";
 
 export default Container;

@@ -101,7 +101,10 @@ const cappedSections: AuditRequirement[] = [
   },
 ];
 
-const cappedResults = calculateWeightedDegreeCompletion(cappedSections, courses);
+const cappedResults = calculateWeightedDegreeCompletion(
+  cappedSections,
+  courses,
+);
 assert.equal(cappedResults.sections[0].progress.planned, 2);
 
 console.log("Requirement progress validation passed.");

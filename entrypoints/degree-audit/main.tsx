@@ -36,13 +36,19 @@ const MainContent = () => {
   return (
     <VStack
       x="center"
-      className={clsx("w-full min-w-0 h-screen overflow-hidden transition-[margin-left] duration-300 ease-out", {
-        "ml-[365px]": sidebarIsOpen,
-        "ml-0": !sidebarIsOpen,
-      })}
+      className={clsx(
+        "w-full min-w-0 h-screen overflow-hidden transition-[margin-left] duration-300 ease-out",
+        {
+          "ml-[365px]": sidebarIsOpen,
+          "ml-0": !sidebarIsOpen,
+        },
+      )}
     >
       <Navbar />
-      <VStack x="center" className="px-10 mx-auto mb-[30px] w-full flex-1 overflow-y-auto">
+      <VStack
+        x="center"
+        className="px-10 mx-auto mb-[30px] w-full flex-1 overflow-y-auto"
+      >
         {viewMode === "audit" ? <DegreeAuditPage /> : <DegreePlannerPage />}
       </VStack>
     </VStack>
