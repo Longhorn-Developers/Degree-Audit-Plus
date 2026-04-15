@@ -547,6 +547,23 @@ export function CourseSearchResults({
   );
 }
 
+export function CourseSearchPanel() {
+  const [view, setView] = useState(false);
+  const [courses, setCourses] = useState<CatalogCourse[]>([]);
+
+  return view ? (
+    <CourseSearchResults courses={courses} onBack={() => setView(false)} />
+  ) : (
+    <CourseSearchContent
+      onSearchSubmit={async (formData) => {
+        const results = await SearchCourses(formData);
+        setCourses(results);
+        setView(true);
+      }}
+    />
+  );
+}
+
 export default function CourseAddModal({
   isOpen,
   onClose,
