@@ -16,6 +16,8 @@ type RecommendationScope = {
 interface CourseModalContextType {
   isOpen: boolean;
   recommendedCourses: CatalogCourse[];
+  recommendationScope: RecommendationScope | null;
+  isLoadingRecommendedCourses: boolean;
   toggleModal: () => void;
   openModal: (scope?: RecommendationScope) => void;
   closeModal: () => void;
@@ -33,6 +35,8 @@ export const CourseModalContextProvider = ({
   const [recommendedCourses, setRecommendedCourses] = useState<CatalogCourse[]>(
     [],
   );
+  const [isLoadingRecommendedCourses, setIsLoadingRecommendedCourses] =
+    useState(false);
   const [recommendationScope, setRecommendationScope] =
     useState<RecommendationScope | null>(null);
 
@@ -40,6 +44,7 @@ export const CourseModalContextProvider = ({
     let isCancelled = false;
 
     async function loadRecommendedCourses() {
+      setIsLoadingRecommendedCourses(true);
       const courses =
         recommendationScope?.requirementTitle && recommendationScope?.ruleTitle
           ? await getSuggestedCoursesForRequirement(
@@ -50,6 +55,7 @@ export const CourseModalContextProvider = ({
 
       if (!isCancelled) {
         setRecommendedCourses(courses);
+        setIsLoadingRecommendedCourses(false);
       }
     }
 
@@ -60,6 +66,7 @@ export const CourseModalContextProvider = ({
       );
       if (!isCancelled) {
         setRecommendedCourses([]);
+        setIsLoadingRecommendedCourses(false);
       }
     });
 
@@ -77,8 +84,11 @@ export const CourseModalContextProvider = ({
       value={{
         isOpen,
         recommendedCourses,
+        recommendationScope,
+        isLoadingRecommendedCourses,
         toggleModal: () => setIsOpen(!isOpen),
         openModal: (scope) => {
+          setRecommendedCourses([]);
           setRecommendationScope(scope ?? null);
           setIsOpen(true);
         },
@@ -93,12 +103,11 @@ export const CourseModalContextProvider = ({
       <CourseAddModal
         isOpen={isOpen}
         recommendedCourses={recommendedCourses}
+        recommendationScope={recommendationScope}
+        isLoading={isLoadingRecommendedCourses}
         onClose={() => {
           setIsOpen(false);
           setRecommendationScope(null);
-        }}
-        onSearch={(searchData) => {
-          console.log("Search data:", searchData);
         }}
       />
     </CourseModalContext.Provider>

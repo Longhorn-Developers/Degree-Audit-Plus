@@ -1,26 +1,37 @@
 import { searchCatalogCourses } from "@/lib/backend/db";
-import type { CatalogCourse } from "@/lib/general-types";
+import { getCurrentSemester } from "@/lib/backend/audit-scraper";
+import type {
+  CatalogCourse,
+  CourseCode,
+  PlannedCourseOutline,
+} from "@/lib/general-types";
 import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,
   CircleNotchIcon,
+  DotsSixVerticalIcon,
   GraduationCapIcon,
+  PlusIcon,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 import { useCourseModalContext } from "../degree-audit/providers/course-modal-provider";
 import Button from "./common/button";
 import SelectDropdown from "./common/select-dropdown";
 import CourseCard from "./course-card";
 
+type RecommendationScope = {
+  requirementTitle?: string;
+  ruleTitle?: string;
+};
+
 interface CourseAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSearch: (searchData: CourseSearchData) => void;
   recommendedCourses?: CatalogCourse[];
+  recommendationScope?: RecommendationScope | null;
   isLoading?: boolean;
-  hasSearched?: boolean;
-  resultsCount?: number;
 }
 
 export interface CourseSearchData {
@@ -43,19 +54,6 @@ const DEPARTMENTS = [
   "History",
 ];
 
-// const RECOMMENDED_COURSES = [
-//   {
-//     fullName: "HIS 315K - Fourmy",
-//     courseName: "MWF 9:00 am – 10:00 am, UTC 2.102A",
-//     color: "orange" as const,
-//   },
-//   {
-//     fullName: "DES 374 - Garmon",
-//     courseName: "MWF 3:00pm – 4:00pm, BUR 2.112",
-//     color: "indigo" as const,
-//   },
-// ];
-
 async function SearchCourses(
   searchData: CourseSearchData,
 ): Promise<CatalogCourse[]> {
@@ -73,6 +71,42 @@ interface CourseSearchContentProps {
   recommendedCourses?: CatalogCourse[];
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
   isLoading?: boolean;
+}
+
+type DivisionField = "lowerDivision" | "upperDivision";
+
+function DivisionToggle({
+  checked,
+  disabled,
+  label,
+  onToggle,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        className={cn(
+          "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
+          checked ? "bg-[#4A7C59]" : "bg-gray-200",
+        )}
+      >
+        <div
+          className={cn(
+            "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+            checked ? "translate-x-[24px]" : "translate-x-1",
+          )}
+        />
+      </button>
+      <span className="text-base text-gray-900">{label}</span>
+    </div>
+  );
 }
 
 function mapCatalogCourseToPreview(course: CatalogCourse) {
@@ -93,6 +127,41 @@ function dedupeCatalogCoursesByCode(courses: CatalogCourse[]): CatalogCourse[] {
 
     seenCourseCodes.add(courseCode);
     return true;
+  });
+}
+
+function catalogCourseToPlannedCourse(
+  course: CatalogCourse,
+): PlannedCourseOutline {
+  return {
+    code: `${course.department} ${course.number}` as CourseCode,
+    name: course.fullName,
+    hours: course.creditHours,
+    semester: getCurrentSemester(),
+    status: "Planned",
+    type: "In-Residence",
+  };
+}
+
+function filterFulfillingCourses(courses: CatalogCourse[], query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return courses;
+  }
+
+  return courses.filter((course) => {
+    const courseCode = `${course.department} ${course.number}`;
+    const instructorNames = course.instructors
+      .map((instructor) => instructor.fullName)
+      .join(" ");
+
+    return [
+      courseCode,
+      course.fullName,
+      course.courseName,
+      instructorNames,
+    ].some((value) => value.toLowerCase().includes(normalizedQuery));
   });
 }
 
@@ -126,7 +195,7 @@ export function CourseSearchContent({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleToggle = (field: "lowerDivision" | "upperDivision") => {
+  const handleToggle = (field: DivisionField) => {
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
@@ -214,57 +283,19 @@ export function CourseSearchContent({
           />
         </div>
 
-        {/* Toggle Switches */}
         <div className="space-y-3 mb-6">
-          {/* Lower Division Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => handleToggle("lowerDivision")}
-              disabled={isSearching}
-              className={cn(
-                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
-              )}
-            >
-              <div
-                className={cn(
-                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
-                  formData.lowerDivision
-                    ? "translate-x-[24px]"
-                    : "translate-x-1",
-                )}
-              />
-            </button>
-            <span className="text-base text-gray-900">
-              Lower Division Courses
-            </span>
-          </div>
-
-          {/* Upper Division Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => handleToggle("upperDivision")}
-              disabled={isSearching}
-              className={cn(
-                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
-              )}
-            >
-              <div
-                className={cn(
-                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
-                  formData.upperDivision
-                    ? "translate-x-[24px]"
-                    : "translate-x-1",
-                )}
-              />
-            </button>
-            <span className="text-base text-gray-900">
-              Upper Division Courses
-            </span>
-          </div>
+          <DivisionToggle
+            checked={formData.lowerDivision}
+            disabled={isSearching}
+            label="Lower Division Courses"
+            onToggle={() => handleToggle("lowerDivision")}
+          />
+          <DivisionToggle
+            checked={formData.upperDivision}
+            disabled={isSearching}
+            label="Upper Division Courses"
+            onToggle={() => handleToggle("upperDivision")}
+          />
         </div>
 
         {/* Validation Error */}
@@ -309,208 +340,172 @@ export function CourseSearchContent({
   );
 }
 
-export function CourseSuggestionContent({
-  recommendedCourses,
-  onSearchSubmit,
+interface FulfillingCoursesContentProps {
+  courses: CatalogCourse[];
+  recommendationScope?: RecommendationScope | null;
+  isLoading?: boolean;
+  onClose: () => void;
+}
+
+function FulfillingCoursesContent({
+  courses,
+  recommendationScope,
   isLoading = false,
-}: CourseSearchContentProps) {
-  const { recommendedCourses: sharedRecommendedCourses } =
-    useCourseModalContext();
-  const displayedRecommendedCourses = dedupeCatalogCoursesByCode(
-    recommendedCourses ?? sharedRecommendedCourses,
-  );
-  const [formData, setFormData] = useState<CourseSearchData>({
-    searchQuery: "",
-    requirement: "",
-    catalogYear: "",
-    department: "",
-    lowerDivision: true,
-    upperDivision: true,
-  });
-  const [validationError, setValidationError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  onClose,
+}: FulfillingCoursesContentProps) {
+  const { addPlannedCourse } = useAuditContext();
+  const displayedCourses = dedupeCatalogCoursesByCode(courses);
+  const [query, setQuery] = useState("");
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState("");
 
-  const isSearching = isLoading || isSubmitting;
+  useEffect(() => {
+    setSelectedCourseId(displayedCourses[0]?.uniqueId ?? null);
+  }, [displayedCourses[0]?.uniqueId]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const filteredCourses = filterFulfillingCourses(displayedCourses, query);
+  const hasSearchQuery = query.trim().length > 0;
 
-  const handleToggle = (field: "lowerDivision" | "upperDivision") => {
-    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
+  useEffect(() => {
+    const selectedCourseIsVisible = filteredCourses.some(
+      (course) => course.uniqueId === selectedCourseId,
+    );
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.lowerDivision && !formData.upperDivision) {
-      setValidationError(
-        "Please select at least one course division (Lower or Upper)",
-      );
-      return;
+    if (!selectedCourseIsVisible) {
+      setSelectedCourseId(filteredCourses[0]?.uniqueId ?? null);
     }
-    setValidationError("");
-    if (!onSearchSubmit) {
+  }, [filteredCourses.length, filteredCourses[0]?.uniqueId, selectedCourseId]);
+
+  const selectedCourse =
+    filteredCourses.find((course) => course.uniqueId === selectedCourseId) ??
+    null;
+  const canAddCourse =
+    Boolean(
+      selectedCourse &&
+      recommendationScope?.requirementTitle &&
+      recommendationScope?.ruleTitle,
+    ) && !isAdding;
+
+  const handleAddPlannedCourse = async () => {
+    if (
+      !selectedCourse ||
+      !recommendationScope?.requirementTitle ||
+      !recommendationScope?.ruleTitle
+    ) {
       return;
     }
 
     try {
-      setIsSubmitting(true);
-      await waitForNextPaint();
-      await onSearchSubmit(formData);
+      setIsAdding(true);
+      setError("");
+      const courseId = await addPlannedCourse(
+        catalogCourseToPlannedCourse(selectedCourse),
+        recommendationScope.requirementTitle,
+        recommendationScope.ruleTitle,
+      );
+
+      if (!courseId) {
+        setError("Could not add this course. Please try again.");
+        return;
+      }
+
+      onClose();
     } finally {
-      setIsSubmitting(false);
+      setIsAdding(false);
     }
   };
 
-  const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
-
   return (
     <div>
-      {/* Recommended Section */}
-      <div className="mb-6">
-        <p className="text-dap-orange font-semibold text-sm uppercase tracking-wide mb-3">
-          Recommended
-        </p>
-        <div className="space-y-2">
-          {displayedRecommendedCourses.map((course) => (
-            <CourseCard
-              key={course.uniqueId}
-              previewCourse={mapCatalogCourseToPreview(course)}
-              type="add"
-            />
-          ))}
-        </div>
-      </div>
+      <input
+        type="text"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Search fulfilling courses"
+        className="w-full h-12 px-4 border border-[#E5E1DA] rounded-md text-base font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#579D42] focus:border-transparent transition-all"
+      />
 
-      {/* Search Section */}
-      <form onSubmit={handleSearch}>
-        {/* Search Input */}
-        <input
-          type="text"
-          name="searchQuery"
-          value={formData.searchQuery}
-          onChange={handleInputChange}
-          placeholder="Search with name or unique"
-          disabled={isSearching}
-          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-
-        {/* Or Divider */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-dap-border" />
-          <span className="text-gray-400 text-sm">or</span>
-          <div className="flex-1 h-px bg-dap-border" />
-        </div>
-
-        {/* Department Dropdown */}
-        <div className="mb-4">
-          <SelectDropdown
-            icon={<ChalkboardTeacherIcon size={28} />}
-            placeholder="Department"
-            options={DEPARTMENTS}
-            value={formData.department}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, department: value }))
-            }
-            disabled={isSearching}
-          />
-        </div>
-
-        {/* Toggle Switches */}
-        <div className="space-y-3 mb-6">
-          {/* Lower Division Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => handleToggle("lowerDivision")}
-              disabled={isSearching}
-              className={cn(
-                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                formData.lowerDivision ? "bg-[#4A7C59]" : "bg-gray-200",
-              )}
-            >
-              <div
-                className={cn(
-                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
-                  formData.lowerDivision
-                    ? "translate-x-[24px]"
-                    : "translate-x-1",
-                )}
-              />
-            </button>
-            <span className="text-base text-gray-900">
-              Lower Division Courses
-            </span>
+      <div className="mt-4 space-y-3 max-h-[500px] overflow-y-auto pr-1">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-gray-600">
+            <CircleNotchIcon className="h-5 w-5 animate-spin" />
+            <span>Loading fulfilling courses...</span>
           </div>
+        ) : filteredCourses.length > 0 ? (
+          filteredCourses.map((course) => {
+            const courseCode = `${course.department} ${course.number}`;
+            const isSelected = course.uniqueId === selectedCourseId;
 
-          {/* Upper Division Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => handleToggle("upperDivision")}
-              disabled={isSearching}
-              className={cn(
-                "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-                formData.upperDivision ? "bg-[#4A7C59]" : "bg-gray-200",
-              )}
-            >
-              <div
+            return (
+              <button
+                type="button"
+                key={course.uniqueId}
+                onClick={() => setSelectedCourseId(course.uniqueId)}
                 className={cn(
-                  "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
-                  formData.upperDivision
-                    ? "translate-x-[24px]"
-                    : "translate-x-1",
+                  "w-full min-h-[70px] grid grid-cols-[22px_1fr] items-stretch overflow-hidden rounded-md border bg-white text-left transition-colors",
+                  isSelected
+                    ? "border-2 border-[#579D42]"
+                    : "border-[#E5E1DA] hover:border-gray-300",
                 )}
-              />
-            </button>
-            <span className="text-base text-gray-900">
-              Upper Division Courses
-            </span>
-          </div>
-        </div>
-
-        {/* Validation Error */}
-        {validationError && (
-          <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl mb-4">
-            <svg
-              className="w-5 h-5 text-red-600 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <p className="text-sm text-red-700">{validationError}</p>
+              >
+                <div className="bg-dap-orange flex items-center justify-center">
+                  <DotsSixVerticalIcon
+                    size={16}
+                    weight="bold"
+                    className="text-white"
+                  />
+                </div>
+                <div className="px-3 py-3">
+                  <p className="text-base font-semibold text-gray-900 leading-tight">
+                    {courseCode}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-black leading-tight">
+                    {course.fullName}
+                  </p>
+                </div>
+              </button>
+            );
+          })
+        ) : (
+          <div className="min-h-[180px] rounded-md border border-dashed border-[#E5E1DA] bg-[#FAFAF9] px-6 py-8 flex flex-col items-center justify-center text-center">
+            <p className="text-lg font-semibold text-gray-900">
+              {hasSearchQuery
+                ? "No matching fulfilling courses"
+                : "No fulfilling courses found"}
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              {hasSearchQuery
+                ? "Try a different course number, title, or instructor."
+                : "This requirement does not have any catalog matches yet."}
+            </p>
           </div>
         )}
+      </div>
 
-        {/* Search Button */}
+      {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
+
+      <div className="mt-8 flex justify-end">
         <Button
-          type="submit"
-          color="orange"
+          type="button"
           fill="solid"
-          disabled={isSearchDisabled}
-          className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!canAddCourse}
+          onClick={handleAddPlannedCourse}
+          className="w-[310px] h-14 bg-[#579D42] hover:bg-[#4C8F3B] text-white border-none rounded-md text-xl font-bold flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSearching ? (
-            <div className="flex items-center gap-2">
-              <CircleNotchIcon className="h-5 w-5 animate-spin" />
-              <span>Searching...</span>
-            </div>
+          {isAdding ? (
+            <>
+              <CircleNotchIcon className="h-6 w-6 animate-spin" />
+              Adding...
+            </>
           ) : (
-            "Search"
+            <>
+              <PlusIcon size={30} weight="light" />
+              Add Planned Course
+            </>
           )}
         </Button>
-      </form>
+      </div>
     </div>
   );
 }
@@ -567,19 +562,10 @@ export function CourseSearchPanel() {
 export default function CourseAddModal({
   isOpen,
   onClose,
-  onSearch,
   recommendedCourses = [],
+  recommendationScope,
   isLoading = false,
 }: CourseAddModalProps) {
-  const [view, setView] = useState<boolean>(false);
-  const [courses, setCourses] = useState<CatalogCourse[]>([]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setView(false);
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
@@ -592,30 +578,21 @@ export default function CourseAddModal({
     >
       <div
         className={cn(
-          "bg-white rounded-md border-2 border-dap-border shadow-2xl w-full max-w-[480px] max-h-[80vh] mx-4 transform transition-all duration-200",
+          "bg-white rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden",
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0",
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 pt-6 pb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Add courses</h2>
-          {!view ? (
-            <CourseSuggestionContent
-              recommendedCourses={recommendedCourses}
-              isLoading={isLoading}
-              onSearchSubmit={async (formData) => {
-                const matchingCourses = await SearchCourses(formData);
-                setCourses(matchingCourses);
-                onSearch(formData);
-                setView(true);
-              }}
-            />
-          ) : (
-            <CourseSearchResults
-              courses={courses}
-              onBack={() => setView(false)}
-            />
-          )}
+        <div className="px-7 pt-7 pb-7">
+          <h2 className="text-3xl leading-none font-bold text-gray-900 mb-8">
+            Fulfilling courses
+          </h2>
+          <FulfillingCoursesContent
+            courses={recommendedCourses}
+            recommendationScope={recommendationScope}
+            isLoading={isLoading}
+            onClose={onClose}
+          />
         </div>
       </div>
     </div>

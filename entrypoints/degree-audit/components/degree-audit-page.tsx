@@ -1,5 +1,6 @@
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import Title from "@/entrypoints/components/common/text";
+import { CourseSearchPanel } from "@/entrypoints/components/course-add-modal";
 import "@/entrypoints/styles/content.css";
 import { formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
@@ -42,7 +43,10 @@ const SidePanel = () => {
       x="center"
     >
       <SimpleDegreeCompletionDonut size={300} />
-      <VStack gap={4} className="w-sm mt-10">
+      <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-[#FAFAF9]">
+        <CourseSearchPanel />
+      </div>
+      <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
           <GPATotalsCard
             required={gpaRule.requiredHours}

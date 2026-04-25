@@ -155,7 +155,7 @@ export async function getSuggestedCoreCourses(
 export function getSuggestedCoursesForRequirement(
   requirementTitle: string,
   ruleTitle: string,
-  maxSuggestions = 3,
+  maxSuggestions = Number.POSITIVE_INFINITY,
 ): Promise<CatalogCourse[]> {
   const coreArea = getCoreAreaFromRequirementRule(requirementTitle, ruleTitle);
 
@@ -163,7 +163,9 @@ export function getSuggestedCoursesForRequirement(
     return Promise.resolve([]);
   }
 
-  return searchCores(maxSuggestions, coreArea);
+  return Number.isFinite(maxSuggestions)
+    ? searchCores(maxSuggestions, coreArea)
+    : findCoursesByCore(coreArea);
 }
 
 function getDepartmentCodesByName(departmentName: string): string[] {

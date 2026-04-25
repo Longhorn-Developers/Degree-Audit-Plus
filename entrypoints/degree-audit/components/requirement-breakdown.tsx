@@ -1,5 +1,6 @@
 import Button from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
+import EyeIcon from "../../../assets/svgs/Eye.svg";
 import {
   Course,
   PlannableStatus,
@@ -13,7 +14,6 @@ import {
   CaretUpIcon,
   Check,
   Minus,
-  PlusIcon,
   X,
 } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -181,6 +181,11 @@ const parseRequirementCode = (
   return { code: text, description: "" };
 };
 
+const isCoreOrCreditSection = (title: string): boolean => {
+  const normalizedTitle = title.toLowerCase();
+  return normalizedTitle.includes("core") || normalizedTitle.includes("credit");
+};
+
 // Individual requirement row with expandable courses
 const RequirementRow = ({
   requirement,
@@ -197,6 +202,7 @@ const RequirementRow = ({
   );
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(false);
+  const showActionButton = isCoreOrCreditSection(requirementTitle);
 
   return (
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
@@ -234,21 +240,28 @@ const RequirementRow = ({
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
 
-          <div className="w-full flex justify-center mt-2">
-            <Button
-              fill="solid"
-              className="bg-[var(--color-dap-orange)] hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[16px]"
-              onClick={() =>
-                openModal({
-                  requirementTitle,
-                  ruleTitle: requirement.text,
-                })
-              }
-            >
-              <PlusIcon className="w-5 h-5" weight="bold" />
-              Add Planned Course
-            </Button>
-          </div>
+          {showActionButton && (
+            <div className="w-full flex justify-center mt-2">
+              <Button
+                fill="solid"
+                className="bg-[var(--color-dap-orange)] hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
+                onClick={() =>
+                  openModal({
+                    requirementTitle,
+                    ruleTitle: requirement.text,
+                  })
+                }
+              >
+                <img
+                  src={EyeIcon}
+                  alt=""
+                  className="w-5 h-5"
+                  aria-hidden="true"
+                />
+                See Fufilling Courses
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
