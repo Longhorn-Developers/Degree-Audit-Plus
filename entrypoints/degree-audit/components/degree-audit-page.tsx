@@ -1,9 +1,9 @@
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
 import Title from "@/entrypoints/components/common/text";
-import { CourseSearchPanel } from "@/entrypoints/components/course-add-modal";
 import "@/entrypoints/styles/content.css";
 import { formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
+import CourseAddPanel from "./course-add-panel";
 import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
@@ -44,7 +44,7 @@ const SidePanel = () => {
     >
       <SimpleDegreeCompletionDonut size={300} />
       <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-[#FAFAF9]">
-        <CourseSearchPanel />
+        <CourseAddPanel />
       </div>
       <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
