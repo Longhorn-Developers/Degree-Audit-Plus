@@ -56,8 +56,7 @@ export default function CourseAddPanel() {
   const selectedCourse = results.find(
     (course) => course.uniqueId === selectedId,
   );
-  // Show the fulfillment message only while loading or after the check finishes.
-  const showFulfillment = isFulfillmentLoading || fulfillmentMessage;
+  const showFulfillment = Boolean(isFulfillmentLoading || fulfillmentMessage);
 
   return (
     <div className="flex flex-col">
@@ -116,16 +115,17 @@ export default function CourseAddPanel() {
         })}
       </div>
 
-      {/* This block appears only after selection and can be used for requirement feedback. */}
-      {showFulfillment ? (
-        <div className="mt-7 rounded-md border border-[#63B031] bg-[#F4FFE6] px-5 py-5 text-sm text-black">
-          {isFulfillmentLoading
-            ? "Checking requirement fit..."
-            : fulfillmentMessage}
-        </div>
-      ) : null}
+      <div className="mt-7 min-h-[62px]">
+        {showFulfillment ? (
+          <div className="rounded-md border border-[#63B031] bg-[#F4FFE6] px-5 py-5 text-sm text-black">
+            {isFulfillmentLoading
+              ? "Checking requirement fit..."
+              : fulfillmentMessage}
+          </div>
+        ) : null}
+      </div>
 
-      <div className={`${showFulfillment ? "mt-8" : "mt-7"} flex justify-end`}>
+      <div className="mt-8 flex justify-end">
         <button
           type="button"
           onClick={() => selectedCourse && void selectCourse(selectedCourse)}
