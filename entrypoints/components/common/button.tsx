@@ -18,14 +18,14 @@ const styleMap: Record<
     none: "bg-transparent text-dap-primary border-transparent",
   },
   white: {
-    solid: "bg-white text-black border-transparent",
+    solid: "bg-background text-text border-transparent",
     outline: "bg-transparent text-white border-white",
     none: "bg-transparent text-white border-transparent",
   },
   black: {
-    solid: "bg-gray-800 text-white border-transparent",
-    outline: "bg-transparent text-gray-800 border-gray-800",
-    none: "bg-transparent text-gray-800 border-transparent",
+    solid: "bg-text text-background border-transparent",
+    outline: "bg-transparent text-text border-text",
+    none: "bg-transparent text-text border-transparent",
   },
 };
 
@@ -149,7 +149,7 @@ export const ToggleSwitch = forwardRef<HTMLButtonElement, ToggleSwitchProps>(
       >
         <span
           className={cn(
-            "inline-block rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out",
+            "inline-block rounded-full bg-background shadow-sm transform transition-transform duration-200 ease-in-out",
             currentSize.thumb,
             currentSize.translate,
           )}

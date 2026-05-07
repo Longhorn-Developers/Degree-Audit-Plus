@@ -45,7 +45,7 @@ const CourseCardVisual = forwardRef<
       {...rest}
       ref={ref}
       className={cn(
-        "bg-white rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
+        "bg-background rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
         className,
       )}
     >
@@ -57,7 +57,7 @@ const CourseCardVisual = forwardRef<
         ) : null}
       </div>
       <div className="py-3 px-3 flex-1">
-        <p className="text-gray-900 font-semibold text-sm">{fullName}</p>
+        <p className="text-text font-semibold text-sm">{fullName}</p>
         <p className="text-gray-500 text-xs">{courseName}</p>
       </div>
       {type === "add" && (

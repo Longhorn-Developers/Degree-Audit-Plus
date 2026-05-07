@@ -34,7 +34,7 @@ const SemesterCardVisual = forwardRef<
       {...props}
       ref={ref}
       className={cn(
-        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-[#FAFAF9]",
+        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-background",
         className,
       )}
       gap={6}
@@ -60,7 +60,7 @@ const SemesterCardVisual = forwardRef<
           ) : (
             <VStack
               centered
-              className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-white"
+              className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-background"
               fillWidth
             >
               Drag and drop courses here

@@ -1,5 +1,5 @@
-import React from "react";
 import { XIcon } from "@phosphor-icons/react";
+import React from "react";
 import { cn } from "~/lib/utils";
 
 type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
@@ -52,7 +52,7 @@ export default function Modal({
     >
       <div
         className={cn(
-          "bg-white rounded-lg shadow-xl w-full mx-4 overflow-hidden",
+          "bg-background rounded-lg shadow-xl w-full mx-4 overflow-hidden",
           sizeClasses[size],
           className,
         )}
@@ -61,9 +61,7 @@ export default function Modal({
         {/* Header */}
         {showHeader && (
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-[var(--color-dap-dark)]">
-              {title}
-            </h2>
+            <h2 className="text-xl font-bold text-dap-dark">{title}</h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
