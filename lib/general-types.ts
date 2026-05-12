@@ -1,9 +1,26 @@
 import type { UniqueIdentifier } from "@dnd-kit/core";
 
 /**
- * A unique identifier for each course. Is shared between the course object and the requirement rule object.
+ * A branded identifier. Stops the type from being assignable to any string. Must be another branded identifier with the same brand to be assignable.
  */
-export type CourseId = UniqueIdentifier;
+export type Brand<T, B extends string> = T & { readonly __brand: B };
+
+/**
+ * A branded identifier specifically for Id's.
+ */
+export type Id<B extends string> = UniqueIdentifier & {
+  readonly __identifies: B;
+};
+
+export type DegreePlanId = Id<"DegreePlan">;
+export type CourseId = Id<"Course">;
+export type CollegeId = Id<"College">;
+export type MajorId = Id<"Major">;
+export type MinorCertId = Id<"MinorCert">;
+export type IdaAuditId = Id<"IdaAudit">;
+export type AuditId = Id<"Audit">;
+
+export type SetStateFn<T> = React.Dispatch<React.SetStateAction<T>>;
 
 /**
  * A progress object.
@@ -192,7 +209,7 @@ export interface DegreeAuditCardProps {
   majors?: string[];
   minors?: string[];
   percentage?: number;
-  auditId?: string;
+  auditId?: AuditId;
   isSelected?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
