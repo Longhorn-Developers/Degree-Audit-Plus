@@ -76,16 +76,16 @@ export const GPATotalsCard = ({
   points = 320,
 }: GPATotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-md">
+    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
       <HStack x="between" y="top" fill>
-        <h3 className="text-xl font-bold text-gray-900">GPA Totals</h3>
+        <h3 className="text-xl font-bold text-text">GPA Totals</h3>
         <InfoIcon />
       </HStack>
 
       <HStack gap={6} className="mt-4">
         <VStack gap={1}>
           <span className="text-sm text-gray-500">Required</span>
-          <div className="px-4 py-2 bg-white border border-gray-300 rounded-lg">
+          <div className="px-4 py-2 bg-background border border-gray-300 rounded-lg">
             <span className="text-lg font-semibold">{required.toFixed(4)}</span>
           </div>
         </VStack>
@@ -132,8 +132,8 @@ export const CreditHourTotalsCard = ({
   ],
 }: CreditHourTotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-white shadow-md">
-      <h3 className="text-xl font-bold text-gray-900">Credit Hour Totals</h3>
+    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+      <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
 
       <VStack gap={3} className="mt-4">
         {requirements.map((req, idx) => (

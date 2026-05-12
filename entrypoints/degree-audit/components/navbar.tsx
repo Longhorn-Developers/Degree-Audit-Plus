@@ -5,8 +5,10 @@ import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences
 import { cn, formatMajorLabel } from "@/lib/utils";
 import {
   ExportIcon,
+  MoonIcon,
   PencilIcon,
   Sidebar as SidebarIcon,
+  SunIcon,
 } from "@phosphor-icons/react";
 
 const MAJOR_TAG_STYLES = [
@@ -23,8 +25,14 @@ const MINOR_TAG_STYLES = [
 ];
 
 const Navbar = () => {
-  const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } =
-    usePreferences();
+  const {
+    toggleSidebar,
+    toggleViewMode,
+    viewMode,
+    sidebarIsOpen,
+    toggleDarkMode,
+    isDarkMode,
+  } = usePreferences();
   const { currentAudit } = useAuditContext();
 
   const title = currentAudit?.title ?? "Degree Audit Plus";
@@ -37,7 +45,7 @@ const Navbar = () => {
       gap={8}
       x="between"
       y="middle"
-      className="sticky top-0 z-10 bg-white border-b border-gray-200 px-10 pt-4 pb-5"
+      className="sticky top-0 z-10 bg-background border-b border-gray-200 px-10 pt-4 pb-5"
     >
       {!sidebarIsOpen && (
         <button
@@ -45,16 +53,14 @@ const Navbar = () => {
           onClick={toggleSidebar}
           aria-label="Open sidebar"
         >
-          <SidebarIcon size={24} className="text-[var(--color-dap-dark-alt)]" />
+          <SidebarIcon size={24} />
         </button>
       )}
       <VStack gap={2} className="min-w-0 flex-1 pb-1">
-        <h1 className="text-2xl font-bold text-black leading-tight truncate">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-bold leading-tight truncate">{title}</h1>
         {majors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
+            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-dap-orange">
               MAJOR
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">
@@ -74,7 +80,7 @@ const Navbar = () => {
 
         {minors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-[#af6427]">
+            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-dap-orange">
               MINOR/CERT
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">
@@ -103,32 +109,38 @@ const Navbar = () => {
             className={cn(
               "relative inline-flex h-5 w-9 items-center rounded-full border shadow-sm transition-all duration-200 ease-in-out border-gray-200",
               viewMode === "planner"
-                ? "bg-dap-primary border-white"
-                : "bg-white border-[#97a7b4]",
+                ? "bg-dap-primary border-background"
+                : "bg-background border-[#97a7b4]",
             )}
           >
             <span
               className={cn(
                 "inline-block h-[12px] w-[12px] transform rounded-full transition-transform duration-200 ease-in-out",
                 viewMode === "planner"
-                  ? "bg-white translate-x-[18px]"
-                  : "bg-[#97a7b4] translate-x-[3px]",
+                  ? "bg-background translate-x-[18px]"
+                  : "bg-muted translate-x-[3px]",
               )}
             />
           </button>
-          <span className="text-sm font-medium text-[#363f43] whitespace-nowrap">
+          <span className="text-sm font-medium whitespace-nowrap">
             Planner View
           </span>
         </HStack>
         <IconButton
           icon={<PencilIcon className="w-5 h-5" />}
           label="Edit Audit"
-          className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
+          className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
         />
         <IconButton
           icon={<ExportIcon className="w-5 h-5" />}
           label="Share"
-          className="h-10 rounded-[5px] px-[18px] bg-[#bf5701] gap-1.5 text-sm font-bold"
+          className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
+        />
+        <IconButton
+          icon={isDarkMode() ? <MoonIcon size={24} /> : <SunIcon size={24} />}
+          label={isDarkMode() ? "Light Mode" : "Dark Mode"}
+          onClick={toggleDarkMode}
+          className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
         />
       </HStack>
     </HStack>

@@ -66,61 +66,61 @@ function buildDonutBars(
   return bars;
 }
 
-const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
-  const { progresses, history, currentAuditId } = useAuditContext();
-  const currentAudit = history?.audits?.find(
-    (a, i) => (a.auditId || String(i)) === currentAuditId,
-  );
-  const unifiedTitle =
-    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
-    "Degree Requirements";
-  const bars = buildDonutBars(progresses.sections, unifiedTitle);
+// const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
+//   const { progresses, history, currentAuditId } = useAuditContext();
+//   const currentAudit = history?.audits?.find(
+//     (a, i) => (a.auditId || String(i)) === currentAuditId,
+//   );
+//   const unifiedTitle =
+//     currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
+//     "Degree Requirements";
+//   const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
-  const overallPercentage =
-    (currentAudit?.percentage ??
-      Math.round((progresses.total.current / progresses.total.total) * 100)) ||
-    0;
+//   const overallPercentage =
+//     (currentAudit?.percentage ??
+//       Math.round((progresses.total.current / progresses.total.total) * 100)) ||
+//     0;
 
-  return (
-    <MultiDonutGraph
-      {...styleProps}
-      bars={bars}
-      tooltipContent={(bar) => (
-        <VStack
-          className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
-          style={{ borderColor: bar.color, color: bar.color }}
-        >
-          <HStack
-            x="between"
-            y="middle"
-            fill
-            className="whitespace-nowrap text-xl font-bold"
-          >
-            <p>{bar.title}</p>
-            <p>
-              {Math.round(
-                (bar.percentage.current / bar.percentage.total) * 100,
-              )}
-              %
-            </p>
-          </HStack>
-          <div className="text-sm">
-            ({bar.percentage.current}/{bar.percentage.total}) courses completed
-          </div>
-        </VStack>
-      )}
-    >
-      <VStack centered gap={0}>
-        <div className="text-2xl font-bold">{overallPercentage}%</div>
-        <div className="text-lg leading-tight w-min text-center">
-          Degree Completion
-        </div>
-      </VStack>
-    </MultiDonutGraph>
-  );
-};
+//   return (
+//     <MultiDonutGraph
+//       {...styleProps}
+//       bars={bars}
+//       tooltipContent={(bar) => (
+//         <VStack
+//           className="p-2 rounded-md border-2 font-bold bg-transparent shadow-md shadow-black/20 w-full"
+//           style={{ borderColor: bar.color, color: bar.color }}
+//         >
+//           <HStack
+//             x="between"
+//             y="middle"
+//             fill
+//             className="whitespace-nowrap text-xl font-bold"
+//           >
+//             <p>{bar.title}</p>
+//             <p>
+//               {Math.round(
+//                 (bar.percentage.current / bar.percentage.total) * 100,
+//               )}
+//               %
+//             </p>
+//           </HStack>
+//           <div className="text-sm">
+//             ({bar.percentage.current}/{bar.percentage.total}) courses completed
+//           </div>
+//         </VStack>
+//       )}
+//     >
+//       <VStack centered gap={0}>
+//         <div className="text-2xl font-bold">{overallPercentage}%</div>
+//         <div className="text-lg leading-tight w-min text-center">
+//           Degree Completion
+//         </div>
+//       </VStack>
+//     </MultiDonutGraph>
+//   );
+// };
 
-export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
+export const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses, history, currentAuditId } = useAuditContext();
   const currentAudit = history?.audits?.find(
     (a, i) => (a.auditId || String(i)) === currentAuditId,
@@ -146,7 +146,7 @@ export const SimpleDegreeCompletionDonut = (styleProps: GraphStyleProps) => {
       tooltipCorner="bottom-left"
       tooltipContent={(bar) => (
         <VStack
-          className="p-2 rounded-md border-2 font-bold bg-gray-200 shadow-md shadow-black/20 w-full"
+          className="p-2 rounded-md border-2 font-bold bg-hover-bg shadow-md shadow-black/20 w-full"
           style={{ borderColor: bar.color, color: bar.color }}
         >
           <HStack

@@ -138,7 +138,29 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
     });
     setIsMounted(true);
     isInitialMountRef.current = false;
-  }, [darkOrLightLuminosity]);
+  }, []);
+
+  /** Keep <html class="dark"> in sync so @theme overrides and Tailwind `dark:` variants apply. */
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const applyDarkClassToDocument = () => {
+      const isDark =
+        luminosity === "system"
+          ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          : luminosity === "dark";
+      document.documentElement.classList.toggle("dark", isDark);
+      document.documentElement.classList.remove("light", "system");
+    };
+
+    applyDarkClassToDocument();
+
+    if (luminosity !== "system") return;
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", applyDarkClassToDocument);
+    return () => mq.removeEventListener("change", applyDarkClassToDocument);
+  }, [isMounted, luminosity]);
 
   const value: PreferencesContext = {
     isMounted: isMounted,
@@ -188,17 +210,9 @@ export function PreferencesProvider(props: { children: React.ReactNode }) {
 
   return (
     <PreferencesProviderContext.Provider {...props} value={value}>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-          const storedTheme = localStorage.getItem("${DEFAULT_PREFERENCES.luminosity.key}");
-          if (storedTheme) {
-            document.documentElement.classList.add(storedTheme);
-          }
-        `,
-        }}
-      />
-      {props.children}
+      <div className="min-h-screen bg-background text-text">
+        {props.children}
+      </div>
     </PreferencesProviderContext.Provider>
   );
 }

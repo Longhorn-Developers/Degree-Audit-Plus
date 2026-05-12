@@ -1,11 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Staatliches&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap");
+
+/* Scan repo from project root (path is relative to this file in entrypoints/styles/). */
 @import "tailwindcss";
 
-/* Load Staatliches font directly */
-
-@import url("https://fonts.googleapis.com/css2?family=Staatliches&display=swap");
-
-/* Load Roboto Flex font directly */
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap");
+/* Tokens alone don't emit utilities — force these so CSS + IntelliSense always include them. */
+@source inline("bg-background text-text dark:bg-background dark:text-text");
 
 /* Colors and fonts */
 @theme {
@@ -60,6 +60,25 @@
   /* Fonts */
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
+
+  /* Semantic page colors (→ bg-background, text-text) */
+  --color-background: #ffffff;
+  --color-text: #000000;
+  --color-muted: #9ca3af;
+  --color-hover-bg: #f5f5f5;
+}
+
+/*
+ * @layer theme puts --color-* on :root and :host. :host wins over inheritance, so shadow UIs
+ * need :host-context(html.dark). Use html.dark so variables beat the theme layer like unlayered rules.
+ */
+html.dark,
+:host-context(html.dark) {
+  --color-background: #272727;
+  --color-text: #ffffff;
+  --color-muted: #9ca3af;
+  --color-dap-border: #4f4f4f;
+  --color-hover-bg: #333333;
 }
 
 /* 333F48 */
