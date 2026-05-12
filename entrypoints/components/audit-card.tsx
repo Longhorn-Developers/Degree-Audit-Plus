@@ -6,6 +6,7 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import React from "react";
+import { useAuditContext } from "../degree-audit/providers/audit-provider";
 
 /**
  * Sidebar variant - collapsible with caret icons and menu dots
@@ -21,6 +22,8 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   onMenuClick,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const { currentAuditId, setCurrentAuditId, history } = useAuditContext();
 
   React.useEffect(() => {
     if (!isSelected) {
@@ -42,6 +45,21 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     >
       <div className="flex items-center justify-between">
         {/* Title */}
+        {/* <input
+          type="text"
+          className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap outline-none border-none bg-transparent p-0 m-0 cursor-pointer"
+          value={title}
+          readOnly={!isEditing}
+          tabIndex={isEditing ? 0 : -1}
+          onBlur={() => setIsEditing(false)}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+          onChange={(e) =>
+            setTitle(e.target.value)
+          }
+        /> */}
         <div
           className={`font-bold text-[18px] leading-tight ${
             isSelected ? "text-white" : "text-dap-orange"
