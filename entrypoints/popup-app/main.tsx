@@ -134,7 +134,7 @@ export default function App() {
   //   // TODO: Store in browser storage and send to degree audit page
   // };
   const Pill = ({ text }: { text: string }) => (
-    <span className="inline-flex items-center rounded-full bg-[var(--color-dap-primary)] px-2.5 py-[2px] text-[12px] font-extrabold leading-none text-white">
+    <span className="inline-flex items-center rounded-full bg-dap-primary px-2.5 py-[2px] text-[12px] font-extrabold leading-none text-white">
       {text}
     </span>
   );
@@ -147,11 +147,11 @@ export default function App() {
           rounded-[12px]
           border
           border-gray-200
-          bg-white
+          bg-background
           px-5
           py-4
           hover:cursor-pointer
-          hover:bg-[var(--color-dap-primary)]
+          hover:bg-dap-primary
           transition-colors
         "
       onClick={(e) => {
@@ -166,7 +166,7 @@ export default function App() {
             className="
               text-[20px]
               font-extrabold
-              text-[var(--color-dap-primary)]
+              text-dap-primary
               leading-tight
               transition-colors
               group-hover:text-white
@@ -210,14 +210,14 @@ export default function App() {
           {/* Optional MINOR/CERT row if you want parity with the detailed card */}
           {(audit.minors ?? []).length > 0 && (
             <div className="mt-2 flex items-center gap-4">
-              <div className="text-[13px] font-extrabold tracking-wide text-[var(--color-ut-charcoal)]">
+              <div className="text-[13px] font-extrabold tracking-wide text-dap-dark">
                 MINOR/CERT
               </div>
               <div className="flex flex-wrap gap-2">
                 {(audit.minors ?? []).map((m, i) => (
                   <span
                     key={`${m}-${i}`}
-                    className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-[2px] text-[12px] font-bold leading-none text-[var(--color-ut-charcoal)]"
+                    className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-[2px] text-[12px] font-bold leading-none text-dap-dark"
                   >
                     {m}
                   </span>
@@ -229,7 +229,7 @@ export default function App() {
 
         {/* Right badge */}
         <div className="relative top-6">
-          <div className="rounded-[10px] bg-[var(--color-dap-primary)] px-3.5 py-2 text-white text-[16px] font-extrabold leading-none">
+          <div className="rounded-[10px] bg-dap-primary px-3.5 py-2 text-white text-[16px] font-extrabold leading-none">
             {audit.percentage}%
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function App() {
   );
 
   return (
-    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-white font-sans overflow-hidden flex flex-col border border-gray-100">
+    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
       <header className="flex justify-between items-center px-5 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <img
@@ -246,7 +246,7 @@ export default function App() {
             alt="Logo"
             style={{ width: "40px", height: "auto" }}
           />
-          <span className="font-semibold text-[16px] text-dap-primary leading-none">
+          <span className="font-semibold text-[16px] text-dap-primary leading-none font-header-title">
             Degree Audit
             <br />
             Plus
@@ -275,12 +275,12 @@ export default function App() {
           <div className="flex items-center gap-3">
             <h1
               style={{ fontFamily: "Roboto Flex" }}
-              className="text-[25.63px] font-bold text-[var(--color-dap-dark)]"
+              className="text-[25.63px] font-bold text-dap-dark"
             >
               {audits.length} AUDITS
             </h1>
             {isSyncing && (
-              <div className="flex items-center gap-1.5 text-[var(--color-dap-gray-light)]">
+              <div className="flex items-center gap-1.5 text-dap-gray-light">
                 <SpinnerIcon size={14} className="animate-spin" />
                 <span className="text-xs">Syncing...</span>
               </div>
@@ -300,7 +300,7 @@ export default function App() {
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-[var(--color-dap-gray-light)]">
+            <p className="text-base text-dap-gray-light">
               Loading audit history...
             </p>
           </div>
@@ -309,16 +309,16 @@ export default function App() {
             <p className="text-base text-red-600 max-w-[250px]">
               Error loading audits: {error}
             </p>
-            <p className="text-sm text-[var(--color-dap-gray-light)]">
+            <p className="text-sm text-dap-gray-light">
               Please visit the UT Direct degree audits page to refresh.
             </p>
           </div>
         ) : audits.length === 0 ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-[var(--color-dap-gray-light)] tracking-[0.32px] max-w-[250px]">
+            <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[250px]">
               Alas! Your future is veiled. I do not know what is to come.
             </p>
-            <p className="text-[14.22px] font-medium text-[var(--color-ut-charcoal)]">
+            <p className="text-[14.22px] font-medium text-dap-dark">
               (No current audits)
             </p>
           </div>
@@ -345,7 +345,7 @@ export default function App() {
             {hasMoreAudits && (
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="w-full text-center text-[var(--color-dap-link)] font-medium text-sm mb-1 hover:underline hover:cursor-pointer"
+                className="w-full text-center text-dap-link font-medium text-sm mb-1 hover:underline hover:cursor-pointer"
               >
                 {showAll ? "Show Less" : `Show ${audits.length - 3} More`}
               </button>

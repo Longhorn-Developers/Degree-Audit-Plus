@@ -1,6 +1,5 @@
 import Button from "@/entrypoints/components/common/button";
 import { HStack, VStack } from "@/entrypoints/components/common/helperdivs";
-import EyeIcon from "../../../assets/svgs/Eye.svg";
 import {
   Course,
   PlannableStatus,
@@ -17,6 +16,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useState } from "react";
+import EyeIcon from "../../../assets/svgs/Eye.svg";
 import { useAuditContext } from "../providers/audit-provider";
 import { useCourseModalContext } from "../providers/course-modal-provider";
 
@@ -111,7 +111,7 @@ const RequirementBadge = ({
 }) => {
   const isComplete = current >= total;
   return (
-    <span className="text-sm text-gray-900 border border-gray-800 rounded-full px-3 py-0.5 font-medium">
+    <span className="text-sm text-text border border-gray-800 rounded-full px-3 py-0.5 font-medium">
       {isComplete
         ? pluralizeUnit(total, unit)
         : current === 0
@@ -128,15 +128,15 @@ const statusIcons = {
   },
   Planned: {
     icon: null,
-    color: "bg-[var(--color-course-applied)] border-gray-200",
+    color: "bg-course-applied border-gray-200",
   },
   "In Progress": {
     icon: null,
-    color: "bg-[var(--color-course-in-progress)] border-gray-200",
+    color: "bg-course-in-progress border-gray-200",
   },
   "Not Started": {
     icon: null,
-    color: "bg-[var(--color-course-unknown)] border-gray-200",
+    color: "bg-course-unknown border-gray-200",
   },
 } as const satisfies Record<
   PlannableStatus,
@@ -208,7 +208,7 @@ const RequirementRow = ({
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
       {/* Requirement header */}
       <button
-        className="w-full py-3 px-3 flex items-start gap-3 hover:bg-gray-50 transition-colors bg-white"
+        className="w-full py-3 px-3 flex items-start gap-3 hover:bg-hover-bg transition-colors bg-background"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <RequirementStatusIcon
@@ -216,8 +216,8 @@ const RequirementRow = ({
           total={requirement.requiredHours}
         />
         <VStack gap={0} className="flex-1 text-left">
-          <span className="font-bold text-base text-gray-900">{code}</span>
-          <span className="text-sm text-gray-600 mt-0.5">{description}</span>
+          <span className="font-bold text-base text-text">{code}</span>
+          <span className="text-sm text-muted mt-0.5">{description}</span>
         </VStack>
         <HStack y="middle" gap={3}>
           <RequirementBadge
@@ -226,16 +226,16 @@ const RequirementRow = ({
             unit={requirement.progressUnit ?? "hours"}
           />
           {isExpanded ? (
-            <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
           ) : (
-            <CaretDownIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
           )}
         </HStack>
       </button>
 
       {/* Expanded courses and add button */}
       {isExpanded && (
-        <div className="flex flex-col gap-3 pl-12 pr-4 pb-4 bg-white">
+        <div className="flex flex-col gap-3 pl-12 pr-4 pb-4 bg-background">
           {courses.map((course, idx) => (
             <CoursePill key={`${course.code}-${idx}`} course={course} />
           ))}
@@ -244,7 +244,7 @@ const RequirementRow = ({
             <div className="w-full flex justify-center mt-2">
               <Button
                 fill="solid"
-                className="bg-[var(--color-dap-orange)] hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
+                className="bg-dap-orange hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
                 onClick={() =>
                   openModal({
                     requirementTitle,
@@ -310,16 +310,16 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
 
   return (
     <div
-      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-4"
+      className="w-full bg-background rounded-md border border-gray-200 overflow-hidden border-l-4"
       style={{ borderLeftColor: borderColor.tailwind }}
     >
       {/* Main header */}
       <button
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
+        className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={2}>
-          <span className="font-bold text-base text-gray-900">{title}</span>
+          <span className="font-bold text-base text-text">{title}</span>
           <ProgressBar
             current={hours.current}
             total={hours.total}
@@ -327,20 +327,20 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
           />
         </VStack>
         <HStack y="middle" gap={2}>
-          <span className="text-gray-900 font-medium text-sm">
+          <span className="text-text font-medium text-sm">
             {formatProgressSummary(hours.current, hours.total, progressUnit)}
           </span>
           {isOpen ? (
-            <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
           ) : (
-            <CaretDownIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
           )}
         </HStack>
       </button>
 
       {/* Expanded content */}
       {isOpen && (
-        <div className="bg-white">
+        <div className="bg-background">
           {/* Requirement rows */}
           <div className="px-4 py-4">
             {requirements.map((requirement, idx) => (
@@ -385,18 +385,16 @@ export const UnifiedDegreeCard = ({
 
   return (
     <div
-      className="w-full bg-white rounded-md border border-gray-200 overflow-hidden border-l-4"
+      className="w-full bg-background rounded-md border border-gray-200 overflow-hidden border-l-4"
       style={{ borderLeftColor: greenColor.tailwind }}
     >
       {/* Header */}
       <button
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors bg-white"
+        className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
         onClick={() => setIsOpen(!isOpen)}
       >
         <VStack gap={2}>
-          <span className="font-bold text-base text-gray-900">
-            {degreeTitle}
-          </span>
+          <span className="font-bold text-base text-text">{degreeTitle}</span>
           <ProgressBar
             current={totalCurrent}
             total={totalTotal}
@@ -404,20 +402,20 @@ export const UnifiedDegreeCard = ({
           />
         </VStack>
         <HStack y="middle" gap={2}>
-          <span className="text-gray-900 font-medium text-sm">
+          <span className="text-text font-medium text-sm">
             {formatProgressSummary(totalCurrent, totalTotal, totalProgressUnit)}
           </span>
           {isOpen ? (
-            <CaretUpIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
           ) : (
-            <CaretDownIcon className="w-5 h-5 text-gray-900" weight="bold" />
+            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
           )}
         </HStack>
       </button>
 
       {/* Expanded: sections with green labels */}
       {isOpen && (
-        <div className="bg-white px-4 pt-4 pb-4">
+        <div className="bg-background px-4 pt-4 pb-4">
           {sections.map((section, idx) => (
             <div key={section.title || idx} className={idx > 0 ? "mt-4" : ""}>
               <span

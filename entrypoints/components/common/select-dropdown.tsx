@@ -1,5 +1,5 @@
-import { CaretDown } from "@phosphor-icons/react";
-import { useState, useRef, useEffect } from "react";
+import { CaretDownIcon } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 
 type SelectDropdownProps = {
@@ -44,14 +44,14 @@ export default function SelectDropdown({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={cn(
-            "w-full flex items-center justify-between px-3 py-2 border border-dap-border rounded-lg text-base bg-white cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+            "w-full flex items-center justify-between px-3 py-2 border border-dap-border rounded-lg text-base bg-background cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed",
             isOpen && "ring-2 ring-dap-orange border-transparent",
           )}
         >
-          <span className={value ? "text-gray-900" : "text-gray-500"}>
+          <span className={value ? "text-text" : "text-gray-500"}>
             {value || placeholder}
           </span>
-          <CaretDown
+          <CaretDownIcon
             size={20}
             className={cn(
               "text-gray-500 transition-transform",
@@ -61,7 +61,7 @@ export default function SelectDropdown({
         </button>
 
         {isOpen && (
-          <div className="absolute left-0 right-0 mt-2 bg-white border border-dap-border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+          <div className="absolute left-0 right-0 mt-2 bg-background border border-dap-border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
             <div className="p-2 space-y-1">
               {options.map((option) => (
                 <button
@@ -72,10 +72,7 @@ export default function SelectDropdown({
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-4 py-3 rounded-lg text-base transition-colors",
-                    value === option
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-700 hover:bg-gray-50",
+                    "w-full text-left px-4 py-3 rounded-lg text-base transition-colors text-text hover:bg-hover-bg",
                   )}
                 >
                   {option}

@@ -38,6 +38,8 @@ export default {
           pink: "#EC4899",
           border: "#EAE8E1",
         },
+        background: "#ffffff",
+        text: "#000000",
       },
     },
   },

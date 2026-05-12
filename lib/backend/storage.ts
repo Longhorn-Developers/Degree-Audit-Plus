@@ -4,6 +4,7 @@
 import { browser } from "wxt/browser";
 import type {
   AuditHistoryData,
+  AuditId,
   CachedAuditData,
   CourseId,
   DegreeAuditCardProps,
@@ -40,7 +41,7 @@ export async function saveAuditHistory(
  * @returns True if the course was added successfully, false otherwise.
  */
 export async function addPlannedCourse(
-  auditId: string,
+  auditId: AuditId,
   course: PlannedCourseOutline,
   requirementTitle: string,
   ruleTitle: string,
@@ -68,7 +69,7 @@ export async function addPlannedCourse(
     }
 
     // Add the course to the rule's courses
-    const courseId = crypto.randomUUID();
+    const courseId = crypto.randomUUID() as CourseId;
     rule.courses.push(courseId);
     courses[courseId] = { ...course, id: courseId };
     await saveAuditData(auditId, auditData);
@@ -90,7 +91,7 @@ export async function addPlannedCourse(
  */
 // TODO: Implement with new course, sections dynamic
 export async function removePlannedCourse(
-  auditId: string,
+  auditId: AuditId,
   courseId: CourseId,
 ): Promise<boolean> {
   try {
@@ -131,7 +132,7 @@ export async function removePlannedCourse(
  * @param auditId - The ID of the audit to wipe the courses from.
  * @returns The number of courses wiped successfully.
  */
-export async function wipeAllPlannedCourses(auditId: string): Promise<number> {
+export async function wipeAllPlannedCourses(auditId: AuditId): Promise<number> {
   try {
     const auditData = await getAuditData(auditId);
     if (!auditData) {
@@ -205,14 +206,14 @@ const AUDIT_DATA_PREFIX = "auditData_";
 
 // Save scraped audit data (requirements + courses) to cache
 export async function saveAuditData(
-  auditId: string,
+  auditId: AuditId,
   data: CachedAuditData,
 ): Promise<void> {
   try {
     const key = `${AUDIT_DATA_PREFIX}${auditId}`;
     console.log(`[Storage] Saving audit data for key: ${key}`);
     console.log(
-      `[Storage] Data to save: ${data.requirements?.length || 0} requirements, ${data.courses?.length || 0} courses`,
+      `[Storage] Data to save: ${data.requirements?.length || 0} requirements, ${Object.values(data.courses).length || 0} courses`,
       data,
     );
     await browser.storage.local.set({
@@ -230,7 +231,7 @@ export async function saveAuditData(
 
 // Get cached audit data (returns null if not cached)
 export async function getAuditData(
-  auditId: string,
+  auditId: AuditId,
 ): Promise<CachedAuditData | null> {
   try {
     const key = `${AUDIT_DATA_PREFIX}${auditId}`;
@@ -252,9 +253,9 @@ export async function getAuditData(
 
 // Get list of audit IDs that are not yet cached
 export async function getUncachedAuditIds(
-  auditIds: string[],
-): Promise<string[]> {
-  const uncached: string[] = [];
+  auditIds: AuditId[],
+): Promise<AuditId[]> {
+  const uncached: AuditId[] = [];
   for (const id of auditIds) {
     const cached = await getAuditData(id);
     if (!cached) uncached.push(id);

@@ -9,6 +9,7 @@ import {
 } from "@/lib/backend/storage";
 import {
   AuditHistoryData,
+  AuditId,
   AuditRequirement,
   Course,
   CourseId,
@@ -36,9 +37,9 @@ interface AuditContextType {
   sections: AuditRequirement[];
   courses: Course[];
   history: AuditHistoryData;
-  currentAuditId: string;
+  currentAuditId: AuditId;
   currentAudit: DegreeAuditCardProps;
-  setCurrentAuditId: (id: string) => void;
+  setCurrentAuditId: React.Dispatch<React.SetStateAction<AuditId | null>>;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
@@ -105,8 +106,10 @@ export const AuditContextProvider = ({
 }) => {
   const { lastAuditId, updateLastAuditId } = usePreferences();
   const [loaded, setLoaded] = useState(false);
-  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
-    new URLSearchParams(window.location.search).get("auditId") ?? lastAuditId,
+  const [currentAuditId, setCurrentAuditId] = useState<AuditId | null>(
+    (new URLSearchParams(window.location.search).get(
+      "auditId",
+    ) as AuditId | null) ?? lastAuditId,
   );
 
   const [courseDict, setCourseDict] = useState<Record<CourseId, Course>>({});
