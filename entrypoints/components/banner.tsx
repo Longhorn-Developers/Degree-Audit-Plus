@@ -1,11 +1,10 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { getAuditHistory } from "@/lib/backend/storage";
+import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
+import noiseTexture from "../../assets/noise-texture.svg";
 import ArrowTopRightIcon from "../../assets/svgs/arrow-top-right";
 import DAPLogo from "../../assets/svgs/dap-logo";
 import gridBg from "../../public/Grid.png";
-import noiseTexture from "../../assets/noise-texture.svg";
-import { XIcon } from "@phosphor-icons/react";
-import { getAuditHistory } from "@/lib/backend/storage";
 
 const TryDAPBanner = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -90,7 +89,7 @@ const TryDAPBanner = () => {
               </p>
             </div>
             <button
-              className="flex items-center gap-2 text-black absolute right-12 top-[55%] -translate-y-1/2 bg-white rounded-md px-4 py-2 cursor-pointer transition-all duration-300 ease-in-out transform scale-100 origin-center z-10 h-[44px]"
+              className="flex items-center gap-2 absolute right-12 top-[55%] -translate-y-1/2 bg-background rounded-md px-4 py-2 cursor-pointer transition-all duration-300 ease-in-out transform scale-100 origin-center z-10 h-[44px]"
               onClick={handleTryItNow}
             >
               <ArrowTopRightIcon className="w-6 h-6" />
@@ -107,9 +106,9 @@ const TryDAPBanner = () => {
             </button>
           </div>
 
-          <div className="w-full h-[12px] bg-[var(--color-dap-orange-light)]" />
+          <div className="w-full h-[12px] bg-dap-orange-light" />
 
-          <div className="w-full h-[6px] bg-[var(--color-dap-yellow)]" />
+          <div className="w-full h-[6px] bg-dap-yellow" />
         </div>
       )}
     </div>

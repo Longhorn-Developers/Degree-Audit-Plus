@@ -4,7 +4,7 @@ import { CourseSearchPanel } from "@/entrypoints/components/course-add-modal";
 import "@/entrypoints/styles/content.css";
 import { formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "../providers/audit-provider";
-import { SimpleDegreeCompletionDonut } from "./degree-completion-donut";
+import DegreeCompletionDonut from "./degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,
@@ -38,12 +38,12 @@ const SidePanel = () => {
 
   return (
     <VStack
-      className="self-start sticky top-0 z-20 bg-white"
+      className="self-start sticky top-0 z-20 bg-background"
       y="stretch"
       x="center"
     >
-      <SimpleDegreeCompletionDonut size={300} />
-      <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-[#FAFAF9]">
+      <DegreeCompletionDonut size={300} />
+      <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-background">
         <CourseSearchPanel />
       </div>
       <VStack gap={4} className="w-sm mt-4">

@@ -1,8 +1,8 @@
 import "@/entrypoints/styles/content.css";
+import { seedDatabase } from "@/lib/backend/db-seeder";
 import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { seedDatabase } from "@/lib/backend/db-seeder";
 import { HStack, VStack } from "../components/common/helperdivs";
 import DegreeAuditPage from "./components/degree-audit-page.tsx";
 import Navbar from "./components/navbar";

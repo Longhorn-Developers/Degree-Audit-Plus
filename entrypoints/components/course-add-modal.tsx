@@ -1,5 +1,5 @@
-import { searchCatalogCourses } from "@/lib/backend/db";
 import { getCurrentSemester } from "@/lib/backend/audit-scraper";
+import { searchCatalogCourses } from "@/lib/backend/db";
 import type {
   CatalogCourse,
   CourseCode,
@@ -99,12 +99,12 @@ function DivisionToggle({
       >
         <div
           className={cn(
-            "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-white",
+            "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-background",
             checked ? "translate-x-[24px]" : "translate-x-1",
           )}
         />
       </button>
-      <span className="text-base text-gray-900">{label}</span>
+      <span className="text-base text-text">{label}</span>
     </div>
   );
 }
@@ -423,12 +423,12 @@ function FulfillingCoursesContent({
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search fulfilling courses"
-        className="w-full h-12 px-4 border border-[#E5E1DA] rounded-md text-base font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#579D42] focus:border-transparent transition-all"
+        className="w-full h-12 px-4 border border-dap-border rounded-md text-base font-semibold placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all"
       />
 
       <div className="mt-4 space-y-3 max-h-[500px] overflow-y-auto pr-1">
         {isLoading ? (
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-muted">
             <CircleNotchIcon className="h-5 w-5 animate-spin" />
             <span>Loading fulfilling courses...</span>
           </div>
@@ -443,7 +443,7 @@ function FulfillingCoursesContent({
                 key={course.uniqueId}
                 onClick={() => setSelectedCourseId(course.uniqueId)}
                 className={cn(
-                  "w-full min-h-[70px] grid grid-cols-[22px_1fr] items-stretch overflow-hidden rounded-md border bg-white text-left transition-colors",
+                  "w-full min-h-[70px] grid grid-cols-[22px_1fr] items-stretch overflow-hidden rounded-md border bg-background text-left transition-colors",
                   isSelected
                     ? "border-2 border-[#579D42]"
                     : "border-[#E5E1DA] hover:border-gray-300",
@@ -457,10 +457,10 @@ function FulfillingCoursesContent({
                   />
                 </div>
                 <div className="px-3 py-3">
-                  <p className="text-base font-semibold text-gray-900 leading-tight">
+                  <p className="text-base font-semibold leading-tight">
                     {courseCode}
                   </p>
-                  <p className="mt-2 text-sm font-medium text-black leading-tight">
+                  <p className="mt-2 text-sm font-medium leading-tight">
                     {course.fullName}
                   </p>
                 </div>
@@ -468,13 +468,13 @@ function FulfillingCoursesContent({
             );
           })
         ) : (
-          <div className="min-h-[180px] rounded-md border border-dashed border-[#E5E1DA] bg-[#FAFAF9] px-6 py-8 flex flex-col items-center justify-center text-center">
-            <p className="text-lg font-semibold text-gray-900">
+          <div className="min-h-[180px] rounded-md border border-dashed border-dap-border bg-background px-6 py-8 flex flex-col items-center justify-center text-center">
+            <p className="text-lg font-semibold text-text">
               {hasSearchQuery
                 ? "No matching fulfilling courses"
                 : "No fulfilling courses found"}
             </p>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted">
               {hasSearchQuery
                 ? "Try a different course number, title, or instructor."
                 : "This requirement does not have any catalog matches yet."}
@@ -578,13 +578,13 @@ export default function CourseAddModal({
     >
       <div
         className={cn(
-          "bg-white rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden",
+          "bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden",
           isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0",
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-7 pt-7 pb-7">
-          <h2 className="text-3xl leading-none font-bold text-gray-900 mb-8">
+          <h2 className="text-3xl leading-none font-bold text-text mb-8">
             Fulfilling courses
           </h2>
           <FulfillingCoursesContent
