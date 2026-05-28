@@ -1,19 +1,27 @@
 import { usePreferences } from "@/entrypoints/degree-audit/providers/preferences-provider";
-import { calculateWeightedDegreeCompletion } from "@/lib/audit-calculations";
+import {
+  calculateWeightedDegreeCompletion,
+  getDuplicateCourseRequirementFlags,
+  getCompositeAuditRequirements,
+} from "@/lib/audit-calculations";
 import {
   addPlannedCourse as addPlannedCourseToStorage,
   getAuditData,
   getAuditHistory,
   removePlannedCourse as removePlannedCourseFromStorage,
+  renameAudit,
   wipeAllPlannedCourses as wipeAllPlannedCoursesFromStorage,
 } from "@/lib/backend/storage";
 import {
   AuditHistoryData,
   AuditRequirement,
+  CompositeAuditData,
+  CompositeAuditRequirement,
   Course,
   CourseId,
   CurrentAuditProgress,
   DegreeAuditCardProps,
+  DuplicateCourseRequirementFlag,
   PlannedCourseOutline,
   RequirementRule,
   StringSemester,
@@ -35,10 +43,14 @@ type AuditRequirementLike = Omit<AuditRequirement, "rule"> & {
 interface AuditContextType {
   sections: AuditRequirement[];
   courses: Course[];
+  compositeAuditData: CompositeAuditData;
+  compositeRequirements: CompositeAuditRequirement[];
+  duplicateCourseFlags: DuplicateCourseRequirementFlag[];
   history: AuditHistoryData;
   currentAuditId: string;
   currentAudit: DegreeAuditCardProps;
   setCurrentAuditId: (id: string) => void;
+  renameAuditTitle: (auditId: string, title: string) => Promise<boolean>;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
@@ -98,6 +110,13 @@ function normalizeRequirements(
   }));
 }
 
+function getAuditDisplayName(
+  audit: DegreeAuditCardProps | undefined,
+  auditId: string,
+) {
+  return audit?.title ?? audit?.majors?.join("; ") ?? auditId;
+}
+
 export const AuditContextProvider = ({
   children,
 }: {
@@ -111,7 +130,18 @@ export const AuditContextProvider = ({
 
   const [courseDict, setCourseDict] = useState<Record<CourseId, Course>>({});
   const [sections, setSections] = useState<AuditRequirement[]>([]);
+  const [compositeAuditData, setCompositeAuditData] =
+    useState<CompositeAuditData>({ audits: [] });
   const [history, setHistory] = useState<AuditHistoryData>();
+
+  const compositeRequirements = useMemo(
+    () => getCompositeAuditRequirements(compositeAuditData),
+    [compositeAuditData],
+  );
+  const duplicateCourseFlags = useMemo(
+    () => getDuplicateCourseRequirementFlags(compositeAuditData),
+    [compositeAuditData],
+  );
 
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections ?? [], courseDict),
@@ -230,6 +260,25 @@ export const AuditContextProvider = ({
     return numRemoved;
   }
 
+  // Keep the provider state in sync after storage accepts the rename.
+  async function renameAuditTitle(auditId: string, title: string) {
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      return false;
+    }
+
+    const updatedHistory = await renameAudit(auditId, cleanTitle);
+    if (!updatedHistory) {
+      return false;
+    }
+
+    setHistory(updatedHistory);
+    setCompositeAuditData((prev) => ({
+      audits: prev.audits.map((audit) => ({ ...audit, name: cleanTitle })),
+    }));
+    return true;
+  }
+
   const currentAudit = useMemo(() => {
     return history?.audits.find((a) => a.auditId === currentAuditId) ?? {};
   }, [history, currentAuditId]);
@@ -267,19 +316,21 @@ export const AuditContextProvider = ({
         // Load requirements from cache
         const cached = await getAuditData(currentAuditId!);
         if (cached) {
-          setSections(
-            cached.requirements.map((section) => ({
-              ...section,
-              rules: section.rules.map((rule) => ({
-                ...rule,
-                progressUnit: rule.progressUnit ?? "hours",
-                courses: rule.courses,
-              })),
-            })),
-          );
+          const namedAudit = {
+            ...cached,
+            name: getAuditDisplayName(matchingAudit, currentAuditId!),
+          };
+          const composite = { audits: [namedAudit] };
+          setCompositeAuditData(composite);
+          setSections(getCompositeAuditRequirements(composite));
           console.log("[Main] courses", cached.courses);
           setCourseDict(cached.courses);
-        } else console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+        } else {
+          setCompositeAuditData({ audits: [] });
+          setSections([]);
+          setCourseDict({});
+          console.warn(`[Main] Audit ${currentAuditId} not in cache.`);
+        }
 
         setLoaded(true);
       } catch (error) {
@@ -300,6 +351,9 @@ export const AuditContextProvider = ({
       value={{
         sections,
         courses: Object.values(courseDict),
+        compositeAuditData,
+        compositeRequirements,
+        duplicateCourseFlags,
         history: history!,
         semesters,
         currentAuditId,
@@ -309,6 +363,7 @@ export const AuditContextProvider = ({
           setCurrentAuditId(id);
           updateLastAuditId(id);
         },
+        renameAuditTitle,
         moveCourseToNewSemester,
         progresses,
         getCourseById: (id) => {

@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
-import { calculateWeightedDegreeCompletion } from "../lib/audit-calculations";
+import {
+  calculateWeightedDegreeCompletion,
+  getDuplicateCourseRequirementFlags,
+  getCompositeAuditRequirements,
+} from "../lib/audit-calculations";
 import { parseRequirementProgress } from "../lib/backend/audit-scraper";
 import type {
   AuditRequirement,
+  CompositeAuditData,
   Course,
   RequirementRule,
 } from "../lib/general-types";
@@ -106,5 +111,48 @@ const cappedResults = calculateWeightedDegreeCompletion(
   courses,
 );
 assert.equal(cappedResults.sections[0].progress.planned, 2);
+
+const composite: CompositeAuditData = {
+  audits: [
+    {
+      name: "Computer Science BS",
+      requirements: sections,
+      courses,
+    },
+    {
+      name: "Mathematics Minor",
+      requirements: [
+        {
+          title: "Minor Requirements",
+          rules: [{ ...coursesRule, courses: ["minor-linear-algebra"] }],
+        },
+      ],
+      courses: {
+        "minor-linear-algebra": {
+          id: "minor-linear-algebra",
+          code: "M 341",
+          name: "Linear Algebra",
+          hours: 3,
+          semester: "Fall 2026",
+          status: "Completed",
+          type: "In-Residence",
+        },
+      },
+    },
+  ],
+};
+
+const compositeRequirements = getCompositeAuditRequirements(composite);
+const duplicateFlags = getDuplicateCourseRequirementFlags(composite);
+
+assert.equal(compositeRequirements.length, 2);
+assert.equal(duplicateFlags.length, 1);
+assert.equal(duplicateFlags[0].courseCode, "M 341");
+assert.deepEqual(duplicateFlags[0].auditNames, [
+  "Computer Science BS",
+  "Mathematics Minor",
+]);
+assert.deepEqual(compositeRequirements[0].duplicateCourseCodes, ["M 341"]);
+assert.deepEqual(compositeRequirements[1].duplicateCourseCodes, ["M 341"]);
 
 console.log("Requirement progress validation passed.");

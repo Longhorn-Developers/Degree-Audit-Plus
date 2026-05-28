@@ -31,6 +31,30 @@ export async function saveAuditHistory(
   }
 }
 
+// Rename only the history entry because that is what the sidebar displays.
+export async function renameAudit(
+  auditId: string,
+  title: string,
+): Promise<AuditHistoryData | null> {
+  try {
+    const history = await getAuditHistory();
+    if (!history) {
+      return null;
+    }
+
+    const audits = history.audits.map((audit) =>
+      audit.auditId === auditId ? { ...audit, title } : audit,
+    );
+    const updatedHistory = { ...history, audits, timestamp: Date.now() };
+
+    await browser.storage.local.set({ [STORAGE_KEY]: updatedHistory });
+    return updatedHistory;
+  } catch (e) {
+    console.error("Failed to rename audit:", e);
+    return null;
+  }
+}
+
 /**
  * Adds a course to the audit history.
  * @param auditId - The ID of the audit to add the course to.
