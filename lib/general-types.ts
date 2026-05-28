@@ -39,8 +39,15 @@ export type CurrentAuditProgress = {
  * courses which contains all the courses in the audit as a simple list.
  */
 export interface CachedAuditData {
+  // Display name used when this audit is shown inside a composite view.
+  name?: string;
   requirements: AuditRequirement[];
   courses: Record<CourseId, Course>;
+}
+
+// Holds multiple audits together so planner views can read all requirements at once.
+export interface CompositeAuditData {
+  audits: CachedAuditData[];
 }
 
 /**
@@ -90,6 +97,22 @@ export type RequirementRule = {
 export type AuditRequirement = {
   title: string;
   rules: RequirementRule[];
+};
+
+// Used by the audit provider after combining CompositeAuditData requirements for the existing UI.
+export type CompositeAuditRequirement = AuditRequirement & {
+  // Keeps each flattened requirement tied back to the audit it came from.
+  auditName: string;
+  // Lets planner/requirement UI flag repeated courses without deduping them.
+  duplicateCourseCodes: CourseCode[];
+};
+
+// Used by audit-calculations helpers to report courses shared across multiple audits.
+export type DuplicateCourseRequirementFlag = {
+  // Course code is used instead of course id because each audit has its own ids.
+  courseCode: CourseCode;
+  // The audit names where this course appears in requirements.
+  auditNames: string[];
 };
 
 export type CoreArea =
@@ -197,6 +220,7 @@ export interface DegreeAuditCardProps {
   isExpanded?: boolean;
   onToggle?: () => void;
   onMenuClick?: () => void;
+  onRename?: (title: string) => void;
 }
 
 export interface AuditHistoryData {

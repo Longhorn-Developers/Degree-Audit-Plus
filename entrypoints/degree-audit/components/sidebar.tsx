@@ -17,7 +17,8 @@ import { useAuditContext } from "../providers/audit-provider";
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();
-  const { currentAuditId, setCurrentAuditId, history } = useAuditContext();
+  const { currentAuditId, setCurrentAuditId, history, renameAuditTitle } =
+    useAuditContext();
   // const [audits, setAudits] = useState<DegreeAuditCardProps[]>([]); //history
   // const [loading, setLoading] = useState(true);
 
@@ -95,6 +96,11 @@ const Sidebar = () => {
                   onToggle={() => {
                     if (audit.auditId) {
                       setCurrentAuditId(audit.auditId); // No page refresh, just update state
+                    }
+                  }}
+                  onRename={(title) => {
+                    if (audit.auditId) {
+                      renameAuditTitle(audit.auditId, title);
                     }
                   }}
                   onMenuClick={() => {

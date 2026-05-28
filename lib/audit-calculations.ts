@@ -1,9 +1,84 @@
 import type {
   AuditRequirement,
+  CompositeAuditData,
+  CompositeAuditRequirement,
   Course,
+  CourseCode,
   CourseId,
   CurrentAuditProgress,
+  DuplicateCourseRequirementFlag,
 } from "./general-types";
+
+// Give unnamed audits a readable fallback so the UI never shows a blank source.
+function getAuditName(
+  audit: CompositeAuditData["audits"][number],
+  index: number,
+) {
+  return audit.name ?? `Degree Audit ${index + 1}`;
+}
+
+// Find course codes that appear in requirements from more than one audit.
+export function getDuplicateCourseRequirementFlags(
+  composite: CompositeAuditData,
+): DuplicateCourseRequirementFlag[] {
+  const courseAudits = new Map<CourseCode, Set<string>>();
+
+  composite.audits.forEach((audit, auditIndex) => {
+    const auditName = getAuditName(audit, auditIndex);
+
+    audit.requirements.forEach((requirement) => {
+      requirement.rules.forEach((rule) => {
+        rule.courses.forEach((courseId) => {
+          const course = audit.courses[courseId];
+          if (!course) return;
+
+          const auditNames = courseAudits.get(course.code) ?? new Set<string>();
+          auditNames.add(auditName);
+          courseAudits.set(course.code, auditNames);
+        });
+      });
+    });
+  });
+
+  return Array.from(courseAudits.entries())
+    .filter(([, auditNames]) => auditNames.size > 1)
+    .map(([courseCode, auditNames]) => ({
+      courseCode,
+      auditNames: Array.from(auditNames),
+    }));
+}
+
+// Build the composite requirement list used by views that need all audits together.
+export function getCompositeAuditRequirements(
+  composite: CompositeAuditData,
+): CompositeAuditRequirement[] {
+  const duplicateCodes = new Set(
+    getDuplicateCourseRequirementFlags(composite).map(
+      (flag) => flag.courseCode,
+    ),
+  );
+
+  return composite.audits.flatMap((audit, auditIndex) => {
+    const auditName = getAuditName(audit, auditIndex);
+
+    return audit.requirements.map((requirement) => ({
+      ...requirement,
+      auditName,
+      duplicateCourseCodes: Array.from(
+        new Set(
+          requirement.rules.flatMap((rule) =>
+            rule.courses
+              .map((courseId) => audit.courses[courseId]?.code)
+              .filter(
+                (code): code is CourseCode =>
+                  !!code && duplicateCodes.has(code),
+              ),
+          ),
+        ),
+      ),
+    }));
+  });
+}
 
 export function calculateWeightedDegreeCompletion(
   sections: AuditRequirement[],
