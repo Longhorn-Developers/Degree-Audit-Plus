@@ -2,6 +2,7 @@ import { getCurrentSemester } from "@/lib/backend/audit-scraper";
 import { searchCatalogCourses } from "@/lib/backend/db";
 import type {
   CatalogCourse,
+  Course,
   CourseCode,
   PlannedCourseOutline,
 } from "@/lib/general-types";
@@ -54,11 +55,33 @@ const DEPARTMENTS = [
   "History",
 ];
 
+// Course statuses that mean the student already has the course, so it should be
+// hidden from search results.
+const EXCLUDED_SEARCH_STATUSES = new Set<string>(["Completed", "In Progress"]);
+
+// Build the set of course codes to hide from search based on the student's audit.
+function getExcludedCourseCodes(courses: Course[]): Set<string> {
+  const excludedCodes = new Set<string>();
+  for (const course of courses) {
+    if (EXCLUDED_SEARCH_STATUSES.has(course.status)) {
+      excludedCodes.add(course.code.trim());
+    }
+  }
+  return excludedCodes;
+}
+
 async function SearchCourses(
   searchData: CourseSearchData,
+  excludeCodes?: Set<string>,
 ): Promise<CatalogCourse[]> {
   // Pass the modal form data into the DB search helper and return the results.
-  return searchCatalogCourses(searchData);
+  return searchCatalogCourses({
+    searchQuery: searchData.searchQuery,
+    department: searchData.department,
+    lowerDivision: searchData.lowerDivision,
+    upperDivision: searchData.upperDivision,
+    excludeCodes,
+  });
 }
 
 function waitForNextPaint(): Promise<void> {
@@ -543,6 +566,7 @@ export function CourseSearchResults({
 }
 
 export function CourseSearchPanel() {
+  const { courses: studentCourses } = useAuditContext();
   const [view, setView] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
 
@@ -551,7 +575,10 @@ export function CourseSearchPanel() {
   ) : (
     <CourseSearchContent
       onSearchSubmit={async (formData) => {
-        const results = await SearchCourses(formData);
+        const results = await SearchCourses(
+          formData,
+          getExcludedCourseCodes(studentCourses),
+        );
         setCourses(results);
         setView(true);
       }}

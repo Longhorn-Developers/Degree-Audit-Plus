@@ -175,19 +175,23 @@ function getDepartmentCodesByName(departmentName: string): string[] {
 }
 
 // Searches catalog courses by text, department, and lower/upper division filters.
-export function searchCatalogCourses(filters: {
+// Skips any course codes passed in `excludeCodes` (e.g. courses the student has
+// already taken) and collapses duplicate sections so each course appears once.
+export async function searchCatalogCourses(filters: {
   searchQuery: string;
   department: string;
   lowerDivision: boolean;
   upperDivision: boolean;
+  excludeCodes?: Set<string>;
 }): Promise<CatalogCourse[]> {
   // Normalize the search inputs once before filtering the collection.
   const normalizedQuery = filters.searchQuery.trim().toLowerCase();
   const departmentCodes = filters.department
     ? getDepartmentCodesByName(filters.department)
     : [];
+  const excludeCodes = filters.excludeCodes ?? new Set<string>();
 
-  return db.courses
+  const matches = await db.courses
     .toCollection()
     .filter((course) => {
       // Match the search text against the catalog title fields.
@@ -208,7 +212,26 @@ export function searchCatalogCourses(filters: {
         (filters.lowerDivision && courseLevel >= 1 && courseLevel <= 3) ||
         (filters.upperDivision && courseLevel >= 4 && courseLevel <= 6);
 
-      return matchesQuery && matchesDepartment && matchesDivision;
+      // Drop courses the student has already taken.
+      const isAlreadyTaken = excludeCodes.has(
+        `${course.department} ${course.number}`,
+      );
+
+      return (
+        matchesQuery && matchesDepartment && matchesDivision && !isAlreadyTaken
+      );
     })
     .toArray();
+
+  // Collapse duplicate sections/teachers so each course code appears only once.
+  const seenCourseCodes = new Set<string>();
+  return matches.filter((course) => {
+    const courseCode = `${course.department} ${course.number}`;
+    if (seenCourseCodes.has(courseCode)) {
+      return false;
+    }
+
+    seenCourseCodes.add(courseCode);
+    return true;
+  });
 }
