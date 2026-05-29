@@ -50,6 +50,15 @@ export interface CompositeAuditData {
   audits: CachedAuditData[];
 }
 
+// A persisted composite. Stores only a name + the member audit ids; it does NOT cache audit
+// data. The full CompositeAuditData is rebuilt on demand from the per-audit cache
+// (auditData_<id>) so it never goes stale when planned courses change or audits re-scrape.
+export interface CachedCompositeAudit {
+  id: string; // crypto.randomUUID()
+  name: string; // user-facing label, e.g. "My Degree Plan"
+  auditIds: string[]; // ordered member ids -> point into auditData_<id>
+}
+
 /**
  * Simple way of expanding an object type one layer so it shows its children's contents
  */

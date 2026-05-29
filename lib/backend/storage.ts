@@ -5,6 +5,8 @@ import { browser } from "wxt/browser";
 import type {
   AuditHistoryData,
   CachedAuditData,
+  CachedCompositeAudit,
+  CompositeAuditData,
   CourseId,
   DegreeAuditCardProps,
   PlannedCourseOutline,
@@ -284,4 +286,119 @@ export async function getUncachedAuditIds(
     if (!cached) uncached.push(id);
   }
   return uncached;
+}
+
+/**
+ * Helper function: Loads each saved audit from the per-audit cache and combines them into the
+ * composite model. IDs with no cached data (never scraped or failed to scrape)
+ * are skipped, so the remaining audits still load. Display names come from audit
+ * history, matching the provider's naming logic.
+ *
+ * @param auditIds - The IDs of the audits to load and combine.
+ * @returns A composite holding one entry per successfully loaded audit.
+ */
+export async function loadCompositeAuditData(
+  auditIds: string[],
+  options?: {
+    // Injectable for tests; defaults to the real storage readers.
+    getData?: (id: string) => Promise<CachedAuditData | null>;
+    getHistory?: () => Promise<AuditHistoryData | null>;
+  },
+): Promise<CompositeAuditData> {
+  const getData = options?.getData ?? getAuditData;
+  const getHistory = options?.getHistory ?? getAuditHistory;
+
+  const history = await getHistory();
+  const audits: CachedAuditData[] = [];
+
+  for (const id of auditIds) {
+    const data = await getData(id);
+    if (!data) continue; // not cached yet — skip so the others still load
+    const card = history?.audits.find((a) => a.auditId === id);
+    const name = card?.title ?? card?.majors?.join("; ") ?? id;
+    audits.push({ ...data, name });
+  }
+
+  return { audits };
+}
+
+// ---- Saved Composites (a named grouping of audits the user views together) ----
+const COMPOSITES_KEY = "compositeAudits";
+
+// Get all saved composites (returns an empty list if none).
+export async function getCachedComposites(): Promise<CachedCompositeAudit[]> {
+  try {
+    const result = await browser.storage.local.get(COMPOSITES_KEY);
+    return (result[COMPOSITES_KEY] as CachedCompositeAudit[]) ?? [];
+  } catch (e) {
+    console.error("Failed to get composites from storage:", e);
+    return [];
+  }
+}
+
+async function setCachedComposites(
+  composites: CachedCompositeAudit[],
+): Promise<void> {
+  await browser.storage.local.set({ [COMPOSITES_KEY]: composites });
+}
+
+/**
+ * Creates a new composite from a set of audits, frontend facing method  "create
+ * composite" audit. Persists only the name + member ids, then builds and
+ * returns the composite so the caller can render it immediately without a second
+ * round-trip.
+ *
+ * @param name - The user-facing label for the composite.
+ * @param auditIds - The IDs of the audits that make up the composite.
+ * @returns The stored record and the freshly built composite.
+ */
+export async function createComposite(
+  name: string,
+  auditIds: string[],
+): Promise<{ saved: CachedCompositeAudit; composite: CompositeAuditData }> {
+  const saved: CachedCompositeAudit = {
+    id: crypto.randomUUID(),
+    name,
+    auditIds,
+  };
+  const composites = await getCachedComposites();
+  await setCachedComposites([...composites, saved]);
+  const composite = await loadCompositeAuditData(auditIds);
+  return { saved, composite };
+}
+
+
+export async function updateCachedComposite(
+  id: string,
+  patch: Partial<Pick<CachedCompositeAudit, "name" | "auditIds">>,
+): Promise<CachedCompositeAudit | null> {
+  const composites = await getCachedComposites();
+  const existing = composites.find((c) => c.id === id);
+  if (!existing) return null;
+  const updated: CachedCompositeAudit = { ...existing, ...patch, id };
+  await setCachedComposites(composites.map((c) => (c.id === id ? updated : c)));
+  return updated;
+}
+
+export async function deleteCachedComposite(id: string): Promise<boolean> {
+  const composites = await getCachedComposites();
+  const next = composites.filter((c) => c.id !== id);
+  if (next.length === composites.length) return false;
+  await setCachedComposites(next);
+  return true;
+}
+
+/**
+ * Reopens a saved composite by rebuilding it from the per-audit cache.
+ *
+ * @param id - The ID of the composite to load.
+ * @returns The built composite, or null if no composite has that ID.
+ */
+export async function loadCompositeAudit(
+  id: string,
+): Promise<CompositeAuditData | null> {
+  const composites = await getCachedComposites();
+  const composite = composites.find((c) => c.id === id);
+  if (!composite) return null;
+  return loadCompositeAuditData(composite.auditIds);
 }
