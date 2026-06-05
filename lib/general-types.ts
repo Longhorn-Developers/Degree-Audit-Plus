@@ -99,6 +99,7 @@ export type AuditRequirement = {
   rules: RequirementRule[];
 };
 
+<<<<<<< Updated upstream
 // Used by the audit provider after combining CompositeAuditData requirements for the existing UI.
 export type CompositeAuditRequirement = AuditRequirement & {
   // Keeps each flattened requirement tied back to the audit it came from.
@@ -114,6 +115,144 @@ export type DuplicateCourseRequirementFlag = {
   // The audit names where this course appears in requirements.
   auditNames: string[];
 };
+=======
+/**
+ * The outcome of checking whether a CatalogCourse satisfies a plan requirement rule.
+ * - "fulfills"     – course satisfies an identified rule; carries requirementTitle + ruleTitle
+ *                    needed by addPlannedCourse(), plus a display message.
+ * - "no-match"     – course was checked but does not fulfill any outstanding rule.
+ * - "check-failed" – check could not complete (missing data, error); carries a reason string.
+ */
+export type CourseRequirementFit =
+  | {
+      kind: "fulfills";
+      requirementTitle: string;
+      ruleTitle: string;
+      message: string;
+    }
+  | { kind: "no-match"; message: string }
+  | { kind: "check-failed"; reason: string };
+
+/**
+ * The current state of the requirement-fit check in the course-add panel.
+ * - "idle"     – no course selected; nothing to show.
+ * - "checking" – async check is in flight.
+ * - "resolved" – check complete; result carries the CourseRequirementFit outcome.
+ */
+export type PlanRequirementValidationState =
+  | { status: "idle" }
+  | { status: "checking" }
+  | { status: "resolved"; result: CourseRequirementFit };
+
+export function isValidationChecking(
+  state: PlanRequirementValidationState,
+): boolean {
+  return state.status === "checking";
+}
+
+export function isCourseRequirementFulfilled(
+  fit: CourseRequirementFit,
+): fit is Extract<CourseRequirementFit, { kind: "fulfills" }> {
+  return fit.kind === "fulfills";
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Plan requirement validation state (DAP-84 / 6.4)
+ *
+ * Every requirement in a degree plan carries two INDEPENDENT dimensions:
+ *   1. its validation result – what the last check found.
+ *   2. its staleness         – whether the plan changed since that check.
+ * They are tracked separately (not one enum) so "was confirmed, now stale" stays
+ * distinguishable from "was failed, now stale".
+ *
+ * Distinct from PlanRequirementValidationState above, which is the course-add
+ * panel's transient async UI state (idle / checking / resolved).
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/** Identifies an audit. Audits are keyed by id in storage (`auditData_<id>`). */
+export type AuditId = string;
+
+/**
+ * Identifies a requirement within an audit. Requirements have no separate id, so
+ * they are identified by their title (matches `AuditRequirement.title`), assumed
+ * unique within a single audit — consistent with how `addPlannedCourse` resolves
+ * a requirement by title.
+ */
+export type RequirementId = string;
+
+/**
+ * What the last validation found for a requirement.
+ * - "unchecked" – default; no validation has run on this requirement yet.
+ * - "confirmed" – last validation found it satisfied by the current plan.
+ * - "failed"    – last validation found it NOT satisfied.
+ */
+export type ValidationResult = "unchecked" | "confirmed" | "failed";
+
+/**
+ * The full per-requirement validation state — both dimensions in one record:
+ * - result        – the last validation outcome.
+ * - isStale       – true if the plan changed since `lastValidated`, so `result`
+ *                   may be outdated. A SEPARATE flag, never folded into `result`.
+ * - lastValidated – when `result` was produced, or null if never validated.
+ */
+export interface RequirementValidation {
+  result: ValidationResult;
+  isStale: boolean;
+  lastValidated: Date | null;
+}
+
+/** The default state for a requirement that has never been validated. */
+export function unvalidatedRequirement(): RequirementValidation {
+  return { result: "unchecked", isStale: false, lastValidated: null };
+}
+
+/**
+ * Validation state for one audit: a RequirementValidation per requirement, keyed
+ * by requirement title.
+ */
+export type AuditValidationState = Record<RequirementId, RequirementValidation>;
+
+/**
+ * Validation state for a whole composite plan: per-audit, then per-requirement.
+ * Mirrors 6.1's composite shape — CompositeAuditData holds one CachedAuditData
+ * per member audit id, each with its own requirements — so this map slots onto
+ * the composite with one AuditValidationState per audit id.
+ */
+export type CompositeValidationState = Record<AuditId, AuditValidationState>;
+
+/**
+ * A change to the plan that may invalidate prior validation results — a planned
+ * course added to, removed from, or moved within a requirement. Each change names
+ * the audit it happened in, so the requirements it makes stale address the
+ * matching per-audit slot of CompositeValidationState. (move-course carries no
+ * requirementTitle: a semester move marks nothing stale, so it needs none.)
+ */
+export type PlanChange =
+  | { kind: "add-course"; auditId: AuditId; requirementTitle: RequirementId }
+  | { kind: "remove-course"; auditId: AuditId; requirementTitle: RequirementId }
+  | { kind: "move-course"; auditId: AuditId };
+
+/**
+ * Given a plan change, returns the requirement IDs (titles) within
+ * `change.auditId` whose validation result should be marked stale — i.e. the
+ * requirements to invalidate inside `CompositeValidationState[change.auditId]`.
+ *
+ * Intentionally conservative for v1 (see the ticket's staleness note): adding or
+ * removing a planned course only invalidates the one requirement it applies to,
+ * and moving a course between semesters does not change whether a requirement is
+ * satisfied, so it marks nothing stale. Combination-sensitive cross-requirement
+ * staleness is a future refinement, not a v1 blocker.
+ */
+export function requirementsMadeStaleBy(change: PlanChange): RequirementId[] {
+  switch (change.kind) {
+    case "add-course":
+    case "remove-course":
+      return [change.requirementTitle];
+    case "move-course":
+      return [];
+  }
+}
+>>>>>>> Stashed changes
 
 export type CoreArea =
   | "First-Year Signature Course"
