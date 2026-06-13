@@ -99,7 +99,6 @@ export type AuditRequirement = {
   rules: RequirementRule[];
 };
 
-<<<<<<< Updated upstream
 // Used by the audit provider after combining CompositeAuditData requirements for the existing UI.
 export type CompositeAuditRequirement = AuditRequirement & {
   // Keeps each flattened requirement tied back to the audit it came from.
@@ -115,7 +114,7 @@ export type DuplicateCourseRequirementFlag = {
   // The audit names where this course appears in requirements.
   auditNames: string[];
 };
-=======
+
 /**
  * The outcome of checking whether a CatalogCourse satisfies a plan requirement rule.
  * - "fulfills"     – course satisfies an identified rule; carries requirementTitle + ruleTitle
@@ -252,7 +251,6 @@ export function requirementsMadeStaleBy(change: PlanChange): RequirementId[] {
       return [];
   }
 }
->>>>>>> Stashed changes
 
 export type CoreArea =
   | "First-Year Signature Course"
