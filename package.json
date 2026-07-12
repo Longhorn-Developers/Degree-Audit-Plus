@@ -15,6 +15,8 @@
     "test:parse-major": "bun run tests/validate-parse-major.ts",
     "test:requirement-progress": "bun run tests/validate-requirement-progress.ts",
     "test:plan-validation": "bun run tests/validate-plan-validation-state.ts",
+    "test:composite-load": "bun run tests/validate-composite-audit-load.ts",
+    "test:saved-composites": "bun run tests/validate-saved-composites.ts",
     "postinstall": "bun run wxt prepare",
     "prepare": "husky",
     "tailwind:init": "bun run tailwindcss init -p"
