@@ -367,7 +367,6 @@ export async function createComposite(
   return { saved, composite };
 }
 
-
 export async function updateCachedComposite(
   id: string,
   patch: Partial<Pick<CachedCompositeAudit, "name" | "auditIds">>,
