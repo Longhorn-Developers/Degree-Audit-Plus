@@ -151,7 +151,7 @@ const CoursePill = ({ course }: { course: Course }) => {
   return (
     <div
       className={cn(
-        "grid grid-cols-[100px_1fr_auto] items-center gap-4 px-4 py-3 rounded-lg text-sm w-full border",
+        "grid grid-cols-[100px_1fr_auto] items-center gap-4 px-4 py-3 rounded-lg text-sm w-full border text-gray-900",
         statusIcons[course.status].color,
       )}
     >
