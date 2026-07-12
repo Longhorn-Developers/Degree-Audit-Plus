@@ -111,7 +111,10 @@ const Sidebar = () => {
             })
           )}
         </div>
+      </div>
 
+      {/* Pinned Resources + Feedback (stick to bottom, above footer) */}
+      <div className="px-8">
         {/* Divider */}
         <hr className="my-5 border-dap-border" />
 
