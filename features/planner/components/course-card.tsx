@@ -2,43 +2,35 @@ import type { CourseCode, CourseId } from "@/domain/course";
 import { cn, getColorByCourseCode } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
-import { PlusCircleIcon } from "lucide-react";
+import { PlusCircleIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
+type CourseCardData = {
+  code: string;
+  name: string;
+};
+
 type CourseCardProps = {
   courseId?: CourseId;
-  previewCourse?: {
-    code: string;
-    name: string;
-  };
+  previewCourse?: CourseCardData;
   className?: string;
   showDots?: boolean;
   type?: "add";
 };
 
+// Dumb display component: renders whatever course data it is handed. It has no
+// knowledge of where the data comes from, so it works outside any provider.
 const CourseCardVisual = forwardRef<
   HTMLDivElement,
-  CourseCardProps & React.HTMLAttributes<HTMLDivElement>
+  {
+    course: CourseCardData;
+    className?: string;
+    showDots?: boolean;
+    type?: "add";
+  } & React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const {
-    courseId,
-    previewCourse,
-    className,
-    showDots = false,
-    type,
-    ...rest
-  } = props;
-  const auditContext = useAuditContext();
-  const course =
-    previewCourse ?? (courseId ? auditContext.getCourseById(courseId) : null);
-
-  if (!course) {
-    return null;
-  }
-
-  const fullName = course.name;
-  const courseName = course.code;
+  const { course, className, showDots = false, type, ...rest } = props;
 
   return (
     <div
@@ -50,15 +42,15 @@ const CourseCardVisual = forwardRef<
       )}
     >
       <div
-        className={`w-6 flex items-center justify-center ${getColorByCourseCode(courseName as CourseCode).className} rounded-l-sm border-r-2 border-dap-border`}
+        className={`w-6 flex items-center justify-center ${getColorByCourseCode(course.code as CourseCode).className} rounded-l-sm border-r-2 border-dap-border`}
       >
         {showDots ? (
           <DotsSixVerticalIcon size={18} weight="bold" className="text-white" />
         ) : null}
       </div>
       <div className="py-3 px-3 flex-1">
-        <p className="text-text font-semibold text-sm">{fullName}</p>
-        <p className="text-gray-500 text-xs">{courseName}</p>
+        <p className="text-text font-semibold text-sm">{course.name}</p>
+        <p className="text-gray-500 text-xs">{course.code}</p>
       </div>
       {type === "add" && (
         <div className="flex items-center justify-center px-3">
@@ -78,6 +70,7 @@ const DraggableCourseCard = ({
   courseId: CourseId;
   className?: string;
 }) => {
+  const { getCourseById } = useAuditContext();
   const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
     id: courseId,
   });
@@ -86,7 +79,7 @@ const DraggableCourseCard = ({
     <CourseCardVisual
       {...attributes}
       {...listeners}
-      courseId={courseId}
+      course={getCourseById(courseId)}
       showDots
       className={cn(
         isDragging ? "opacity-50" : "opacity-100",
@@ -94,6 +87,30 @@ const DraggableCourseCard = ({
         className,
       )}
       ref={setNodeRef}
+    />
+  );
+};
+
+// Resolves a course id via the audit context, then hands pure data to the
+// dumb visual. Used for non-draggable, id-based cards (e.g. the drag overlay).
+const ResolvedCourseCard = ({
+  courseId,
+  className,
+  showDots,
+  type,
+}: {
+  courseId: CourseId;
+  className?: string;
+  showDots?: boolean;
+  type?: "add";
+}) => {
+  const { getCourseById } = useAuditContext();
+  return (
+    <CourseCardVisual
+      course={getCourseById(courseId)}
+      className={className}
+      showDots={showDots}
+      type={type}
     />
   );
 };
@@ -106,17 +123,30 @@ const CourseCard = ({
   showDots = false,
   type,
 }: CourseCardProps & { draggable?: boolean }) => {
-  return draggable ? (
-    <DraggableCourseCard courseId={courseId!} className={className} />
-  ) : (
-    <CourseCardVisual
-      courseId={courseId}
-      previewCourse={previewCourse}
-      className={className}
-      showDots={showDots}
-      type={type}
-    />
-  );
+  if (draggable) {
+    return <DraggableCourseCard courseId={courseId!} className={className} />;
+  }
+  if (previewCourse) {
+    return (
+      <CourseCardVisual
+        course={previewCourse}
+        className={className}
+        showDots={showDots}
+        type={type}
+      />
+    );
+  }
+  if (courseId) {
+    return (
+      <ResolvedCourseCard
+        courseId={courseId}
+        className={className}
+        showDots={showDots}
+        type={type}
+      />
+    );
+  }
+  return null;
 };
 
 export default CourseCard;

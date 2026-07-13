@@ -145,7 +145,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             <CopySimple size={20} className="shrink-0" />
             <span>Duplicate</span>
           </button>
-          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-[#c63636] hover:bg-hover-bg">
+          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg">
             <Trash size={20} className="shrink-0" />
             <span>Delete Audit</span>
           </button>

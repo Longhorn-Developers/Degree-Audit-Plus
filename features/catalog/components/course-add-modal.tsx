@@ -64,7 +64,7 @@ function DivisionToggle({
         disabled={disabled}
         className={cn(
           "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-          checked ? "bg-[#4A7C59]" : "bg-gray-200",
+          checked ? "bg-dap-plan-green-dark" : "bg-gray-200",
         )}
       >
         <div
@@ -337,8 +337,8 @@ function FulfillingCoursesContent() {
                 className={cn(
                   "w-full min-h-[70px] grid grid-cols-[22px_1fr] items-stretch overflow-hidden rounded-md border bg-background text-left transition-colors",
                   isSelected
-                    ? "border-2 border-[#579D42]"
-                    : "border-[#E5E1DA] hover:border-gray-300",
+                    ? "border-2 border-dap-plan-green"
+                    : "border-dap-border hover:border-gray-300",
                 )}
               >
                 <div className="bg-dap-orange flex items-center justify-center">
@@ -383,7 +383,7 @@ function FulfillingCoursesContent() {
           fill="solid"
           disabled={!canAddCourse}
           onClick={handleAddPlannedCourse}
-          className="w-[310px] h-14 bg-[#579D42] hover:bg-[#4C8F3B] text-white border-none rounded-md text-xl font-bold flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-[310px] h-14 bg-dap-plan-green hover:bg-dap-plan-green-hover text-white border-none rounded-md text-xl font-bold flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isAdding ? (
             <>

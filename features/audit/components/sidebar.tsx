@@ -12,7 +12,7 @@ import {
   Plus,
   Sidebar as SidebarIcon,
 } from "@phosphor-icons/react";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 import { useAuditContext } from "../audit-provider";
 
 const Sidebar = () => {
@@ -21,7 +21,7 @@ const Sidebar = () => {
     useAuditContext();
   return (
     <div
-      className={clsx(
+      className={cn(
         "py-5 h-full min-h-screen flex flex-col fixed left-0 top-0 z-20 bg-background border-r border-dap-border whitespace-nowrap overflow-hidden transition-[width] duration-300 ease-out",
         {
           "w-[365px]": sidebarIsOpen,

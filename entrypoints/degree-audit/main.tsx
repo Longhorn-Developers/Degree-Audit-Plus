@@ -1,6 +1,6 @@
 import "@/entrypoints/styles/content.css";
 import { seedDatabase } from "@/features/catalog/seed-catalog";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
@@ -14,6 +14,7 @@ import {
   PreferencesProvider,
   usePreferences,
 } from "@/features/preferences/preferences-provider";
+import ErrorBoundary from "@/components/error-boundary";
 
 const App = () => {
   return (
@@ -36,7 +37,7 @@ const MainContent = () => {
   return (
     <VStack
       x="center"
-      className={clsx(
+      className={cn(
         "w-full min-w-0 h-screen overflow-hidden transition-[margin-left] duration-300 ease-out",
         {
           "ml-[365px]": sidebarIsOpen,
@@ -64,7 +65,9 @@ async function bootstrap() {
 
   root.render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 }

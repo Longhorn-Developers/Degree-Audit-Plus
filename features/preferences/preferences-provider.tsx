@@ -1,8 +1,13 @@
+// For handling saved preferences like dark mode between sessions.
+
 import LoadingPage from "@/features/audit/components/loading-page";
 import {
   DEFAULT_PREFERENCES,
   initPreferences,
-  setPreference,
+  lastAuditIdItem,
+  luminosityItem,
+  showSidebarItem,
+  viewModeItem,
   type PreferredLuminosity,
   type ViewMode,
 } from "@/lib/storage/preferences-storage";
@@ -49,6 +54,7 @@ export function PreferencesProvider({
     DEFAULT_PREFERENCES.luminosity,
   );
 
+  // Initial load — read all prefs at once.
   useEffect(() => {
     void initPreferences()
       .then((preferences) => {
@@ -59,6 +65,33 @@ export function PreferencesProvider({
       })
       .catch((error) => console.error("Failed to load preferences:", error))
       .finally(() => setIsMounted(true));
+  }, []);
+
+  // watch() keeps the page in sync when preferences change from another
+  // context (e.g. a background re-scrape, or the popup writing to sync
+  // storage).  Replaces the hand-rolled browser.storage.onChanged pattern.
+  useEffect(() => {
+    const unwatchSidebar = showSidebarItem.watch((value: boolean) => {
+      setSidebarState(value);
+    });
+    const unwatchLuminosity = luminosityItem.watch(
+      (value: PreferredLuminosity) => {
+        setLuminosityState(value);
+      },
+    );
+    const unwatchViewMode = viewModeItem.watch((value: ViewMode) => {
+      setViewModeState(value);
+    });
+    const unwatchLastAuditId = lastAuditIdItem.watch((value: string | null) => {
+      setLastAuditId(value);
+    });
+
+    return () => {
+      unwatchSidebar();
+      unwatchLuminosity();
+      unwatchViewMode();
+      unwatchLastAuditId();
+    };
   }, []);
 
   const isDarkMode = useCallback(
@@ -87,27 +120,35 @@ export function PreferencesProvider({
 
   const setLuminosity = useCallback((value: PreferredLuminosity) => {
     setLuminosityState(value);
-    void setPreference("luminosity", value).catch((error) =>
-      console.error("Failed to save luminosity preference:", error),
-    );
+    void luminosityItem
+      .setValue(value)
+      .catch((error) =>
+        console.error("Failed to save luminosity preference:", error),
+      );
   }, []);
   const setSidebarIsOpen = useCallback((value: boolean) => {
     setSidebarState(value);
-    void setPreference("showSidebar", value).catch((error) =>
-      console.error("Failed to save sidebar preference:", error),
-    );
+    void showSidebarItem
+      .setValue(value)
+      .catch((error) =>
+        console.error("Failed to save sidebar preference:", error),
+      );
   }, []);
   const setViewMode = useCallback((value: ViewMode) => {
     setViewModeState(value);
-    void setPreference("viewMode", value).catch((error) =>
-      console.error("Failed to save view preference:", error),
-    );
+    void viewModeItem
+      .setValue(value)
+      .catch((error) =>
+        console.error("Failed to save view preference:", error),
+      );
   }, []);
   const updateLastAuditId = useCallback((value: string) => {
     setLastAuditId(value);
-    void setPreference("lastAuditId", value).catch((error) =>
-      console.error("Failed to save audit preference:", error),
-    );
+    void lastAuditIdItem
+      .setValue(value)
+      .catch((error) =>
+        console.error("Failed to save audit preference:", error),
+      );
   }, []);
 
   const toggleDarkMode = useCallback(

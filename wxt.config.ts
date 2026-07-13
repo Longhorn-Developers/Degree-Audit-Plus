@@ -1,14 +1,19 @@
 import { defineConfig } from "wxt";
+
+// See https://wxt.dev/api/config.html
 import os from "node:os";
 import path from "node:path";
 
-// See https://wxt.dev/api/config.html
+const profilePath = path.join(os.homedir(), ".chrome-extension-dev-profile");
 
 
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
- 
+  webExt: {
+    chromiumProfile: profilePath,
+    keepProfileChanges: true,
+  },
 
   // Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
   hooks: {

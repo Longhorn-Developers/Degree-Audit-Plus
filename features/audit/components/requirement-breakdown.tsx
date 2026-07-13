@@ -77,20 +77,20 @@ const RequirementStatusIcon = ({
 
   if (state === "completed") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 bg-[#5BA753] rounded shrink-0 mt-0.5">
+      <div className="flex items-center justify-center w-6 h-6 bg-dap-plan-green-light rounded shrink-0 mt-0.5">
         <Check className="text-white w-4 h-4" weight="bold" />
       </div>
     );
   }
   if (state === "not-started") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 bg-[#4A5568] rounded shrink-0 mt-0.5">
+      <div className="flex items-center justify-center w-6 h-6 bg-dap-status-slate rounded shrink-0 mt-0.5">
         <X className="text-white w-4 h-4" weight="bold" />
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-center w-6 h-6 bg-[#9CA3AF] rounded shrink-0 mt-0.5">
+    <div className="flex items-center justify-center w-6 h-6 bg-dap-gray rounded shrink-0 mt-0.5">
       <Minus className="text-white w-4 h-4" weight="bold" />
     </div>
   );
@@ -118,9 +118,9 @@ const RequirementBadge = ({
 };
 
 const statusColors: Record<PlannableStatus, string> = {
-  Completed: "bg-[#ECF8D0] border-[#9FCA5B]",
-  Planned: "bg-course-applied border-gray-200",
-  "In Progress": "bg-course-in-progress border-gray-200",
+  Completed: "bg-course-completed-bg border-course-completed-border",
+  Planned: "bg-course-planned-bg border-course-planned-border",
+  "In Progress": "bg-course-in-progress-bg border-course-in-progress-border",
   "Not Started": "bg-course-unknown border-gray-200",
 };
 

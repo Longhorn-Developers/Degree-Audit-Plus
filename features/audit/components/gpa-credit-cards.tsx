@@ -13,7 +13,7 @@ const InfoIcon = () => (
   <svg
     aria-hidden="true"
     viewBox="0 0 24 24"
-    className="h-6 w-6 shrink-0 text-[#1A2024]"
+    className="h-6 w-6 shrink-0 text-dap-dark"
     fill="none"
   >
     <path
@@ -36,10 +36,10 @@ const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => (
       rx="3.5"
       fill={
         state === "completed"
-          ? "#579D42"
+          ? "var(--color-dap-plan-green)"
           : state === "in-progress"
-            ? "#B7C6D1"
-            : "#333F48"
+            ? "var(--color-dap-slate-blue)"
+            : "var(--color-ut-charcoal)"
       }
     />
     {state === "completed" ? (

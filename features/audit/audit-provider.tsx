@@ -105,7 +105,7 @@ export function AuditContextProvider({
     () => getCompositeAuditRequirements(compositeAuditData),
     [compositeAuditData],
   );
-  const courseMap = auditData?.courses ?? {};
+  const courseMap = useMemo(() => auditData?.courses ?? {}, [auditData]);
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections, courseMap),
     [courseMap, sections],
@@ -157,7 +157,7 @@ export function AuditContextProvider({
     return () => {
       cancelled = true;
     };
-  }, [currentAuditId]);
+  }, [currentAuditId, updateLastAuditId]);
 
   const value = useMemo<AuditContextValue>(() => {
     const persist = async (auditId: string, updated: CachedAuditData) => {

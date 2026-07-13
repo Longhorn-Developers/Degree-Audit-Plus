@@ -13,7 +13,7 @@ import {
   DragOverlay,
   pointerWithin,
 } from "@dnd-kit/core";
-import { Plus } from "lucide-react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import CourseCard from "./course-card";
 import SemesterCard from "./semester-card";
@@ -85,7 +85,7 @@ const SemesterDropdowns = () => {
             />
           ))}
         <Button
-          className="w-full bg-[#579D42] text-white font-bold"
+          className="w-full bg-dap-plan-green text-white font-bold"
           onClick={() => {
             setExtraEmptySemesters((prev) => [
               ...prev,
@@ -97,7 +97,7 @@ const SemesterDropdowns = () => {
             ]);
           }}
         >
-          <Plus />
+          <PlusIcon />
           Add Future Semester
         </Button>
       </Grid>
