@@ -4,8 +4,6 @@ import type {
   AuditRequirement,
   CachedAuditData,
   CompositeAuditData,
-  CompositeAuditRequirement,
-  DuplicateCourseRequirementFlag,
 } from "@/domain/audit";
 import type {
   Course,
@@ -18,7 +16,6 @@ import { usePreferences } from "@/features/preferences/preferences-provider";
 import {
   calculateWeightedDegreeCompletion,
   getCompositeAuditRequirements,
-  getDuplicateCourseRequirementFlags,
 } from "@/lib/audit-calculations";
 import {
   getAuditData,
@@ -39,10 +36,6 @@ type SemesterInfo = Record<StringSemester, Course[]>;
 
 interface AuditContextValue {
   sections: AuditRequirement[];
-  courses: Course[];
-  compositeAuditData: CompositeAuditData;
-  compositeRequirements: CompositeAuditRequirement[];
-  duplicateCourseFlags: DuplicateCourseRequirementFlag[];
   history: AuditHistoryData;
   currentAuditId: string;
   currentAudit: AuditHistoryEntry;
@@ -61,8 +54,6 @@ interface AuditContextValue {
     requirementTitle: string,
     ruleTitle: string,
   ) => Promise<CourseId | null>;
-  removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
-  wipeAllPlannedCourses: () => Promise<number>;
 }
 
 const AuditContext = createContext<AuditContextValue | null>(null);
@@ -111,11 +102,6 @@ export function AuditContextProvider({
     [compositeAuditData],
   );
   const courseMap = auditData?.courses ?? {};
-  const compositeRequirements = sections;
-  const duplicateCourseFlags = useMemo(
-    () => getDuplicateCourseRequirementFlags(compositeAuditData),
-    [compositeAuditData],
-  );
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections, courseMap),
     [courseMap, sections],
@@ -233,10 +219,6 @@ export function AuditContextProvider({
     <AuditContext.Provider
       value={{
         sections,
-        courses: Object.values(courseMap),
-        compositeAuditData,
-        compositeRequirements,
-        duplicateCourseFlags,
         history,
         semesters,
         currentAuditId,
@@ -256,8 +238,6 @@ export function AuditContextProvider({
         },
         courseMap,
         addPlannedCourse,
-        removePlannedCourse,
-        wipeAllPlannedCourses,
       }}
     >
       {children}

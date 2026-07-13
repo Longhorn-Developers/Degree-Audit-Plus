@@ -69,8 +69,6 @@ const Sidebar = () => {
                 <DegreeAuditCard
                   key={id}
                   title={audit.title}
-                  majors={audit.majors}
-                  minors={audit.minors}
                   percentage={audit.percentage}
                   isSelected={currentAuditId === id}
                   onToggle={() => {

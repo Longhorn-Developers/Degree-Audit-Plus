@@ -37,8 +37,6 @@ interface CourseAddModalProps {
 
 interface CourseSearchData {
   searchQuery: string;
-  requirement: string;
-  catalogYear: string;
   department: string;
   lowerDivision: boolean;
   upperDivision: boolean;
@@ -62,7 +60,6 @@ function waitForNextPaint(): Promise<void> {
 }
 
 interface CourseSearchContentProps {
-  recommendedCourses?: CatalogCourse[];
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
   isLoading?: boolean;
 }
@@ -104,19 +101,13 @@ function DivisionToggle({
 }
 
 function CourseSearchContent({
-  recommendedCourses,
   onSearchSubmit,
   isLoading = false,
 }: CourseSearchContentProps) {
-  const { recommendedCourses: sharedRecommendedCourses } =
-    useCourseModalContext();
-  const displayedRecommendedCourses = dedupeCatalogCoursesByCode(
-    recommendedCourses ?? sharedRecommendedCourses,
-  );
+  const { recommendedCourses } = useCourseModalContext();
+  const displayedRecommendedCourses = dedupeCatalogCoursesByCode(recommendedCourses);
   const [formData, setFormData] = useState<CourseSearchData>({
     searchQuery: "",
-    requirement: "",
-    catalogYear: "",
     department: "",
     lowerDivision: true,
     upperDivision: true,
@@ -505,17 +496,11 @@ export default function CourseAddModal({
 
   return (
     <div
-      className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center transition-all duration-200",
-        isOpen ? "bg-black/50 opacity-100" : "opacity-0 pointer-events-none",
-      )}
+      className="fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 bg-black/50 opacity-100"
       onClick={onClose}
     >
       <div
-        className={cn(
-          "bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden",
-          isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0",
-        )}
+        className="bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden scale-100 opacity-100"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-7 pt-7 pb-7">

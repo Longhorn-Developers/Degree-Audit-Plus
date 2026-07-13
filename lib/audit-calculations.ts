@@ -86,7 +86,6 @@ export function calculateWeightedDegreeCompletion(
     total: { current: 0, planned: 0, total: 0 },
     sections: [],
   };
-  console.log("sections", sections);
   sections.forEach((section) => {
     const sectionProgress = {
       title: section.title,
@@ -138,6 +137,5 @@ export function calculateWeightedDegreeCompletion(
     (acc, section) => acc + section.progress.total,
     0,
   );
-  console.log("[Audit Calculations] results", results);
   return results;
 }

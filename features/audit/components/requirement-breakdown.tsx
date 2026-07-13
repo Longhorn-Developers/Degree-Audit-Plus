@@ -117,27 +117,12 @@ const RequirementBadge = ({
   );
 };
 
-const statusIcons = {
-  Completed: {
-    icon: null,
-    color: "bg-[#ECF8D0] border-[#9FCA5B]",
-  },
-  Planned: {
-    icon: null,
-    color: "bg-course-applied border-gray-200",
-  },
-  "In Progress": {
-    icon: null,
-    color: "bg-course-in-progress border-gray-200",
-  },
-  "Not Started": {
-    icon: null,
-    color: "bg-course-unknown border-gray-200",
-  },
-} as const satisfies Record<
-  PlannableStatus,
-  { icon: React.ReactNode | null; color: string }
->;
+const statusColors: Record<PlannableStatus, string> = {
+  Completed: "bg-[#ECF8D0] border-[#9FCA5B]",
+  Planned: "bg-course-applied border-gray-200",
+  "In Progress": "bg-course-in-progress border-gray-200",
+  "Not Started": "bg-course-unknown border-gray-200",
+};
 
 // Course pill component matching Figma design
 const CoursePill = ({ course }: { course: Course }) => {
@@ -148,7 +133,7 @@ const CoursePill = ({ course }: { course: Course }) => {
     <div
       className={cn(
         "grid grid-cols-[100px_1fr_auto] items-center gap-4 px-4 py-3 rounded-lg text-sm w-full border text-gray-900",
-        statusIcons[course.status].color,
+        statusColors[course.status],
       )}
     >
       <span className="font-semibold min-w-[80px]">{course.code}</span>

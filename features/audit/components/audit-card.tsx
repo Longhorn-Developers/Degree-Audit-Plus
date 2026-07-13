@@ -1,4 +1,3 @@
-import type { AuditHistoryEntry } from "@/domain/audit";
 import {
   CopySimple,
   DotsThree,
@@ -7,7 +6,9 @@ import {
 } from "@phosphor-icons/react";
 import React from "react";
 
-export interface DegreeAuditCardProps extends AuditHistoryEntry {
+export interface DegreeAuditCardProps {
+  title?: string;
+  percentage?: number;
   isSelected?: boolean;
   onToggle?: () => void;
   onRename?: (title: string) => void;
@@ -17,17 +18,15 @@ export interface DegreeAuditCardProps extends AuditHistoryEntry {
  * Sidebar variant - collapsible with caret icons and menu dots
  */
 const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
-  title = "Degree Audit 1",
-  majors = ["Informatics", "Design"],
-  minors = ["Business"],
-  percentage = 90,
+  title,
+  percentage,
   isSelected = false,
   onToggle,
   onRename,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [draftTitle, setDraftTitle] = React.useState(title);
+  const [draftTitle, setDraftTitle] = React.useState(title ?? "");
 
   React.useEffect(() => {
     if (!isSelected) {
@@ -43,12 +42,12 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     if (nextTitle && nextTitle !== title) {
       onRename?.(nextTitle);
     } else {
-      setDraftTitle(title);
+      setDraftTitle(title ?? "");
     }
   };
 
   const startRename = () => {
-    setDraftTitle(title);
+    setDraftTitle(title ?? "");
     setIsEditing(true);
     setMenuOpen(false);
   };

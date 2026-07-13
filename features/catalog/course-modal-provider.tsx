@@ -18,7 +18,6 @@ interface CourseModalContextType {
   recommendedCourses: CatalogCourse[];
   recommendationScope: RecommendationScope | null;
   isLoadingRecommendedCourses: boolean;
-  toggleModal: () => void;
   openModal: (scope?: RecommendationScope) => void;
   closeModal: () => void;
 }
@@ -79,6 +78,11 @@ export const CourseModalContextProvider = ({
     recommendationScope?.ruleTitle,
   ]);
 
+  const closeModal = () => {
+    setIsOpen(false);
+    setRecommendationScope(null);
+  };
+
   return (
     <CourseModalContext.Provider
       value={{
@@ -86,16 +90,12 @@ export const CourseModalContextProvider = ({
         recommendedCourses,
         recommendationScope,
         isLoadingRecommendedCourses,
-        toggleModal: () => setIsOpen(!isOpen),
         openModal: (scope) => {
           setRecommendedCourses([]);
           setRecommendationScope(scope ?? null);
           setIsOpen(true);
         },
-        closeModal: () => {
-          setIsOpen(false);
-          setRecommendationScope(null);
-        },
+        closeModal,
       }}
     >
       {children}
@@ -105,10 +105,7 @@ export const CourseModalContextProvider = ({
         recommendedCourses={recommendedCourses}
         recommendationScope={recommendationScope}
         isLoading={isLoadingRecommendedCourses}
-        onClose={() => {
-          setIsOpen(false);
-          setRecommendationScope(null);
-        }}
+        onClose={closeModal}
       />
     </CourseModalContext.Provider>
   );

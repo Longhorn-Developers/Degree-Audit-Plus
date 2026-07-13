@@ -25,7 +25,7 @@ type GraphProps = GraphStyleProps & {
   children?: React.ReactNode;
   bars: Bar[];
   tooltipContent?: (bar: Bar) => React.ReactNode;
-} & GraphStyleProps;
+};
 
 function lowerOpacityColor(
   color: `rgb(${number}, ${number}, ${number})`,
@@ -50,7 +50,6 @@ type InnerDonutGraphStylingProps = {
 
 type InnerDonutGraphProps = {
   bar: Bar;
-  index: number;
   animatedProgress: number;
   animatedPlannedProgress: number;
   onMouseEnter: () => void;
@@ -176,7 +175,6 @@ const InnerDonutGraph = (props: InnerDonutGraphProps) => {
     bgOpacity = 0.1,
     ...other
   } = props;
-  // Calculate stroke-dasharray for circular progress
   const svgRef = useRef<SVGSVGElement>(null);
   const circumference = 2 * Math.PI * radius;
   const progressLength =
@@ -421,7 +419,6 @@ const MultiDonutGraph = (props: GraphProps) => {
           <InnerDonutGraph
             key={index}
             bar={bar}
-            index={index}
             radius={startRadius - index * (strokeWidth + gap)}
             color={bar.color}
             animatedProgress={animatedProgress[index]?.current || 0}
