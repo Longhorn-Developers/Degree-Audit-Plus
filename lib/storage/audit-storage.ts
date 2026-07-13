@@ -4,21 +4,35 @@ import type {
   CachedAuditData,
 } from "@/domain/audit";
 import { browser } from "wxt/browser";
+import { storage } from "wxt/utils/storage";
 
-const AUDIT_HISTORY_KEY = "auditHistory";
 const AUDIT_DATA_PREFIX = "auditData_";
 
-export async function saveAuditHistory(
+const createAuditHistoryItem = () =>
+  storage.defineItem<AuditHistoryData>("local:auditHistory");
+let auditHistoryItem: ReturnType<typeof createAuditHistoryItem> | undefined;
+
+function getAuditHistoryItem() {
+  // Avoid touching extension storage when consumers only import audit-data helpers.
+  return (auditHistoryItem ??= createAuditHistoryItem());
+}
+
+export function watchAuditHistory(
+  listener: (history: AuditHistoryData | null) => void,
+): () => void {
+  return getAuditHistoryItem().watch(listener);
+}
+
+export function saveAuditHistory(
   audits: AuditHistoryEntry[],
   error?: string,
 ): Promise<void> {
   const data: AuditHistoryData = { audits, timestamp: Date.now(), error };
-  await browser.storage.local.set({ [AUDIT_HISTORY_KEY]: data });
+  return getAuditHistoryItem().setValue(data);
 }
 
-export async function getAuditHistory(): Promise<AuditHistoryData | null> {
-  const result = await browser.storage.local.get(AUDIT_HISTORY_KEY);
-  return (result[AUDIT_HISTORY_KEY] as AuditHistoryData | undefined) ?? null;
+export function getAuditHistory(): Promise<AuditHistoryData | null> {
+  return getAuditHistoryItem().getValue();
 }
 
 export async function renameAudit(
@@ -35,7 +49,7 @@ export async function renameAudit(
     ),
     timestamp: Date.now(),
   };
-  await browser.storage.local.set({ [AUDIT_HISTORY_KEY]: updatedHistory });
+  await getAuditHistoryItem().setValue(updatedHistory);
   return updatedHistory;
 }
 
@@ -59,6 +73,7 @@ export async function getAuditData(
 export async function getUncachedAuditIds(
   auditIds: string[],
 ): Promise<string[]> {
-  const cached = await Promise.all(auditIds.map(getAuditData));
-  return auditIds.filter((_, index) => !cached[index]);
+  const keys = auditIds.map((id) => `${AUDIT_DATA_PREFIX}${id}`);
+  const cached = await browser.storage.local.get(keys);
+  return auditIds.filter((id) => cached[`${AUDIT_DATA_PREFIX}${id}`] == null);
 }

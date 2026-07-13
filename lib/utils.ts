@@ -74,19 +74,3 @@ export function getColorByCourseCode(code: CourseCode) {
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return CATEGORY_COLORS[departmentSum % CATEGORY_COLORS.length];
 }
-
-export function getColorBySectionTitle(title: string) {
-  const titleSum = title
-    .toLowerCase()
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return CATEGORY_COLORS[titleSum % CATEGORY_COLORS.length];
-}
-
-export function getColorByIndex(index: number) {
-  return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
-}
-
-export function formatMajorLabel(major: string): string {
-  return major;
-}

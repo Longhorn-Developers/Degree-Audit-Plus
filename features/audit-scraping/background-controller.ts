@@ -110,10 +110,12 @@ export class AuditBatchController {
     } finally {
       await this.dependencies.closeWindow();
       await this.dependencies.broadcast("complete");
-      console.log(
-        `Audit batch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed`,
-        result,
-      );
+      const summary = `Audit batch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed`;
+      if (result.failed.length) {
+        console.warn(summary, result);
+      } else if (import.meta.env.DEV) {
+        console.log(summary, result);
+      }
     }
 
     return result;
@@ -238,12 +240,6 @@ function clickRunAuditButton(retry = false): void {
 }
 
 function registerAuditNavigationHandlers(): void {
-  browser.action.onClicked.addListener((tab) => {
-    if (tab.id !== undefined) {
-      void sendTabMessage(tab.id, { type: "TOGGLE_POPUP" }).catch(() => {});
-    }
-  });
-
   browser.runtime.onMessage.addListener(
     (message: ExtensionMessage, _sender, sendResponse) => {
       if (message.type === "OPEN_DEGREE_AUDIT") {

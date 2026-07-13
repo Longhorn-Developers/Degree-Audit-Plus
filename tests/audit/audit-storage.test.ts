@@ -1,21 +1,58 @@
-import { expect, mock, test } from "bun:test";
-import type { CachedAuditData } from "../../domain/audit";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
+import type { AuditHistoryData, CachedAuditData } from "../../domain/audit";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 
-const store: Record<string, unknown> = {};
-mock.module("wxt/browser", () => ({
-  browser: {
-    storage: {
-      local: {
-        get: async (key: string) => ({ [key]: store[key] }),
-        set: async (values: Record<string, unknown>) =>
-          Object.assign(store, values),
-      },
-    },
-  },
-}));
+mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
+mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
 
-const { getAuditData, saveAuditData } =
-  await import("../../lib/storage/audit-storage");
+const {
+  getAuditData,
+  getAuditHistory,
+  getUncachedAuditIds,
+  saveAuditData,
+  saveAuditHistory,
+  watchAuditHistory,
+} = await import("../../lib/storage/audit-storage");
+
+beforeEach(() => {
+  fakeBrowser.reset();
+});
+
+test("reads existing audit history without migrating its storage key", async () => {
+  const history: AuditHistoryData = {
+    audits: [{ auditId: "audit-1", title: "Computer Science" }],
+    timestamp: 123,
+  };
+  await fakeBrowser.storage.local.set({ auditHistory: history });
+
+  expect(await getAuditHistory()).toEqual(history);
+});
+
+test("watches audit history through the typed storage item", async () => {
+  const updates: Array<AuditHistoryData | null> = [];
+  const unwatch = watchAuditHistory((history) => updates.push(history));
+
+  await saveAuditHistory([{ auditId: "audit-1" }]);
+  unwatch();
+  await saveAuditHistory([{ auditId: "audit-2" }]);
+
+  expect(updates).toHaveLength(1);
+  expect(updates[0]?.audits).toEqual([{ auditId: "audit-1" }]);
+});
+
+test("finds uncached audits with one storage read", async () => {
+  await fakeBrowser.storage.local.set({
+    auditData_cached: { requirements: [], courses: {} },
+    auditData_null: null,
+  });
+  const get = spyOn(fakeBrowser.storage.local, "get");
+
+  expect(
+    await getUncachedAuditIds(["cached", "missing", "null", "missing"]),
+  ).toEqual(["missing", "null", "missing"]);
+  expect(get).toHaveBeenCalledTimes(1);
+  get.mockRestore();
+});
 
 test("reloads the exact canonical audit object that was saved", async () => {
   const audit: CachedAuditData = {

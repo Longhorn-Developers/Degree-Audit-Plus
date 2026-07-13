@@ -1,4 +1,8 @@
-import { getAuditHistory } from "@/lib/storage/audit-storage";
+import {
+  getAuditHistory,
+  watchAuditHistory,
+} from "@/lib/storage/audit-storage";
+import type { AuditHistoryData } from "@/domain/audit";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
@@ -14,24 +18,14 @@ const TryDAPBanner = () => {
   );
 
   useEffect(() => {
-    getAuditHistory()
-      .then((data) => {
-        setFirstAuditId(data?.audits?.[0]?.auditId);
-      })
-      .catch(() => {});
-
-    const storageListener = (
-      changes: Record<string, { newValue?: unknown }>,
-    ) => {
-      if (changes["auditHistory"]?.newValue) {
-        const data = changes["auditHistory"].newValue as {
-          audits?: { auditId?: string }[];
-        };
-        setFirstAuditId(data?.audits?.[0]?.auditId);
-      }
+    const updateFirstAudit = (data: AuditHistoryData | null) => {
+      setFirstAuditId(data?.audits[0]?.auditId);
     };
-    browser.storage.onChanged.addListener(storageListener);
-    return () => browser.storage.onChanged.removeListener(storageListener);
+
+    void getAuditHistory()
+      .then(updateFirstAudit)
+      .catch(() => {});
+    return watchAuditHistory(updateFirstAudit);
   }, []);
 
   const handleClose = () => {

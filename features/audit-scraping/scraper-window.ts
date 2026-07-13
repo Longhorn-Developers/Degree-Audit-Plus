@@ -88,13 +88,17 @@ export async function getOrCreateScraperWindow(): Promise<number> {
     }
   }
 
-  console.log(`[Scraper] Created minimized window: ${scraperWindowId}`);
+  if (import.meta.env.DEV) {
+    console.log(`[Scraper] Created minimized window: ${scraperWindowId}`);
+  }
   return scraperWindowId;
 }
 
 export async function closeScraperWindow(): Promise<void> {
   if (scraperWindowId !== null) {
-    console.log(`[Scraper] Closing window: ${scraperWindowId}`);
+    if (import.meta.env.DEV) {
+      console.log(`[Scraper] Closing window: ${scraperWindowId}`);
+    }
     await browser.windows.remove(scraperWindowId).catch(() => {});
     scraperWindowId = null;
   }
@@ -145,7 +149,7 @@ export async function createScraperTab(
     // Safety timeout
     const timeoutId = setTimeout(() => {
       if (!isResolved) {
-        console.log(`[Scraper] Timeout for tab ${tabId}, closing`);
+        console.warn(`[Scraper] Timeout for tab ${tabId}, closing`);
         cleanup();
         if (tabId) {
           browser.tabs.remove(tabId).catch(() => {});

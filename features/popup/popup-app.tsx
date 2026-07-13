@@ -1,5 +1,8 @@
-import { getAuditHistory } from "@/lib/storage/audit-storage";
-import type { AuditHistoryEntry } from "@/domain/audit";
+import {
+  getAuditHistory,
+  watchAuditHistory,
+} from "@/lib/storage/audit-storage";
+import type { AuditHistoryData, AuditHistoryEntry } from "@/domain/audit";
 import {
   sendRuntimeMessage,
   type ExtensionMessage,
@@ -18,26 +21,28 @@ export default function App() {
   const [showAll, setShowAll] = useState(false);
   const [runningAudit, setRunningAudit] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const applyAuditHistory = useCallback((data: AuditHistoryData | null) => {
+    if (data?.error) {
+      setError(data.error);
+      setAudits([]);
+      return;
+    }
+    setAudits(data?.audits ?? []);
+    setError(null);
+  }, []);
+
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
   const refreshAudits = useCallback(async () => {
     try {
-      const data = await getAuditHistory();
-      if (data) {
-        if (data.error) {
-          setError(data.error);
-          setAudits([]);
-        } else {
-          setAudits(data.audits);
-          setError(null);
-        }
-      }
+      applyAuditHistory(await getAuditHistory());
     } catch (e) {
       console.error("Error loading audit history:", e);
       setError("Failed to load audit history");
     }
-  }, []);
+  }, [applyAuditHistory]);
 
   useEffect(() => {
     refreshAudits().finally(() => setLoading(false));
@@ -62,23 +67,17 @@ export default function App() {
       }
     };
 
-    // Listen for storage changes to detect when audit completes and reload data
-    const storageListener = async (
-      changes: Record<string, Browser.storage.StorageChange>,
-    ) => {
-      if (changes.auditHistory) {
-        setRunningAudit(false);
-        await refreshAudits();
-      }
-    };
+    const unwatchAuditHistory = watchAuditHistory((data) => {
+      setRunningAudit(false);
+      applyAuditHistory(data);
+    });
 
     browser.runtime.onMessage.addListener(listener);
-    browser.storage.onChanged.addListener(storageListener);
     return () => {
       browser.runtime.onMessage.removeListener(listener);
-      browser.storage.onChanged.removeListener(storageListener);
+      unwatchAuditHistory();
     };
-  }, [refreshAudits]);
+  }, [applyAuditHistory]);
 
   const handleOpenDegreeAuditPage = (auditId: string | undefined) => {
     sendRuntimeMessage({

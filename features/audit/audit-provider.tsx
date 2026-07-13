@@ -17,12 +17,12 @@ import {
   calculateWeightedDegreeCompletion,
   getCompositeAuditRequirements,
 } from "@/lib/audit-calculations";
-import { formatMajorLabel } from "@/lib/utils";
 import {
   getAuditData,
   getAuditHistory,
   renameAudit,
   saveAuditData,
+  watchAuditHistory,
 } from "@/lib/storage/audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import LoadingPage from "./components/loading-page";
@@ -84,7 +84,7 @@ export function AuditContextProvider({
     [currentAuditId, history],
   );
   const currentAuditName =
-    currentAudit.majors?.map(formatMajorLabel).join("; ") ??
+    currentAudit.majors?.join("; ") ??
     currentAudit.title ??
     "Degree Requirements";
   const compositeAuditData = useMemo<CompositeAuditData>(
@@ -121,6 +121,12 @@ export function AuditContextProvider({
       }, {} as SemesterInfo),
     [courseMap],
   );
+
+  useEffect(() => {
+    return watchAuditHistory((storedHistory) => {
+      if (storedHistory) setHistory(storedHistory);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,7 +209,12 @@ export function AuditContextProvider({
       },
       addPlannedCourse: async (course, requirementTitle, ruleTitle) => {
         if (!auditData || !currentAuditId) return null;
-        const result = addCourse(auditData, course, requirementTitle, ruleTitle);
+        const result = addCourse(
+          auditData,
+          course,
+          requirementTitle,
+          ruleTitle,
+        );
         if (!result) return null;
         await persist(currentAuditId, result.audit);
         return result.courseId;
@@ -224,7 +235,9 @@ export function AuditContextProvider({
 
   if (!loaded || !currentAuditId || !history) return <LoadingPage />;
 
-  return <AuditContext.Provider value={value}>{children}</AuditContext.Provider>;
+  return (
+    <AuditContext.Provider value={value}>{children}</AuditContext.Provider>
+  );
 }
 
 export function useAuditContext(): AuditContextValue {

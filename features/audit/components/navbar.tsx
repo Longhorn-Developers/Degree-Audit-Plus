@@ -2,7 +2,7 @@ import { IconButton } from "@/components/ui/button";
 import { HStack, VStack } from "@/components/ui/stack";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import { useAuditContext } from "../audit-provider";
-import { cn, formatMajorLabel } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   ExportIcon,
   MoonIcon,
@@ -66,12 +66,12 @@ const Navbar = () => {
             <HStack gap={2} y="middle" className="flex-wrap">
               {majors.map((m, i) => (
                 <span
-                  key={`${formatMajorLabel(m)}-${i}`}
+                  key={`${m}-${i}`}
                   className={`inline-flex items-center rounded-[6px] px-2.5 py-[3px] text-[12px] font-medium leading-none ${
                     MAJOR_TAG_STYLES[i % MAJOR_TAG_STYLES.length]
                   }`}
                 >
-                  {formatMajorLabel(m)}
+                  {m}
                 </span>
               ))}
             </HStack>

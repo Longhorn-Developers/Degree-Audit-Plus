@@ -2,7 +2,6 @@ import type { CachedAuditData } from "../../domain/audit";
 import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
-  | { type: "TOGGLE_POPUP" }
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
   | { type: "RUN_NEW_AUDIT" }
   | { type: "GET_SYNC_STATUS" }
