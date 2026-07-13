@@ -6,6 +6,7 @@ import {
   mapCatalogCourseToPreview,
 } from "@/features/catalog/catalog-course-mappers";
 import { searchCatalogCourses } from "../catalog-db";
+import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
 import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,
@@ -14,7 +15,7 @@ import {
   GraduationCapIcon,
   PlusIcon,
 } from "@phosphor-icons/react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { cn } from "~/lib/utils";
 import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
@@ -42,16 +43,7 @@ interface CourseSearchData {
   upperDivision: boolean;
 }
 
-const DEPARTMENTS = [
-  "Computer Science",
-  "Mathematics",
-  "Engineering",
-  "Biology",
-  "Chemistry",
-  "Physics",
-  "English",
-  "History",
-];
+const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
 
 function waitForNextPaint(): Promise<void> {
   return new Promise((resolve) => {
@@ -285,30 +277,20 @@ function FulfillingCoursesContent({
   const { addPlannedCourse } = useAuditContext();
   const displayedCourses = dedupeCatalogCoursesByCode(courses);
   const [query, setQuery] = useState("");
-  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [pickedId, setPickedId] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    setSelectedCourseId(displayedCourses[0]?.uniqueId ?? null);
-  }, [displayedCourses[0]?.uniqueId]);
 
   const filteredCourses = filterCatalogCourses(displayedCourses, query);
   const hasSearchQuery = query.trim().length > 0;
 
-  useEffect(() => {
-    const selectedCourseIsVisible = filteredCourses.some(
-      (course) => course.uniqueId === selectedCourseId,
-    );
-
-    if (!selectedCourseIsVisible) {
-      setSelectedCourseId(filteredCourses[0]?.uniqueId ?? null);
-    }
-  }, [filteredCourses.length, filteredCourses[0]?.uniqueId, selectedCourseId]);
-
+  // Effective selection: the user's explicit pick when it's still visible,
+  // otherwise the first visible course. Derived during render, no effects.
   const selectedCourse =
-    filteredCourses.find((course) => course.uniqueId === selectedCourseId) ??
+    filteredCourses.find((course) => course.uniqueId === pickedId) ??
+    filteredCourses[0] ??
     null;
+  const selectedCourseId = selectedCourse?.uniqueId ?? null;
   const canAddCourse =
     Boolean(
       selectedCourse &&
@@ -370,7 +352,7 @@ function FulfillingCoursesContent({
               <button
                 type="button"
                 key={course.uniqueId}
-                onClick={() => setSelectedCourseId(course.uniqueId)}
+                onClick={() => setPickedId(course.uniqueId)}
                 className={cn(
                   "w-full min-h-[70px] grid grid-cols-[22px_1fr] items-stretch overflow-hidden rounded-md border bg-background text-left transition-colors",
                   isSelected

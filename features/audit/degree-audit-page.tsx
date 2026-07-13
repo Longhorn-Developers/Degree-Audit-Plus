@@ -1,8 +1,8 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
 import "@/entrypoints/styles/content.css";
-import { formatMajorLabel } from "@/lib/utils";
 import { useAuditContext } from "./audit-provider";
+import { groupAuditSections } from "./section-groups";
 import { CourseSearchPanel } from "@/features/catalog/components/course-add-modal";
 import DegreeCompletionDonut from "./components/degree-completion-donut";
 import { CreditHourTotalsCard, GPATotalsCard } from "./components/gpa-credit-cards";
@@ -74,83 +74,41 @@ const SidePanel = () => {
   );
 };
 
-const isStandaloneSection = (title: string) => {
-  const t = title.toLowerCase();
-  return t.includes("core") || t.includes("credit");
-};
-
-const isPreUnifiedSection = (title: string) =>
-  title.toLowerCase().includes("core");
-const isPostUnifiedSection = (title: string) =>
-  title.toLowerCase().includes("credit");
-
 const MainContent = () => {
-  const { progresses, sections, history, currentAuditId } = useAuditContext();
-  const nonGPASections = sections.filter(
-    (section) => !section.title.toLowerCase().includes("gpa"),
-  );
-
-  const currentAudit = history.audits.find((a) => a.auditId === currentAuditId);
-  const degreeTitle =
-    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
-    currentAudit?.title ??
-    "Degree Audit";
-
-  const preUnifiedSections = nonGPASections.filter((s) =>
-    isPreUnifiedSection(s.title),
-  );
-  const postUnifiedSections = nonGPASections.filter((s) =>
-    isPostUnifiedSection(s.title),
-  );
-  const unifiedSectionInputs = nonGPASections.filter(
-    (s) => !isStandaloneSection(s.title),
-  );
-
-  const unifiedSections = unifiedSectionInputs
-    .map((section) => {
-      const originalIdx = sections.findIndex((s) => s.title === section.title);
-      const sectionProgress = progresses.sections[originalIdx];
-      if (!sectionProgress || sectionProgress.progress.total <= 0) return null;
-      return {
-        title: section.title,
-        hours: sectionProgress.progress,
-        requirements: section.rules ?? [],
-      };
-    })
-    .filter((s): s is NonNullable<typeof s> => s !== null);
-
-  const renderStandalone = (
-    section: (typeof nonGPASections)[0],
-    colorIndex: number,
-  ) => {
-    const originalIdx = sections.findIndex((s) => s.title === section.title);
-    const sectionProgress = progresses.sections[originalIdx];
-    return (
-      sectionProgress?.progress.total > 0 && (
-        <RequirementBreakdown
-          key={section.title}
-          title={section.title}
-          hours={sectionProgress.progress}
-          requirements={section.rules ?? []}
-          colorIndex={colorIndex}
-        />
-      )
-    );
-  };
+  const { progresses, sections, currentAuditName } = useAuditContext();
+  const { pre, unified, post } = groupAuditSections(sections, progresses);
 
   return (
     <VStack className="w-full">
       <Title text="Degree Progress Overview" />
-      {preUnifiedSections.map((section, idx) => renderStandalone(section, idx))}
-      {unifiedSections.length > 0 && (
+      {pre.map((section, idx) => (
+        <RequirementBreakdown
+          key={section.title}
+          title={section.title}
+          hours={section.progress}
+          requirements={section.rules}
+          colorIndex={idx}
+        />
+      ))}
+      {unified.length > 0 && (
         <UnifiedDegreeCard
-          degreeTitle={degreeTitle}
-          sections={unifiedSections}
+          degreeTitle={currentAuditName}
+          sections={unified.map((section) => ({
+            title: section.title,
+            hours: section.progress,
+            requirements: section.rules,
+          }))}
         />
       )}
-      {postUnifiedSections.map((section, idx) =>
-        renderStandalone(section, preUnifiedSections.length + idx),
-      )}
+      {post.map((section, idx) => (
+        <RequirementBreakdown
+          key={section.title}
+          title={section.title}
+          hours={section.progress}
+          requirements={section.rules}
+          colorIndex={pre.length + idx}
+        />
+      ))}
     </VStack>
   );
 };

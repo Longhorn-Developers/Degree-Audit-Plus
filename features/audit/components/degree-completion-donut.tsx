@@ -1,77 +1,43 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import MultiDonutGraph, { Bar, GraphStyleProps } from "./graph";
-import type { PlannableProgress } from "@/domain/progress";
-import { CATEGORY_COLORS, formatMajorLabel } from "@/lib/utils";
+import { CATEGORY_COLORS } from "@/lib/utils";
 import { useAuditContext } from "../audit-provider";
+import { groupAuditSections } from "../section-groups";
 
-const isStandaloneSection = (title: string) => {
-  const t = title.toLowerCase();
-  return t.includes("core") || t.includes("credit");
-};
-
-const isPreUnifiedSection = (title: string) =>
-  title.toLowerCase().includes("core");
-const isPostUnifiedSection = (title: string) =>
-  title.toLowerCase().includes("credit");
-
-function buildDonutBars(
-  sections: { title: string; progress: PlannableProgress }[],
-  unifiedTitle: string,
-): Bar[] {
-  const nonGPA = sections.filter((s) => !s.title.toLowerCase().includes("gpa"));
-  const preUnified = nonGPA.filter((s) => isPreUnifiedSection(s.title));
-  const postUnified = nonGPA.filter((s) => isPostUnifiedSection(s.title));
-  const unified = nonGPA.filter((s) => !isStandaloneSection(s.title));
+const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
+  const { progresses, sections, currentAudit, currentAuditName } =
+    useAuditContext();
+  const { pre, unified, post } = groupAuditSections(sections, progresses);
 
   const bars: Bar[] = [];
 
-  preUnified.forEach((section, idx) => {
-    if (section.progress.total > 0) {
-      bars.push({
-        title: section.title,
-        color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length].rgb,
-        percentage: section.progress,
-      });
-    }
+  pre.forEach((section, idx) => {
+    bars.push({
+      title: section.title,
+      color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length].rgb,
+      percentage: section.progress,
+    });
   });
 
-  const unifiedTotal = unified.reduce((sum, s) => sum + s.progress.total, 0);
-  if (unifiedTotal > 0) {
+  if (unified.length > 0) {
     bars.push({
-      title: unifiedTitle,
+      title: currentAuditName,
       color: CATEGORY_COLORS[5].rgb,
       percentage: {
         current: unified.reduce((sum, s) => sum + s.progress.current, 0),
         planned: unified.reduce((sum, s) => sum + s.progress.planned, 0),
-        total: unifiedTotal,
+        total: unified.reduce((sum, s) => sum + s.progress.total, 0),
       },
     });
   }
 
-  postUnified.forEach((section, idx) => {
-    if (section.progress.total > 0) {
-      bars.push({
-        title: section.title,
-        color:
-          CATEGORY_COLORS[(preUnified.length + idx) % CATEGORY_COLORS.length]
-            .rgb,
-        percentage: section.progress,
-      });
-    }
+  post.forEach((section, idx) => {
+    bars.push({
+      title: section.title,
+      color: CATEGORY_COLORS[(pre.length + idx) % CATEGORY_COLORS.length].rgb,
+      percentage: section.progress,
+    });
   });
-
-  return bars;
-}
-
-const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
-  const { progresses, history, currentAuditId } = useAuditContext();
-  const currentAudit = history?.audits?.find(
-    (a, i) => (a.auditId || String(i)) === currentAuditId,
-  );
-  const unifiedTitle =
-    currentAudit?.majors?.map(formatMajorLabel).join("; ") ??
-    "Degree Requirements";
-  const bars = buildDonutBars(progresses.sections, unifiedTitle);
 
   const overallPercentage =
     (currentAudit?.percentage ??

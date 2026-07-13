@@ -277,24 +277,33 @@ const ProgressBar = ({
   );
 };
 
-type RequirementBreakdownProps = {
+type CollapsibleProgressCardProps = {
   title: string;
-  hours: Progress;
-  requirements: RequirementRule[];
+  current: number;
+  total: number;
+  unit: ProgressLabelUnit;
   colorIndex?: number;
+  children: React.ReactNode;
 };
-const RequirementBreakdown = (props: RequirementBreakdownProps) => {
-  const { title, hours, requirements, colorIndex = 0 } = props;
+
+// Shared card shell: colored left border, a collapsible header with title,
+// progress bar and summary, plus children rendered only while expanded.
+const CollapsibleProgressCard = ({
+  title,
+  current,
+  total,
+  unit,
+  colorIndex = 0,
+  children,
+}: CollapsibleProgressCardProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const borderColor = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
-  const progressUnit = getSharedProgressUnit(requirements);
 
   return (
     <div
       className="w-full bg-background rounded-md border border-gray-200 overflow-hidden border-l-4"
       style={{ borderLeftColor: borderColor.tailwind }}
     >
-      {/* Main header */}
       <button
         className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
         onClick={() => setIsOpen(!isOpen)}
@@ -302,14 +311,14 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
         <VStack gap={2}>
           <span className="font-bold text-base text-text">{title}</span>
           <ProgressBar
-            current={hours.current}
-            total={hours.total}
+            current={current}
+            total={total}
             colorIndex={colorIndex}
           />
         </VStack>
         <HStack y="middle" gap={2}>
           <span className="text-text font-medium text-sm">
-            {formatProgressSummary(hours.current, hours.total, progressUnit)}
+            {formatProgressSummary(current, total, unit)}
           </span>
           {isOpen ? (
             <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
@@ -318,25 +327,43 @@ const RequirementBreakdown = (props: RequirementBreakdownProps) => {
           )}
         </HStack>
       </button>
-
-      {/* Expanded content */}
-      {isOpen && (
-        <div className="bg-background">
-          {/* Requirement rows */}
-          <div className="px-4 py-4">
-            {requirements.map((requirement, idx) => (
-              <RequirementRow
-                key={`${requirement.text.slice(0, 20)}-${idx}`}
-                requirement={requirement}
-                requirementTitle={title}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {isOpen && children}
     </div>
   );
 };
+
+type RequirementBreakdownProps = {
+  title: string;
+  hours: Progress;
+  requirements: RequirementRule[];
+  colorIndex?: number;
+};
+const RequirementBreakdown = ({
+  title,
+  hours,
+  requirements,
+  colorIndex = 0,
+}: RequirementBreakdownProps) => (
+  <CollapsibleProgressCard
+    title={title}
+    current={hours.current}
+    total={hours.total}
+    unit={getSharedProgressUnit(requirements)}
+    colorIndex={colorIndex}
+  >
+    <div className="bg-background">
+      <div className="px-4 py-4">
+        {requirements.map((requirement, idx) => (
+          <RequirementRow
+            key={`${requirement.text.slice(0, 20)}-${idx}`}
+            requirement={requirement}
+            requirementTitle={title}
+          />
+        ))}
+      </div>
+    </div>
+  </CollapsibleProgressCard>
+);
 
 export default RequirementBreakdown;
 
@@ -355,8 +382,6 @@ export const UnifiedDegreeCard = ({
   degreeTitle,
   sections,
 }: UnifiedDegreeCardProps) => {
-  const [isOpen, setIsOpen] = useState(true);
-
   const totalCurrent = sections.reduce((sum, s) => sum + s.hours.current, 0);
   const totalTotal = sections.reduce((sum, s) => sum + s.hours.total, 0);
   const totalProgressUnit = getSharedProgressUnit(
@@ -365,57 +390,32 @@ export const UnifiedDegreeCard = ({
   const greenColor = CATEGORY_COLORS[5]; // green
 
   return (
-    <div
-      className="w-full bg-background rounded-md border border-gray-200 overflow-hidden border-l-4"
-      style={{ borderLeftColor: greenColor.tailwind }}
+    <CollapsibleProgressCard
+      title={degreeTitle}
+      current={totalCurrent}
+      total={totalTotal}
+      unit={totalProgressUnit}
+      colorIndex={5}
     >
-      {/* Header */}
-      <button
-        className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <VStack gap={2}>
-          <span className="font-bold text-base text-text">{degreeTitle}</span>
-          <ProgressBar
-            current={totalCurrent}
-            total={totalTotal}
-            colorIndex={5}
-          />
-        </VStack>
-        <HStack y="middle" gap={2}>
-          <span className="text-text font-medium text-sm">
-            {formatProgressSummary(totalCurrent, totalTotal, totalProgressUnit)}
-          </span>
-          {isOpen ? (
-            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
-          ) : (
-            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
-          )}
-        </HStack>
-      </button>
-
-      {/* Expanded: sections with green labels */}
-      {isOpen && (
-        <div className="bg-background px-4 pt-4 pb-4">
-          {sections.map((section, idx) => (
-            <div key={section.title || idx} className={idx > 0 ? "mt-4" : ""}>
-              <span
-                className="text-sm font-semibold mb-4 block"
-                style={{ color: greenColor.tailwind }}
-              >
-                {section.title}
-              </span>
-              {section.requirements.map((requirement, rIdx) => (
-                <RequirementRow
-                  key={`${requirement.text.slice(0, 20)}-${rIdx}`}
-                  requirement={requirement}
-                  requirementTitle={section.title}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      <div className="bg-background px-4 pt-4 pb-4">
+        {sections.map((section, idx) => (
+          <div key={section.title || idx} className={idx > 0 ? "mt-4" : ""}>
+            <span
+              className="text-sm font-semibold mb-4 block"
+              style={{ color: greenColor.tailwind }}
+            >
+              {section.title}
+            </span>
+            {section.requirements.map((requirement, rIdx) => (
+              <RequirementRow
+                key={`${requirement.text.slice(0, 20)}-${rIdx}`}
+                requirement={requirement}
+                requirementTitle={section.title}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </CollapsibleProgressCard>
   );
 };

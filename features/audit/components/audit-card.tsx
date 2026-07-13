@@ -80,7 +80,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
                 e.currentTarget.blur();
               }
               if (e.key === "Escape") {
-                setDraftTitle(title);
+                setDraftTitle(title ?? "");
                 setIsEditing(false);
               }
             }}

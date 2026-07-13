@@ -17,6 +17,7 @@ import {
   calculateWeightedDegreeCompletion,
   getCompositeAuditRequirements,
 } from "@/lib/audit-calculations";
+import { formatMajorLabel } from "@/lib/utils";
 import {
   getAuditData,
   getAuditHistory,
@@ -39,6 +40,7 @@ interface AuditContextValue {
   history: AuditHistoryData;
   currentAuditId: string;
   currentAudit: AuditHistoryEntry;
+  currentAuditName: string;
   setCurrentAuditId: (id: string) => void;
   renameAuditTitle: (auditId: string, title: string) => Promise<boolean>;
   progresses: CurrentAuditProgress;
@@ -78,11 +80,15 @@ export function AuditContextProvider({
   const [auditData, setAuditData] = useState<CachedAuditData | null>(null);
   const [history, setHistory] = useState<AuditHistoryData | null>(null);
 
-  const currentAudit = useMemo(
+  const currentAudit = useMemo<AuditHistoryEntry>(
     () =>
       history?.audits.find((audit) => audit.auditId === currentAuditId) ?? {},
     [currentAuditId, history],
   );
+  const currentAuditName =
+    currentAudit.majors?.map(formatMajorLabel).join("; ") ??
+    currentAudit.title ??
+    "Degree Requirements";
   const compositeAuditData = useMemo<CompositeAuditData>(
     () =>
       auditData && currentAuditId
@@ -223,6 +229,7 @@ export function AuditContextProvider({
         semesters,
         currentAuditId,
         currentAudit,
+        currentAuditName,
         setCurrentAuditId: (id) => {
           window.history.pushState({}, "", `?auditId=${id}`);
           setCurrentAuditIdState(id);

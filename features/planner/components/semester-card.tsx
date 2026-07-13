@@ -3,13 +3,12 @@ import Dropdown, {
   DropdownHeader,
 } from "@/components/ui/dropdown";
 import { HStack, VStack } from "@/components/ui/stack";
-import { getCurrentSemester } from "@/domain/course";
+import { getCurrentSemester, sortSemesters } from "@/domain/course";
 import type { Course, StringSemester } from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { forwardRef } from "react";
 import CourseCard from "./course-card";
-import { sortSemesters } from "./semester-dropdowns";
 
 interface SemesterCardProps {
   semester: StringSemester;

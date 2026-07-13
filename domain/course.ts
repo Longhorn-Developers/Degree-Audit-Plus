@@ -13,6 +13,34 @@ export function getCurrentSemester(date = new Date()): StringSemester {
   if (month >= 8) return `Fall ${year}`;
   return `Summer ${year}`;
 }
+
+/** Chronological ordering comparator for two semesters (earliest first). */
+export function sortSemesters(
+  a: StringSemester,
+  b: StringSemester,
+): number {
+  const seasonRank = (season: string) =>
+    season === "Spring" ? 1 : season === "Summer" ? 2 : 3;
+  const [seasonA, yearA] = a.split(" ");
+  const [seasonB, yearB] = b.split(" ");
+
+  const yearDiff = Number(yearA) - Number(yearB);
+  if (yearDiff !== 0) return yearDiff;
+  return seasonRank(seasonA) - seasonRank(seasonB);
+}
+
+/** The semester immediately following the given one. */
+export function nextSemester(semester: StringSemester): StringSemester {
+  const [season, year] = semester.split(" ") as [SemesterSeason, Year];
+  switch (season) {
+    case "Spring":
+      return `Summer ${year}`;
+    case "Summer":
+      return `Fall ${year}`;
+    case "Fall":
+      return `Spring ${Number(year) + 1}`;
+  }
+}
 export type CourseCompletionMethod =
   | "Transfer"
   | "Credit By Exam"

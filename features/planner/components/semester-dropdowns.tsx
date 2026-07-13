@@ -3,9 +3,9 @@ import { Grid } from "@/components/ui/stack";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
   CourseId,
-  SemesterSeason,
+  nextSemester,
+  sortSemesters,
   StringSemester,
-  Year,
 } from "@/domain/course";
 import {
   DndContext,
@@ -17,38 +17,6 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import CourseCard from "./course-card";
 import SemesterCard from "./semester-card";
-
-export function sortSemesters(
-  sem_a: StringSemester,
-  sem_b: StringSemester,
-): number {
-  const [season_a, year_a] = sem_a.split(" ");
-  const [season_b, year_b] = sem_b.split(" ");
-  const a = {
-    season: season_a === "Spring" ? 1 : season_a === "Summer" ? 2 : 3,
-    year: Number(year_a),
-  };
-  const b = {
-    season: season_b === "Spring" ? 1 : season_b === "Summer" ? 2 : 3,
-    year: Number(year_b),
-  };
-
-  const diff = a.year - b.year;
-  if (diff !== 0) return diff;
-  return a.season - b.season;
-}
-
-function nextSemester(semester: StringSemester): StringSemester {
-  const [season, year] = semester.split(" ") as [SemesterSeason, Year];
-  switch (season) {
-    case "Spring":
-      return `Summer ${year}` as StringSemester;
-    case "Fall":
-      return `Spring ${Number(year) + 1}` as StringSemester;
-    case "Summer":
-      return `Fall ${year}` as StringSemester;
-  }
-}
 
 const SemesterDropdowns = () => {
   const { courseMap, semesters, moveCourseToNewSemester } = useAuditContext();

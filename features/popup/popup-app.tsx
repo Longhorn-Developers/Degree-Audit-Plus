@@ -5,7 +5,7 @@ import {
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
@@ -21,32 +21,27 @@ export default function App() {
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
+  const refreshAudits = useCallback(async () => {
+    try {
+      const data = await getAuditHistory();
+      if (data) {
+        if (data.error) {
+          setError(data.error);
+          setAudits([]);
+        } else {
+          setAudits(data.audits);
+          setError(null);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading audit history:", e);
+      setError("Failed to load audit history");
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadAudits() {
-      try {
-        const data = await getAuditHistory();
-
-        if (data) {
-          if (data.error) {
-            console.error("Popup: Stored error:", data.error);
-            setError(data.error);
-            setAudits([]);
-          } else {
-            setAudits(data.audits);
-            setError(null);
-          }
-        }
-      } catch (e) {
-        console.error("Error loading audit history:", e);
-        setError("Failed to load audit history");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadAudits();
-  }, []);
+    refreshAudits().finally(() => setLoading(false));
+  }, [refreshAudits]);
 
   useEffect(() => {
     // get sycn status for ui
@@ -73,20 +68,7 @@ export default function App() {
     ) => {
       if (changes.auditHistory) {
         setRunningAudit(false);
-        try {
-          const data = await getAuditHistory();
-          if (data) {
-            if (data.error) {
-              setError(data.error);
-              setAudits([]);
-            } else {
-              setAudits(data.audits);
-              setError(null);
-            }
-          }
-        } catch (e) {
-          console.error("Error reloading audit history:", e);
-        }
+        await refreshAudits();
       }
     };
 
@@ -96,7 +78,7 @@ export default function App() {
       browser.runtime.onMessage.removeListener(listener);
       browser.storage.onChanged.removeListener(storageListener);
     };
-  }, []);
+  }, [refreshAudits]);
 
   const handleOpenDegreeAuditPage = (auditId: string | undefined) => {
     sendRuntimeMessage({

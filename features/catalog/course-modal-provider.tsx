@@ -40,6 +40,7 @@ export const CourseModalContextProvider = ({
     useState<RecommendationScope | null>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     let isCancelled = false;
 
     async function loadRecommendedCourses() {
@@ -73,6 +74,7 @@ export const CourseModalContextProvider = ({
       isCancelled = true;
     };
   }, [
+    isOpen,
     sections,
     recommendationScope?.requirementTitle,
     recommendationScope?.ruleTitle,
