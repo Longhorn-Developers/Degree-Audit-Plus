@@ -22,6 +22,7 @@ import {
   getAuditHistory,
   renameAudit,
   saveAuditData,
+  watchAuditData,
   watchAuditHistory,
 } from "@/lib/storage/audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -129,6 +130,13 @@ export function AuditContextProvider({
   }, []);
 
   useEffect(() => {
+    if (!currentAuditId) return;
+
+    setAuditData(null);
+    return watchAuditData(currentAuditId, setAuditData);
+  }, [currentAuditId]);
+
+  useEffect(() => {
     let cancelled = false;
     setLoaded(false);
 
@@ -166,11 +174,6 @@ export function AuditContextProvider({
   }, [currentAuditId, updateLastAuditId]);
 
   const value = useMemo<AuditContextValue>(() => {
-    const persist = async (auditId: string, updated: CachedAuditData) => {
-      await saveAuditData(auditId, updated);
-      setAuditData(updated);
-    };
-
     // currentAuditId and history are guaranteed non-null past the loading
     // guard below, which is the only path that renders this provider's value.
     return {
@@ -204,7 +207,7 @@ export function AuditContextProvider({
         if (!auditData || !currentAuditId) return false;
         const updated = moveCourseToSemester(auditData, courseId, semester);
         if (!updated) return false;
-        await persist(currentAuditId, updated);
+        await saveAuditData(currentAuditId, updated);
         return true;
       },
       addPlannedCourse: async (course, requirementTitle, ruleTitle) => {
@@ -216,7 +219,7 @@ export function AuditContextProvider({
           ruleTitle,
         );
         if (!result) return null;
-        await persist(currentAuditId, result.audit);
+        await saveAuditData(currentAuditId, result.audit);
         return result.courseId;
       },
     };
@@ -233,7 +236,9 @@ export function AuditContextProvider({
     updateLastAuditId,
   ]);
 
-  if (!loaded || !currentAuditId || !history) return <LoadingPage />;
+  if (!loaded || !currentAuditId || !history || !auditData) {
+    return <LoadingPage />;
+  }
 
   return (
     <AuditContext.Provider value={value}>{children}</AuditContext.Provider>

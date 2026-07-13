@@ -32,6 +32,9 @@ export default defineContentScript({
   matches: ["https://utdirect.utexas.edu/apps/degree/audits/*"],
   cssInjectionMode: "ui",
   async main(ctx) {
+    // Register message handlers before asynchronous setup so background
+    // scraper tabs always have a receiver when loading completes.
+    startAuditContentController(document);
     await seedDatabase();
     loadFonts();
     setHeaderHeight();
@@ -48,7 +51,5 @@ export default defineContentScript({
       });
       banner.mount();
     }
-
-    startAuditContentController(document);
   },
 });

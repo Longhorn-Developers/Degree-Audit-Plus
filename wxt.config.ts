@@ -8,10 +8,10 @@ const profilePath = path.join(os.homedir(), ".chrome-extension-dev-profile");
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
-  webExt: {
-    chromiumProfile: profilePath,
-    keepProfileChanges: true,
-  },
+  // webExt: {
+  //   chromiumProfile: profilePath,
+  //   keepProfileChanges: true,
+  // },
 
   // Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
   hooks: {

@@ -70,6 +70,16 @@ export async function getAuditData(
   return (result[key] as CachedAuditData | undefined) ?? null;
 }
 
+export function watchAuditData(
+  auditId: string,
+  listener: (audit: CachedAuditData | null) => void,
+): () => void {
+  return storage.watch<CachedAuditData>(
+    `local:${AUDIT_DATA_PREFIX}${auditId}`,
+    listener,
+  );
+}
+
 export async function getUncachedAuditIds(
   auditIds: string[],
 ): Promise<string[]> {
