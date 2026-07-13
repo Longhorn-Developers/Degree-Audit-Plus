@@ -1,6 +1,6 @@
 // For handling saved preferences like dark mode between sessions.
 
-import LoadingPage from "@/features/audit/components/loading-page";
+import LoadingPage from "@/components/loading-page";
 import {
   DEFAULT_PREFERENCES,
   initPreferences,

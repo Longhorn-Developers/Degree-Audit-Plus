@@ -1,8 +1,7 @@
-import CourseAddModal from "@/features/catalog/components/course-add-modal";
 import {
   getSuggestedCoreCourses,
   getSuggestedCoursesForRequirement,
-} from "./catalog-db";
+} from "./course-recommendations";
 import type { CatalogCourse } from "@/domain/catalog";
 import {
   createContext,
@@ -12,7 +11,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useAuditContext } from "@/features/audit/audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 
 // Context for sharing audit data betw sidebar and main
 export type RecommendationScope = {
@@ -119,7 +118,6 @@ export const CourseModalContextProvider = ({
   return (
     <CourseModalContext.Provider value={value}>
       {children}
-      <CourseAddModal />
     </CourseModalContext.Provider>
   );
 };

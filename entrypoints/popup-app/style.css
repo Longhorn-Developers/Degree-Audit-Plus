@@ -81,8 +81,7 @@
   --color-text: #000000;
 }
 
-html.dark,
-:host-context(html.dark) {
+html.dark {
   --color-dap-orange: #1a2024;
   --color-background: #1a1a1a;
   --color-text: #f5f5f5;

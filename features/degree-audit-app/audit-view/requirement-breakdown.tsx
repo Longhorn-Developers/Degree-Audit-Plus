@@ -12,9 +12,9 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import EyeIcon from "../../../assets/svgs/Eye.svg";
-import { useCourseModalContext } from "@/features/catalog/course-modal-provider";
-import { useAuditContext } from "../audit-provider";
+import EyeIcon from "@/assets/svgs/Eye.svg";
+import { useCourseModalContext } from "../course-search/course-modal-provider";
+import { useAuditContext } from "../providers/audit-provider";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";

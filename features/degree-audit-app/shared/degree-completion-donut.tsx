@@ -1,8 +1,8 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import MultiDonutGraph, { Bar, GraphStyleProps } from "./graph";
 import { CATEGORY_COLORS } from "@/lib/utils";
-import { useAuditContext } from "../audit-provider";
-import { groupAuditSections } from "../section-groups";
+import { useAuditContext } from "../providers/audit-provider";
+import { groupAuditSections } from "../providers/section-groups";
 
 const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   const { progresses, sections, currentAudit, currentAuditName } =

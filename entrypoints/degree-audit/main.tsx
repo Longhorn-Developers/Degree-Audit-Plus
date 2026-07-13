@@ -4,16 +4,17 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
-import DegreeAuditPage from "@/features/audit/degree-audit-page";
-import Navbar from "@/features/audit/components/navbar";
-import Sidebar from "@/features/audit/components/sidebar";
-import DegreePlannerPage from "@/features/planner/degree-planner-page";
-import AuditContextProvider from "@/features/audit/audit-provider";
-import CourseModalContextProvider from "@/features/catalog/course-modal-provider";
+import DegreeAuditPage from "@/features/degree-audit-app/audit-view/degree-audit-page";
+import CourseAddModal from "@/features/degree-audit-app/course-search/course-add-modal";
+import CourseModalContextProvider from "@/features/degree-audit-app/course-search/course-modal-provider";
+import DegreePlannerPage from "@/features/degree-audit-app/planner-view/degree-planner-page";
+import AuditContextProvider from "@/features/degree-audit-app/providers/audit-provider";
 import {
   PreferencesProvider,
   usePreferences,
-} from "@/features/preferences/preferences-provider";
+} from "@/features/degree-audit-app/providers/preferences-provider";
+import Navbar from "@/features/degree-audit-app/shared/navbar";
+import Sidebar from "@/features/degree-audit-app/shared/sidebar";
 import ErrorBoundary from "@/components/error-boundary";
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
             <Sidebar />
             <MainContent />
           </HStack>
+          <CourseAddModal />
         </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>

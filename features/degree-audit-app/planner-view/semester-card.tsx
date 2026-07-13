@@ -8,7 +8,7 @@ import type { Course, StringSemester } from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { forwardRef } from "react";
-import CourseCard from "./course-card";
+import PlannerCourseCard from "./planner-course-card";
 
 interface SemesterCardProps {
   semester: StringSemester;
@@ -49,7 +49,7 @@ const SemesterCardVisual = forwardRef<
             courses
               .sort(sortCoursesByDepartment)
               .map((course) => (
-                <CourseCard
+                <PlannerCourseCard
                   key={course.code}
                   draggable={course.status !== "Completed"}
                   courseId={course.id}

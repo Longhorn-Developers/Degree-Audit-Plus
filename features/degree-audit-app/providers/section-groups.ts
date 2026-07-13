@@ -1,5 +1,8 @@
 import type { AuditRequirement, RequirementRule } from "@/domain/audit";
-import type { CurrentAuditProgress, PlannableProgress } from "@/domain/progress";
+import type {
+  CurrentAuditProgress,
+  PlannableProgress,
+} from "@/domain/progress";
 
 export interface SectionWithProgress {
   title: string;

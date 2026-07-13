@@ -1,6 +1,6 @@
 import Button from "@/components/ui/button";
 import { Grid } from "@/components/ui/stack";
-import { useAuditContext } from "@/features/audit/audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 import {
   CourseId,
   nextSemester,
@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import CourseCard from "./course-card";
+import PlannerCourseCard from "./planner-course-card";
 import SemesterCard from "./semester-card";
 
 const SemesterDropdowns = () => {
@@ -103,7 +103,7 @@ const SemesterDropdowns = () => {
       </Grid>
       <DragOverlay>
         {activeDragId ? (
-          <CourseCard
+          <PlannerCourseCard
             className="cursor-grabbing"
             courseId={activeDragId}
             showDots

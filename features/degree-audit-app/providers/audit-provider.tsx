@@ -12,7 +12,7 @@ import type {
   StringSemester,
 } from "@/domain/course";
 import type { CurrentAuditProgress } from "@/domain/progress";
-import { usePreferences } from "@/features/preferences/preferences-provider";
+import LoadingPage from "@/components/loading-page";
 import {
   calculateWeightedDegreeCompletion,
   getCompositeAuditRequirements,
@@ -26,7 +26,7 @@ import {
   watchAuditHistory,
 } from "@/lib/storage/audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import LoadingPage from "./components/loading-page";
+import { usePreferences } from "./preferences-provider";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,

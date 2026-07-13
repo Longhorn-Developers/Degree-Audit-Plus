@@ -1,5 +1,5 @@
 import DegreeAuditCard from "./audit-card";
-import { usePreferences } from "@/features/preferences/preferences-provider";
+import { usePreferences } from "../providers/preferences-provider";
 import logo from "@/public/logo.png";
 import {
   ArrowUpRight,
@@ -13,7 +13,7 @@ import {
   Sidebar as SidebarIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { useAuditContext } from "../audit-provider";
+import { useAuditContext } from "../providers/audit-provider";
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar } = usePreferences();

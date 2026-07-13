@@ -1,14 +1,14 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
 import "@/entrypoints/styles/content.css";
-import { useAuditContext } from "./audit-provider";
-import { groupAuditSections } from "./section-groups";
-import { CourseSearchPanel } from "@/features/catalog/components/course-add-modal";
-import DegreeCompletionDonut from "./components/degree-completion-donut";
-import { CreditHourTotalsCard, GPATotalsCard } from "./components/gpa-credit-cards";
+import { CourseSearchPanel } from "../course-search/course-search-panel";
+import { useAuditContext } from "../providers/audit-provider";
+import { groupAuditSections } from "../providers/section-groups";
+import DegreeSidePanel from "../shared/degree-side-panel";
+import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,
-} from "./components/requirement-breakdown";
+} from "./requirement-breakdown";
 
 function parseGpaSummary(text: string | undefined) {
   if (!text) {
@@ -37,15 +37,7 @@ const SidePanel = () => {
   const gpaSummary = parseGpaSummary(gpaRule?.text);
 
   return (
-    <VStack
-      className="self-start sticky top-0 z-20 bg-background"
-      y="stretch"
-      x="center"
-    >
-      <DegreeCompletionDonut size={300} />
-      <div className="w-sm mt-10 p-3 rounded-lg border border-gray-200 bg-background">
-        <CourseSearchPanel />
-      </div>
+    <DegreeSidePanel searchPanel={<CourseSearchPanel />}>
       <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
           <GPATotalsCard
@@ -70,7 +62,7 @@ const SidePanel = () => {
           ]}
         />
       </VStack>
-    </VStack>
+    </DegreeSidePanel>
   );
 };
 

@@ -1,7 +1,7 @@
 import { IconButton } from "@/components/ui/button";
 import { HStack, VStack } from "@/components/ui/stack";
-import { usePreferences } from "@/features/preferences/preferences-provider";
-import { useAuditContext } from "../audit-provider";
+import { usePreferences } from "../providers/preferences-provider";
+import { useAuditContext } from "../providers/audit-provider";
 import { cn } from "@/lib/utils";
 import {
   ExportIcon,

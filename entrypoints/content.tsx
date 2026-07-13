@@ -1,5 +1,4 @@
 import { startAuditContentController } from "@/features/audit-scraping/content-controller";
-import { seedDatabase } from "@/features/catalog/seed-catalog";
 import { createRoot } from "react-dom/client";
 import TryDAPBanner from "@/features/banner/try-dap-banner";
 import "./styles/content.css";
@@ -35,7 +34,6 @@ export default defineContentScript({
     // Register message handlers before asynchronous setup so background
     // scraper tabs always have a receiver when loading completes.
     startAuditContentController(document);
-    await seedDatabase();
     loadFonts();
     setHeaderHeight();
 
@@ -45,7 +43,11 @@ export default defineContentScript({
         position: "inline",
         append: "before",
         anchor: "#service_content",
-        onMount(container) {
+        onMount(container, _shadow, shadowHost) {
+          shadowHost.classList.toggle(
+            "dark",
+            document.documentElement.classList.contains("dark"),
+          );
           createRoot(container).render(<TryDAPBanner />);
         },
       });

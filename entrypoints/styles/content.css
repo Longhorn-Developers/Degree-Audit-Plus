@@ -87,12 +87,9 @@
   --color-hover-bg: #f5f5f5;
 }
 
-/*
- * @layer theme puts --color-* on :root and :host. :host wins over inheritance, so shadow UIs
- * need :host-context(html.dark). Use html.dark so variables beat the theme layer like unlayered rules.
- */
+/* Keep semantic colors above Tailwind's theme layer in pages and shadow UIs. */
 html.dark,
-:host-context(html.dark) {
+:host(.dark) {
   --color-background: #272727;
   --color-text: #ffffff;
   --color-muted: #9ca3af;
