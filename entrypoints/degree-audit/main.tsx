@@ -1,19 +1,19 @@
 import "@/entrypoints/styles/content.css";
-import { seedDatabase } from "@/lib/backend/db-seeder";
+import { seedDatabase } from "@/features/catalog/seed-catalog";
 import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HStack, VStack } from "../components/common/helperdivs";
-import DegreeAuditPage from "./components/degree-audit-page.tsx";
-import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar.tsx";
-import DegreePlannerPage from "./planner-view/degree-planner-page.tsx";
-import AuditContextProvider from "./providers/audit-provider.tsx";
-import CourseModalContextProvider from "./providers/course-modal-provider.tsx";
+import { HStack, VStack } from "@/components/ui/stack";
+import DegreeAuditPage from "@/features/audit/components/degree-audit-page";
+import Navbar from "@/features/audit/components/navbar";
+import Sidebar from "@/features/audit/components/sidebar";
+import DegreePlannerPage from "@/features/planner/degree-planner-page";
+import AuditContextProvider from "@/features/audit/audit-provider";
+import CourseModalContextProvider from "@/features/catalog/course-modal-provider";
 import {
   PreferencesProvider,
   usePreferences,
-} from "./providers/preferences-provider.tsx";
+} from "@/features/preferences/preferences-provider";
 
 const App = () => {
   return (

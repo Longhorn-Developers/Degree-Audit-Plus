@@ -1,10 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import { JSDOM } from "jsdom";
-import {
-  scrapeCourseworkTable,
-  scrapeRequirementSections,
-} from "../../lib/backend/audit-scraper";
-import type { CachedAuditData } from "../../lib/general-types";
+import { parseAuditPage } from "../../features/audit-scraping/audit-page-parser";
+import type { CachedAuditData } from "../../domain/audit";
 
 async function loadAuditDocument(
   fixture = "audit-results.html",
@@ -49,19 +46,10 @@ function normalizeCourseIds(audit: CachedAuditData) {
 describe("degree audit scraper", () => {
   test("creates stable cached audit data from an audit page", async () => {
     const document = await loadAuditDocument();
-    const courseworkTable = document.querySelector(
-      "#coursework table.results",
-    )!;
-    const sections = Array.from(
-      document.querySelectorAll("#requirements table.results tbody.section"),
-    );
     const log = spyOn(console, "log").mockImplementation(() => {});
 
     try {
-      const courses = scrapeCourseworkTable(courseworkTable);
-      const requirements = scrapeRequirementSections(sections, courses);
-
-      expect(normalizeCourseIds({ courses, requirements })).toMatchSnapshot();
+      expect(normalizeCourseIds(parseAuditPage(document))).toMatchSnapshot();
     } finally {
       log.mockRestore();
     }
@@ -69,17 +57,10 @@ describe("degree audit scraper", () => {
 
   test("parses a real UT audit page capture", async () => {
     const document = await loadAuditDocument("audit-results-real.html");
-    const courseworkTable = document.querySelector(
-      "#coursework table.results",
-    )!;
-    const sections = Array.from(
-      document.querySelectorAll("#requirements table.results tbody.section"),
-    );
     const log = spyOn(console, "log").mockImplementation(() => {});
 
     try {
-      const courses = scrapeCourseworkTable(courseworkTable);
-      const requirements = scrapeRequirementSections(sections, courses);
+      const { courses, requirements } = parseAuditPage(document);
 
       // Guards against silent selector drift on the real markup.
       expect(Object.keys(courses).length).toBeGreaterThan(0);

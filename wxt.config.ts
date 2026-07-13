@@ -1,8 +1,16 @@
 import { defineConfig } from "wxt";
+import os from "node:os";
+import path from "node:path";
 
 // See https://wxt.dev/api/config.html
+
+// You will need to create your own chrome dev profile directory and set the path here. This is used to load your extension in a Chrome instance with your dev profile, which allows you to test your extension with your existing cookies, local storage, and other settings. Make sure to use a separate profile for development to avoid conflicts with your main Chrome profile. Use chatgpt to do this. 
+
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
+  runner: {
+    chromiumProfile: path.join(os.homedir(), ".chrome-extension-dev-profile"),
+  },
 
   // Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
   hooks: {

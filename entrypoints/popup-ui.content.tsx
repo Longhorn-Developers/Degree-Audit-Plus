@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
-import App from "./popup-app/main";
+import type { ExtensionMessage } from "@/lib/browser/messages";
+import App from "@/features/popup/popup-app";
 // Import Tailwind styles - WXT will inject these into the shadow DOM with cssInjectionMode: "ui"
 import "./popup-app/style.css";
 
@@ -114,7 +115,7 @@ export default defineContentScript({
     let root: Root | null = null;
 
     // Listen for toggle message from background script
-    browser.runtime.onMessage.addListener((message) => {
+    browser.runtime.onMessage.addListener((message: ExtensionMessage) => {
       if (message.type === "TOGGLE_POPUP") {
         console.log(
           "[DAP Popup] Toggle message received, isVisible:",

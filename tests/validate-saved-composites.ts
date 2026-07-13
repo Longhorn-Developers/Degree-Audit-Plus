@@ -3,7 +3,7 @@ import {
   getCompositeAuditRequirements,
   getDuplicateCourseRequirementFlags,
 } from "../lib/audit-calculations";
-import type { AuditHistoryData, CachedAuditData } from "../lib/general-types";
+import type { AuditHistoryData, CachedAuditData } from "../domain/audit";
 
 // --- In-memory storage stub -------------------------------------------------
 // `wxt/browser` resolves to globalThis.chrome at import time, which is undefined
@@ -30,7 +30,7 @@ const {
   updateCachedComposite,
   deleteCachedComposite,
   loadCompositeAudit,
-} = await import("../lib/backend/storage");
+} = await import("../lib/storage/composite-storage");
 
 // --- Fixtures ---------------------------------------------------------------
 // Two audits that share course code M 341 so the composite helpers have a

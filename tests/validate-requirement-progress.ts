@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
+import type {
+  AuditRequirement,
+  CompositeAuditData,
+  RequirementRule,
+} from "../domain/audit";
+import type { Course } from "../domain/course";
 import {
   calculateWeightedDegreeCompletion,
   getDuplicateCourseRequirementFlags,
   getCompositeAuditRequirements,
 } from "../lib/audit-calculations";
-import { parseRequirementProgress } from "../lib/backend/audit-scraper";
-import type {
-  AuditRequirement,
-  CompositeAuditData,
-  Course,
-  RequirementRule,
-} from "../lib/general-types";
+import { parseRequirementProgress } from "../features/audit-scraping/audit-page-parser";
 
 const parsedCases = [
   { input: "4 Hours", expected: { value: 4, unit: "hours" } },

@@ -3,8 +3,8 @@ import {
   getCompositeAuditRequirements,
   getDuplicateCourseRequirementFlags,
 } from "../lib/audit-calculations";
-import { loadCompositeAuditData } from "../lib/backend/storage";
-import type { AuditHistoryData, CachedAuditData } from "../lib/general-types";
+import { loadCompositeAuditData } from "../lib/storage/composite-storage";
+import type { AuditHistoryData, CachedAuditData } from "../domain/audit";
 
 // --- Fixtures ---------------------------------------------------------------
 

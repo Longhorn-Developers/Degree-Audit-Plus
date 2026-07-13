@@ -3,8 +3,8 @@ import { JSDOM } from "jsdom";
 import {
   CourseCatalogScraper,
   parseCourseDescription,
-  type ScrapedCourse,
-} from "../../lib/catalog-scraper/course-catalog-scraper";
+} from "../../features/catalog/scraping/catalog-parser";
+import type { ScrapedCatalogCourse } from "../../domain/catalog";
 
 const catalogUrl =
   "https://utdirect.utexas.edu/apps/registrar/course_schedule/20259/results/?fos_fl=C%20S&level=U";
@@ -18,14 +18,14 @@ async function loadDocument(fixture: string, url?: string): Promise<Document> {
   return new JSDOM(html, url ? { url } : undefined).window.document;
 }
 
-function scrapeCourses(document: Document): ScrapedCourse[] {
+function scrapeCourses(document: Document): ScrapedCatalogCourse[] {
   const rows = Array.from(document.querySelectorAll("table tbody > tr"));
   const scraper = new CourseCatalogScraper(document, catalogUrl);
   return scraper.scrape(rows).flatMap(({ course }) => (course ? [course] : []));
 }
 
 // scrapedAt is Date.now(); replace it so snapshots stay stable across runs.
-function normalizeCourses(courses: ScrapedCourse[]) {
+function normalizeCourses(courses: ScrapedCatalogCourse[]) {
   return courses.map(({ scrapedAt: _scrapedAt, ...course }) => ({
     ...course,
     scrapedAt: "normalized",

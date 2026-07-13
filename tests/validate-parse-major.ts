@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { parseMajor } from "../lib/backend/parse-major";
+import { parseMajor } from "../features/audit-scraping/parse-major";
 import { utDegreeProgramCases } from "../lib/examples/data/ut-degree-programs";
 import {
   fineArtsDegreePlanCases,
