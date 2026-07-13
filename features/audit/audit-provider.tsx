@@ -29,8 +29,6 @@ import LoadingPage from "./components/loading-page";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,
-  removePlannedCourse as removeCourse,
-  wipePlannedCourses,
 } from "./audit-mutations";
 
 type SemesterInfo = Record<StringSemester, Course[]>;
@@ -161,95 +159,72 @@ export function AuditContextProvider({
     };
   }, [currentAuditId]);
 
-  async function persist(
-    auditId: string,
-    updated: CachedAuditData,
-  ): Promise<void> {
-    await saveAuditData(auditId, updated);
-    setAuditData(updated);
-  }
+  const value = useMemo<AuditContextValue>(() => {
+    const persist = async (auditId: string, updated: CachedAuditData) => {
+      await saveAuditData(auditId, updated);
+      setAuditData(updated);
+    };
 
-  async function addPlannedCourse(
-    course: PlannedCourseOutline,
-    requirementTitle: string,
-    ruleTitle: string,
-  ): Promise<CourseId | null> {
-    if (!auditData || !currentAuditId) return null;
-    const result = addCourse(auditData, course, requirementTitle, ruleTitle);
-    if (!result) return null;
-    await persist(currentAuditId, result.audit);
-    return result.courseId;
-  }
-
-  async function removePlannedCourse(courseId: CourseId): Promise<boolean> {
-    if (!auditData || !currentAuditId) return false;
-    const updated = removeCourse(auditData, courseId);
-    if (!updated) return false;
-    await persist(currentAuditId, updated);
-    return true;
-  }
-
-  async function wipeAllPlannedCourses(): Promise<number> {
-    if (!auditData || !currentAuditId) return 0;
-    const result = wipePlannedCourses(auditData);
-    if (result.removed) await persist(currentAuditId, result.audit);
-    return result.removed;
-  }
-
-  async function moveCourseToNewSemester(
-    courseId: CourseId,
-    semester: StringSemester,
-  ): Promise<boolean> {
-    if (!auditData || !currentAuditId) return false;
-    const updated = moveCourseToSemester(auditData, courseId, semester);
-    if (!updated) return false;
-    await persist(currentAuditId, updated);
-    return true;
-  }
-
-  async function renameAuditTitle(
-    auditId: string,
-    title: string,
-  ): Promise<boolean> {
-    const cleanTitle = title.trim();
-    if (!cleanTitle) return false;
-    const updatedHistory = await renameAudit(auditId, cleanTitle);
-    if (!updatedHistory) return false;
-    setHistory(updatedHistory);
-    return true;
-  }
+    // currentAuditId and history are guaranteed non-null past the loading
+    // guard below, which is the only path that renders this provider's value.
+    return {
+      sections,
+      history: history as AuditHistoryData,
+      semesters,
+      currentAuditId: currentAuditId as string,
+      currentAudit,
+      currentAuditName,
+      progresses,
+      courseMap,
+      getCourseById: (id) => {
+        const course = courseMap[id];
+        if (!course) throw new Error(`Course ${id} not found`);
+        return course;
+      },
+      setCurrentAuditId: (id) => {
+        window.history.pushState({}, "", `?auditId=${id}`);
+        setCurrentAuditIdState(id);
+        updateLastAuditId(id);
+      },
+      renameAuditTitle: async (auditId, title) => {
+        const cleanTitle = title.trim();
+        if (!cleanTitle) return false;
+        const updatedHistory = await renameAudit(auditId, cleanTitle);
+        if (!updatedHistory) return false;
+        setHistory(updatedHistory);
+        return true;
+      },
+      moveCourseToNewSemester: async (courseId, semester) => {
+        if (!auditData || !currentAuditId) return false;
+        const updated = moveCourseToSemester(auditData, courseId, semester);
+        if (!updated) return false;
+        await persist(currentAuditId, updated);
+        return true;
+      },
+      addPlannedCourse: async (course, requirementTitle, ruleTitle) => {
+        if (!auditData || !currentAuditId) return null;
+        const result = addCourse(auditData, course, requirementTitle, ruleTitle);
+        if (!result) return null;
+        await persist(currentAuditId, result.audit);
+        return result.courseId;
+      },
+    };
+  }, [
+    sections,
+    history,
+    semesters,
+    currentAuditId,
+    currentAudit,
+    currentAuditName,
+    progresses,
+    courseMap,
+    auditData,
+    updateLastAuditId,
+  ]);
 
   if (!loaded || !currentAuditId || !history) return <LoadingPage />;
 
-  return (
-    <AuditContext.Provider
-      value={{
-        sections,
-        history,
-        semesters,
-        currentAuditId,
-        currentAudit,
-        currentAuditName,
-        setCurrentAuditId: (id) => {
-          window.history.pushState({}, "", `?auditId=${id}`);
-          setCurrentAuditIdState(id);
-          updateLastAuditId(id);
-        },
-        renameAuditTitle,
-        moveCourseToNewSemester,
-        progresses,
-        getCourseById: (id) => {
-          const course = courseMap[id];
-          if (!course) throw new Error(`Course ${id} not found`);
-          return course;
-        },
-        courseMap,
-        addPlannedCourse,
-      }}
-    >
-      {children}
-    </AuditContext.Provider>
-  );
+  return <AuditContext.Provider value={value}>{children}</AuditContext.Provider>;
 }
 
 export function useAuditContext(): AuditContextValue {

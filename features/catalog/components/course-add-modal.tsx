@@ -23,19 +23,6 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 import { useCourseModalContext } from "../course-modal-provider";
 import CourseCard from "@/features/planner/components/course-card";
 
-type RecommendationScope = {
-  requirementTitle?: string;
-  ruleTitle?: string;
-};
-
-interface CourseAddModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  recommendedCourses?: CatalogCourse[];
-  recommendationScope?: RecommendationScope | null;
-  isLoading?: boolean;
-}
-
 interface CourseSearchData {
   searchQuery: string;
   department: string;
@@ -261,20 +248,14 @@ function CourseSearchContent({
   );
 }
 
-interface FulfillingCoursesContentProps {
-  courses: CatalogCourse[];
-  recommendationScope?: RecommendationScope | null;
-  isLoading?: boolean;
-  onClose: () => void;
-}
-
-function FulfillingCoursesContent({
-  courses,
-  recommendationScope,
-  isLoading = false,
-  onClose,
-}: FulfillingCoursesContentProps) {
+function FulfillingCoursesContent() {
   const { addPlannedCourse } = useAuditContext();
+  const {
+    recommendedCourses: courses,
+    recommendationScope,
+    isLoadingRecommendedCourses: isLoading,
+    closeModal: onClose,
+  } = useCourseModalContext();
   const displayedCourses = dedupeCatalogCoursesByCode(courses);
   const [query, setQuery] = useState("");
   const [pickedId, setPickedId] = useState<number | null>(null);
@@ -467,19 +448,14 @@ export function CourseSearchPanel() {
   );
 }
 
-export default function CourseAddModal({
-  isOpen,
-  onClose,
-  recommendedCourses = [],
-  recommendationScope,
-  isLoading = false,
-}: CourseAddModalProps) {
+export default function CourseAddModal() {
+  const { isOpen, closeModal } = useCourseModalContext();
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 bg-black/50 opacity-100"
-      onClick={onClose}
+      onClick={closeModal}
     >
       <div
         className="bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 transform transition-all duration-200 overflow-hidden scale-100 opacity-100"
@@ -489,12 +465,7 @@ export default function CourseAddModal({
           <h2 className="text-3xl leading-none font-bold text-text mb-8">
             Fulfilling courses
           </h2>
-          <FulfillingCoursesContent
-            courses={recommendedCourses}
-            recommendationScope={recommendationScope}
-            isLoading={isLoading}
-            onClose={onClose}
-          />
+          <FulfillingCoursesContent />
         </div>
       </div>
     </div>

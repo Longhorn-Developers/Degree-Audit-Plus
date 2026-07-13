@@ -4,11 +4,18 @@ import {
   getSuggestedCoursesForRequirement,
 } from "./catalog-db";
 import type { CatalogCourse } from "@/domain/catalog";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
 // Context for sharing audit data betw sidebar and main
-type RecommendationScope = {
+export type RecommendationScope = {
   requirementTitle?: string;
   ruleTitle?: string;
 };
@@ -80,35 +87,39 @@ export const CourseModalContextProvider = ({
     recommendationScope?.ruleTitle,
   ]);
 
-  const closeModal = () => {
+  const openModal = useCallback((scope?: RecommendationScope) => {
+    setRecommendedCourses([]);
+    setRecommendationScope(scope ?? null);
+    setIsOpen(true);
+  }, []);
+  const closeModal = useCallback(() => {
     setIsOpen(false);
     setRecommendationScope(null);
-  };
+  }, []);
+
+  const value = useMemo<CourseModalContextType>(
+    () => ({
+      isOpen,
+      recommendedCourses,
+      recommendationScope,
+      isLoadingRecommendedCourses,
+      openModal,
+      closeModal,
+    }),
+    [
+      isOpen,
+      recommendedCourses,
+      recommendationScope,
+      isLoadingRecommendedCourses,
+      openModal,
+      closeModal,
+    ],
+  );
 
   return (
-    <CourseModalContext.Provider
-      value={{
-        isOpen,
-        recommendedCourses,
-        recommendationScope,
-        isLoadingRecommendedCourses,
-        openModal: (scope) => {
-          setRecommendedCourses([]);
-          setRecommendationScope(scope ?? null);
-          setIsOpen(true);
-        },
-        closeModal,
-      }}
-    >
+    <CourseModalContext.Provider value={value}>
       {children}
-
-      <CourseAddModal
-        isOpen={isOpen}
-        recommendedCourses={recommendedCourses}
-        recommendationScope={recommendationScope}
-        isLoading={isLoadingRecommendedCourses}
-        onClose={closeModal}
-      />
+      <CourseAddModal />
     </CourseModalContext.Provider>
   );
 };

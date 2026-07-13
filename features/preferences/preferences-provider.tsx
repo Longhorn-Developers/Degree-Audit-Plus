@@ -11,6 +11,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -84,51 +85,79 @@ export function PreferencesProvider({
     }
   }, [isDarkMode, isMounted, luminosity]);
 
-  const setLuminosity = (value: PreferredLuminosity) => {
+  const setLuminosity = useCallback((value: PreferredLuminosity) => {
     setLuminosityState(value);
     void setPreference("luminosity", value).catch((error) =>
       console.error("Failed to save luminosity preference:", error),
     );
-  };
-  const setSidebarIsOpen = (value: boolean) => {
+  }, []);
+  const setSidebarIsOpen = useCallback((value: boolean) => {
     setSidebarState(value);
     void setPreference("showSidebar", value).catch((error) =>
       console.error("Failed to save sidebar preference:", error),
     );
-  };
-  const setViewMode = (value: ViewMode) => {
+  }, []);
+  const setViewMode = useCallback((value: ViewMode) => {
     setViewModeState(value);
     void setPreference("viewMode", value).catch((error) =>
       console.error("Failed to save view preference:", error),
     );
-  };
-  const updateLastAuditId = (value: string) => {
+  }, []);
+  const updateLastAuditId = useCallback((value: string) => {
     setLastAuditId(value);
     void setPreference("lastAuditId", value).catch((error) =>
       console.error("Failed to save audit preference:", error),
     );
-  };
+  }, []);
+
+  const toggleDarkMode = useCallback(
+    () => setLuminosity(isDarkMode() ? "light" : "dark"),
+    [setLuminosity, isDarkMode],
+  );
+  const toggleSidebar = useCallback(
+    () => setSidebarIsOpen(!sidebarIsOpen),
+    [setSidebarIsOpen, sidebarIsOpen],
+  );
+  const toggleViewMode = useCallback(
+    () => setViewMode(viewMode === "audit" ? "planner" : "audit"),
+    [setViewMode, viewMode],
+  );
+
+  const value = useMemo<PreferencesContextValue>(
+    () => ({
+      luminosity,
+      setLuminosity,
+      toggleDarkMode,
+      isDarkMode,
+      sidebarIsOpen,
+      setSidebarIsOpen,
+      toggleSidebar,
+      viewMode,
+      setViewMode,
+      toggleViewMode,
+      lastAuditId,
+      updateLastAuditId,
+    }),
+    [
+      luminosity,
+      setLuminosity,
+      toggleDarkMode,
+      isDarkMode,
+      sidebarIsOpen,
+      setSidebarIsOpen,
+      toggleSidebar,
+      viewMode,
+      setViewMode,
+      toggleViewMode,
+      lastAuditId,
+      updateLastAuditId,
+    ],
+  );
 
   if (!isMounted) return <LoadingPage />;
 
   return (
-    <PreferencesContext.Provider
-      value={{
-        luminosity,
-        setLuminosity,
-        toggleDarkMode: () => setLuminosity(isDarkMode() ? "light" : "dark"),
-        isDarkMode,
-        sidebarIsOpen,
-        setSidebarIsOpen,
-        toggleSidebar: () => setSidebarIsOpen(!sidebarIsOpen),
-        viewMode,
-        setViewMode,
-        toggleViewMode: () =>
-          setViewMode(viewMode === "audit" ? "planner" : "audit"),
-        lastAuditId,
-        updateLastAuditId,
-      }}
-    >
+    <PreferencesContext.Provider value={value}>
       <div className="min-h-screen bg-background text-text">{children}</div>
     </PreferencesContext.Provider>
   );
