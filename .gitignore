@@ -30,3 +30,5 @@ package-lock.json
 .claude
 *.code-workspace
 .claude
+
+docs/
