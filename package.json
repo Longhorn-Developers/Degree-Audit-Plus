@@ -16,6 +16,7 @@
     "test:requirement-progress": "bun run tests/validate-requirement-progress.ts",
     "test:composite-load": "bun run tests/validate-composite-audit-load.ts",
     "test:saved-composites": "bun run tests/validate-saved-composites.ts",
+    "test:scraping": "bun test tests/scraping",
     "postinstall": "bun run wxt prepare",
     "prepare": "husky",
     "tailwind:init": "bun run tailwindcss init -p"
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.1.14",
+    "@types/bun": "^1.3.14",
     "@types/chrome": "^0.1.36",
     "@types/jsdom": "^27.0.0",
     "@types/react": "^19.1.12",

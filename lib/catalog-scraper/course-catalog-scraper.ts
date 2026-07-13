@@ -55,6 +55,17 @@ export interface ScrapedRow {
   course: ScrapedCourse | null;
 }
 
+/**
+ * Parse the course description paragraphs from a course detail page (#details).
+ * Shared by the in-page scraper and the detail-page fetch so both stay in sync.
+ */
+export function parseCourseDescription(doc: Document): string[] {
+  const paragraphs = doc.querySelectorAll("#details p");
+  return Array.from(paragraphs)
+    .map((p) => (p.textContent || "").replace(/\s\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
 // --- Selectors ---
 
 const TableDataSelector = {
@@ -282,13 +293,7 @@ export class CourseCatalogScraper {
   }
 
   private getDescription(): string[] {
-    const paragraphs = this.doc.querySelectorAll(
-      DetailsSelector.COURSE_DESCRIPTION,
-    );
-    return Array.from(paragraphs)
-      .map((p) => p.textContent || "")
-      .map((text) => text.replace(/\s\s+/g, " ").trim())
-      .filter(Boolean);
+    return parseCourseDescription(this.doc);
   }
 
   private getSemester(): Semester | undefined {
@@ -335,10 +340,7 @@ async function fetchCourseDescription(
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
 
-    const paragraphs = doc.querySelectorAll("#details p");
-    return Array.from(paragraphs)
-      .map((p) => (p.textContent || "").replace(/\s\s+/g, " ").trim())
-      .filter(Boolean);
+    return parseCourseDescription(doc);
   } catch {
     return [];
   }
