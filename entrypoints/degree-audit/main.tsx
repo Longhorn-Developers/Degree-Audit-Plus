@@ -4,7 +4,7 @@ import clsx from "clsx";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
-import DegreeAuditPage from "@/features/audit/components/degree-audit-page";
+import DegreeAuditPage from "@/features/audit/degree-audit-page";
 import Navbar from "@/features/audit/components/navbar";
 import Sidebar from "@/features/audit/components/sidebar";
 import DegreePlannerPage from "@/features/planner/degree-planner-page";

@@ -2,13 +2,13 @@ import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
 import "@/entrypoints/styles/content.css";
 import { formatMajorLabel } from "@/lib/utils";
-import { useAuditContext } from "../audit-provider";
+import { useAuditContext } from "./audit-provider";
 import { CourseSearchPanel } from "@/features/catalog/components/course-add-modal";
-import DegreeCompletionDonut from "./degree-completion-donut";
-import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
+import DegreeCompletionDonut from "./components/degree-completion-donut";
+import { CreditHourTotalsCard, GPATotalsCard } from "./components/gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,
-} from "./requirement-breakdown";
+} from "./components/requirement-breakdown";
 
 function parseGpaSummary(text: string | undefined) {
   if (!text) {
