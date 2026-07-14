@@ -1,0 +1,8 @@
+node_modules
+.output
+.wxt
+bun.lock
+package-lock.json
+
+# Test fixtures are raw HTML captures; do not reformat
+tests/fixtures/**/*.html

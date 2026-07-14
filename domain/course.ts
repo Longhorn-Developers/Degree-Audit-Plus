@@ -15,10 +15,7 @@ export function getCurrentSemester(date = new Date()): StringSemester {
 }
 
 /** Chronological ordering comparator for two semesters (earliest first). */
-export function sortSemesters(
-  a: StringSemester,
-  b: StringSemester,
-): number {
+export function sortSemesters(a: StringSemester, b: StringSemester): number {
   const seasonRank = (season: string) =>
     season === "Spring" ? 1 : season === "Summer" ? 2 : 3;
   const [seasonA, yearA] = a.split(" ");

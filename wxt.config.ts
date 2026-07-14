@@ -4,12 +4,12 @@ import { defineConfig } from "wxt";
 import os from "node:os";
 import path from "node:path";
 
-const profilePath = path.join(os.homedir(), ".chrome-extension-dev-profile");
+const _profilePath = path.join(os.homedir(), ".chrome-extension-dev-profile");
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   // webExt: {
-  //   chromiumProfile: profilePath,
+  //   chromiumProfile: _profilePath,
   //   keepProfileChanges: true,
   // },
 
