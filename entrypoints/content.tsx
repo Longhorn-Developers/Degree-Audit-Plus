@@ -1,381 +1,57 @@
-import type { CachedAuditData } from "@/lib/general-types";
+import { startAuditContentController } from "@/features/audit-scraping/content-controller";
 import { createRoot } from "react-dom/client";
-import TryDAPBanner from "./components/banner";
-// Import your Tailwind CSS - THIS IS CRITICAL for shadow DOM
-import { fetchAuditHistory } from "@/lib/backend/audit-history-scraper";
-import { db } from "@/lib/backend/db";
-import { getUncachedAuditIds, saveAuditHistory } from "@/lib/backend/storage";
-import "./styles/content.css"; // Make sure this path is correct
+import TryDAPBanner from "@/features/misc/try-dap-banner";
+import "./styles/content.css";
 
-function loadFonts() {
-  const preconnect1 = document.createElement("link");
-  preconnect1.rel = "preconnect";
-  preconnect1.href = "https://fonts.googleapis.com";
-  document.head.appendChild(preconnect1);
+function loadFonts(): void {
+  const preconnect = document.createElement("link");
+  preconnect.rel = "preconnect";
+  preconnect.href = "https://fonts.googleapis.com";
+  document.head.appendChild(preconnect);
 
-  const preconnect2 = document.createElement("link");
-  preconnect2.rel = "preconnect";
-  preconnect2.href = "https://fonts.gstatic.com";
-  preconnect2.crossOrigin = "anonymous";
-  document.head.appendChild(preconnect2);
+  const fontHost = document.createElement("link");
+  fontHost.rel = "preconnect";
+  fontHost.href = "https://fonts.gstatic.com";
+  fontHost.crossOrigin = "anonymous";
+  document.head.appendChild(fontHost);
 
-  const fontLink = document.createElement("link");
-  fontLink.rel = "stylesheet";
-  fontLink.href =
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href =
     "https://fonts.googleapis.com/css2?family=Staatliches:wght@400&family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap";
-  document.head.appendChild(fontLink);
-
-  console.log("Staatliches and Roboto Flex fonts loaded dynamically");
+  document.head.appendChild(stylesheet);
 }
 
-import { seedDatabase } from "@/lib/backend/db-seeder";
+function setHeaderHeight(): void {
+  const header = document.querySelector<HTMLElement>("#utd_toppage");
+  if (header) header.style.height = "96px";
+}
 
 export default defineContentScript({
-  // Runs on ALL UT Direct audit pages - fetches fresh data and watches for updates
-  // Includes: /audits/, /audits/submissions/history/, /audits/requests/history/, etc.
   matches: ["https://utdirect.utexas.edu/apps/degree/audits/*"],
-  cssInjectionMode: "ui", // This should inject CSS into shadow DOM
+  cssInjectionMode: "ui",
   async main(ctx) {
-    console.log("Content script loaded on UT Direct audits page.");
-
-    // Seed the database from bundled JSON
-    await seedDatabase();
-
-    // Load fonts dynamically
+    // Register message handlers before asynchronous setup so background
+    // scraper tabs always have a receiver when loading completes.
+    startAuditContentController(document);
     loadFonts();
-    defineUTDToppageHeight();
-    // banner
-    const isHomePage =
-      window.location.pathname === "/apps/degree/audits/" ||
-      window.location.pathname === "/apps/degree/audits";
-    if (isHomePage) {
-      const tryDapBanner = await createShadowRootUi(ctx, {
+    setHeaderHeight();
+
+    if (/^\/apps\/degree\/audits\/?$/.test(window.location.pathname)) {
+      const banner = await createShadowRootUi(ctx, {
         name: "dap-banner-ui",
         position: "inline",
         append: "before",
         anchor: "#service_content",
-        onMount(container) {
+        onMount(container, _shadow, shadowHost) {
+          shadowHost.classList.toggle(
+            "dark",
+            document.documentElement.classList.contains("dark"),
+          );
           createRoot(container).render(<TryDAPBanner />);
         },
       });
-
-      tryDapBanner.mount();
+      banner.mount();
     }
-
-    // Fetch fresh audit history and update storage
-    // This ONLY runs when user visits the UT Direct audits home page
-    fetchAndStoreAuditHistory();
-    // code to scrape course catalog and update db (make sure to update the department map before running this -> it will run AUTOMATICALLY EVERY TIME!!!)
-    // scrapeCourseCatalog();
-    // code to save scraped courses to csv. Run this ONLY WHEN ABOVE IS COMMENTED OUT.
-    // saveScrapedCourses();
   },
 });
-
-// Get audit history and trigger batch scraping for uncached audits
-async function fetchAndStoreAuditHistory() {
-  try {
-    console.log("[Content] Fetching audit history...");
-    const audits = await fetchAuditHistory();
-    console.log(`[Content] Successfully fetched ${audits.length} audits`);
-    await saveAuditHistory(audits);
-    console.log("[Content] Audit history saved to storage");
-
-    // Get list of audit IDs that aren't cached yet
-    const auditIds = audits
-      .map((a) => a.auditId)
-      .filter((id): id is string => Boolean(id));
-
-    console.log(
-      `[Content] Found ${auditIds.length} audit IDs: that aren't cached yet`,
-      auditIds,
-    );
-
-    if (auditIds.length > 0) {
-      const uncachedIds = await getUncachedAuditIds(auditIds);
-      console.log(
-        `[Content] ${uncachedIds.length} audits need to be cached:`,
-        uncachedIds,
-      );
-
-      if (uncachedIds.length > 0) {
-        // Trigger batch scraping in background
-        console.log(
-          "[Content] Sending SCRAPE_ALL_AUDITS to background script...",
-        );
-        browser.runtime.sendMessage({
-          type: "SCRAPE_ALL_AUDITS",
-          auditIds: uncachedIds,
-        });
-      } else {
-        console.log("[Content] All audits already cached, no scraping needed");
-      }
-    }
-
-    // Setup observer to watch for table changes (new audits completed)
-    setupHistoryTableObserver();
-  } catch (error) {
-    console.error("[Content] Error fetching audit history:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    await saveAuditHistory([], errorMessage);
-  }
-}
-
-//-----------------------------------------------------------------
-//-----------------------------------------------------------------
-// code to scrape course catalog
-// import { DEPARTMENT_MAP } from "@/lib/examples/data/department-map";
-// let scrapedCourses: ScrapedCourse[] = [];
-// logic for fetching data for course catalog scraping
-// async function scrapeCourseCatalog() {
-//   console.log("starting scraping");
-//   const departments = Object.keys(DEPARTMENT_MAP); // gets keys
-//   const semester = "20262"; // Fall 2025
-
-//   console.log(`Scraping ${departments} courses for semester ${semester}...\n`);
-
-//   // get data for each department (both upper and lower division)
-//   for (let i = 0; i < departments.length; i++) {
-//     const department = departments[i];
-//     try {
-//       const upperCourses = await fetchAndScrapeCourses(
-//         semester,
-//         department,
-//         "U",
-//       );
-//       const lowerCourses = await fetchAndScrapeCourses(
-//         semester,
-//         department,
-//         "L",
-//       );
-//       scrapedCourses = [...upperCourses, ...lowerCourses];
-//       console.log(`Found ${scrapedCourses.length} courses for ${department}\n`);
-
-//       // Save to IndexedDB
-//       await db.courses.bulkPut(scrapedCourses);
-//       console.log("Completed department; ", i);
-//     } catch (err) {
-//       console.error("Error:", err instanceof Error ? err.message : err);
-//     }
-//   }
-// }
-
-const saveScrapedCourses = async () => {
-  const data = await db.courses.toArray();
-  if (data.length === 0) {
-    console.error("Database is empty!");
-    return;
-  }
-
-  // JSON Download
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `ut-courses-export.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  console.log(`Exported ${data.length} courses to JSON.`);
-};
-
-//-----------------------------------------------------------------
-//-----------------------------------------------------------------
-// code to watch for changes to the audit history table
-function setupHistoryTableObserver() {
-  let observerActive = false;
-  let lastRowCount = 0;
-
-  const checkForTable = () => {
-    if (observerActive) return;
-
-    // Find audit history table specifically (not just any table)
-    // Check for multiple possible table headers
-    const tables = document.querySelectorAll("table");
-    const historyTable = Array.from(tables).find((table) => {
-      const text = table.textContent || "";
-      return (
-        text.includes("Degree Audits Requested") ||
-        text.includes("Request Created") ||
-        text.includes("Audit Type")
-      );
-    });
-
-    if (historyTable) {
-      const tbody = historyTable.querySelector("tbody");
-      if (!tbody) return;
-      console.log("Setting up audit history observer...");
-      observerActive = true;
-      lastRowCount = tbody.querySelectorAll("tr").length;
-      let debounceTimer: NodeJS.Timeout | null = null;
-      const observer = new MutationObserver(() => {
-        const currentRowCount = tbody.querySelectorAll("tr").length;
-        if (currentRowCount > lastRowCount) {
-          console.log(
-            `New audit detected! Rows: ${lastRowCount} → ${currentRowCount}`,
-          );
-          if (debounceTimer) clearTimeout(debounceTimer);
-
-          debounceTimer = setTimeout(async () => {
-            console.log("Re-fetching audit history...");
-            try {
-              const audits = await fetchAuditHistory();
-              await saveAuditHistory(audits);
-              console.log(`Updated storage with ${audits.length} audits`);
-              lastRowCount = currentRowCount;
-            } catch (error) {
-              console.error("Error re-fetching after table update:", error);
-            }
-          }, 2000); // 2 seconds (sufficient for audit processing)
-        }
-      });
-
-      observer.observe(tbody, {
-        childList: true,
-        subtree: false,
-      });
-
-      console.log(`Observer active ✓ (tracking ${lastRowCount} rows)`);
-    }
-  };
-
-  // Check immediately
-  checkForTable();
-  // incase load is ltr
-  setTimeout(checkForTable, 3000);
-}
-
-//-----------------------------------------------------------------
-//-----------------------------------------------------------------
-// code to define utd_toppage height
-function defineUTDToppageHeight() {
-  const utdToppage = document.querySelector("#utd_toppage");
-  if (utdToppage) {
-    (utdToppage as HTMLElement).style.height = "96px";
-  }
-}
-
-//TODO: Finish below logic to run background audits
-browser.runtime.onMessage.addListener(async (msg, sender) => {
-  if (msg.action !== "run_audit_headless") return;
-
-  console.log("[Content] Received headless audit request", msg);
-
-  try {
-    const csrf = getCSRFToken();
-    if (!csrf) {
-      console.error("[Content] No CSRF token found on page.");
-      browser.runtime.sendMessage({
-        type: "audit_error",
-        error: "csrf_missing",
-      });
-      return;
-    }
-
-    // Build POST data exactly like the UT form would
-    const form = new FormData();
-    form.append("csrfmiddlewaretoken", csrf);
-    form.append("student_eid", msg.student_eid);
-    form.append("degree_plan", msg.degree_plan);
-    form.append("catalog", msg.catalog);
-    form.append("minor", JSON.stringify(msg.minor || []));
-    form.append("effective_ccyys", JSON.stringify(msg.effective_ccyys || []));
-    form.append("incl_current_crswk", msg.incl_current ?? "Y");
-    form.append("incl_future_crswk", msg.incl_future ?? "Y");
-    form.append("incl_planned_crswk", msg.incl_planned ?? " ");
-
-    // Fire the POST request silently — NO navigation
-    const res = await fetch(
-      "https://utdirect.utexas.edu/apps/degree/audits/requests/test_profile_button/",
-      {
-        method: "POST",
-        body: form,
-        credentials: "include",
-      },
-    );
-
-    console.log("[Content] Audit POST finished. Status:", res.status);
-
-    browser.runtime.sendMessage({
-      type: "audit_complete",
-      ok: res.ok,
-      status: res.status,
-    });
-  } catch (err: unknown) {
-    console.error("[Content] Headless audit failed:", err);
-    browser.runtime.sendMessage({
-      type: "audit_error",
-      error: err instanceof Error ? err.message : "unknown_error",
-    });
-  }
-});
-
-//-----------------------------------------------------------------
-//----------------------------------------------------------------
-// code to scrape user audit data
-import {
-  checkLoginRequired,
-  scrapeCourseworkTable,
-  scrapeRequirementSections,
-} from "@/lib/backend/audit-scraper";
-
-browser.runtime.onMessage.addListener(async (msg, sender) => {
-  if (msg.type !== "RUN_SCRAPER") return;
-
-  const auditId = msg.auditId;
-  console.log(`[Scraper] Starting scrape for audit: ${auditId || "unknown"}`);
-
-  // Check for login page
-  if (checkLoginRequired(document)) {
-    browser.runtime.sendMessage({
-      type: "AUDIT_SCRAPE_ERROR",
-      auditId,
-      error: "AUTH_REQUIRED",
-    });
-    return;
-  }
-
-  // Find coursework table
-  const courseworkTable = document.querySelector("#coursework table.results");
-  if (!courseworkTable) {
-    browser.runtime.sendMessage({
-      type: "AUDIT_SCRAPE_ERROR",
-      auditId,
-      error: "TABLE_NOT_FOUND",
-    });
-    return;
-  }
-
-  // Find requirement sections
-  const requirementSections = Array.from(
-    document.querySelectorAll("#requirements table.results tbody.section"),
-  );
-
-  // Scrape data using functions from audit-scraper
-  const courses = scrapeCourseworkTable(courseworkTable);
-  const requirements = scrapeRequirementSections(requirementSections, courses);
-
-  console.log(
-    `[Scraper] Parsed ${requirements.length} sections, ${courses} courses`,
-    courses,
-    requirements,
-  );
-
-  // Send results back
-  browser.runtime.sendMessage({
-    type: "AUDIT_RESULTS",
-    auditId,
-    audit: {
-      courses,
-      requirements,
-    } as CachedAuditData,
-  });
-});
-function getCSRFToken(): string | null {
-  const input = document.querySelector<HTMLInputElement>(
-    "input[name='csrfmiddlewaretoken']",
-  );
-  return input?.value ?? null;
-}

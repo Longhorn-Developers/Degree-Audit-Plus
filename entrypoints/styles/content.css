@@ -35,6 +35,12 @@
   --color-course-applied: #b8c5a3;
   --color-course-in-progress: #f5f0dc;
   --color-course-unknown: #e5e7eb;
+  --color-course-completed-bg: #ecf8d0;
+  --color-course-completed-border: #9fca5b;
+  --color-course-planned-bg: #dbeafe;
+  --color-course-planned-border: #93c5fd;
+  --color-course-in-progress-bg: #fef9c3;
+  --color-course-in-progress-border: #fde047;
 
   /* Gray scale */
   --color-dap-gray-light: #9cadb7;
@@ -57,6 +63,19 @@
   --color-ut-charcoal: #333f48;
   --color-ut-off-white: #d6d2c4;
 
+  /* Planned-course greens (course-add-modal, semester-dropdowns, requirement-breakdown) */
+  --color-dap-plan-green: #579d42;
+  --color-dap-plan-green-hover: #4c8f3b;
+  --color-dap-plan-green-dark: #4a7c59;
+  --color-dap-plan-green-light: #5ba753;
+
+  /* Status / UI grays */
+  --color-dap-status-slate: #4a5568;
+  --color-dap-slate-blue: #b7c6d1;
+
+  /* Destructive */
+  --color-dap-delete: #c63636;
+
   /* Fonts */
   --font-family-staatliches: Staatliches, cursive;
   --font-family-roboto-flex: "Roboto Flex", sans-serif;
@@ -68,12 +87,9 @@
   --color-hover-bg: #f5f5f5;
 }
 
-/*
- * @layer theme puts --color-* on :root and :host. :host wins over inheritance, so shadow UIs
- * need :host-context(html.dark). Use html.dark so variables beat the theme layer like unlayered rules.
- */
+/* Keep semantic colors above Tailwind's theme layer in pages and shadow UIs. */
 html.dark,
-:host-context(html.dark) {
+:host(.dark) {
   --color-background: #272727;
   --color-text: #ffffff;
   --color-muted: #9ca3af;

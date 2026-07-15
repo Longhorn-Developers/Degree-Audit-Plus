@@ -1,15 +1,14 @@
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CourseCode } from "./general-types";
+import type { CourseCode } from "../domain/course";
+import { sendRuntimeMessage } from "./browser/messages";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
 export async function openDAPMainPage() {
-  await browser.runtime.sendMessage({
-    action: "openDegreeAudit",
-  });
+  await sendRuntimeMessage({ type: "OPEN_DEGREE_AUDIT" });
 }
 
 export const CATEGORY_COLORS = [
@@ -74,20 +73,4 @@ export function getColorByCourseCode(code: CourseCode) {
     .split("")
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return CATEGORY_COLORS[departmentSum % CATEGORY_COLORS.length];
-}
-
-export function getColorBySectionTitle(title: string) {
-  const titleSum = title
-    .toLowerCase()
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return CATEGORY_COLORS[titleSum % CATEGORY_COLORS.length];
-}
-
-export function getColorByIndex(index: number) {
-  return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
-}
-
-export function formatMajorLabel(major: string): string {
-  return major;
 }

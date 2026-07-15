@@ -2,12 +2,10 @@ import type {
   AuditRequirement,
   CompositeAuditData,
   CompositeAuditRequirement,
-  Course,
-  CourseCode,
-  CourseId,
-  CurrentAuditProgress,
   DuplicateCourseRequirementFlag,
-} from "./general-types";
+} from "../domain/audit";
+import type { Course, CourseCode, CourseId } from "../domain/course";
+import type { CurrentAuditProgress } from "../domain/progress";
 
 // Give unnamed audits a readable fallback so the UI never shows a blank source.
 function getAuditName(
@@ -88,7 +86,6 @@ export function calculateWeightedDegreeCompletion(
     total: { current: 0, planned: 0, total: 0 },
     sections: [],
   };
-  console.log("sections", sections);
   sections.forEach((section) => {
     const sectionProgress = {
       title: section.title,
@@ -140,6 +137,5 @@ export function calculateWeightedDegreeCompletion(
     (acc, section) => acc + section.progress.total,
     0,
   );
-  console.log("[Audit Calculations] results", results);
   return results;
 }

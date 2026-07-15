@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { parseMajor } from "../lib/backend/parse-major";
-import { utDegreeProgramCases } from "../lib/examples/data/ut-degree-programs";
+import { parseMajor } from "../features/audit-scraping/parse-major";
+import { utDegreeProgramCases } from "./fixtures/ut-degree-programs";
 import {
   fineArtsDegreePlanCases,
   engineeringDegreePlanCases,

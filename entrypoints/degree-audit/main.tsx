@@ -1,19 +1,21 @@
 import "@/entrypoints/styles/content.css";
-import { seedDatabase } from "@/lib/backend/db-seeder";
-import clsx from "clsx";
+import { seedDatabase } from "@/features/catalog/seed-catalog";
+import { cn } from "@/lib/utils";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HStack, VStack } from "../components/common/helperdivs";
-import DegreeAuditPage from "./components/degree-audit-page.tsx";
-import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar.tsx";
-import DegreePlannerPage from "./planner-view/degree-planner-page.tsx";
-import AuditContextProvider from "./providers/audit-provider.tsx";
-import CourseModalContextProvider from "./providers/course-modal-provider.tsx";
+import { HStack, VStack } from "@/components/ui/stack";
+import DegreeAuditPage from "@/features/degree-audit-app/audit-view/degree-audit-page";
+import CourseAddModal from "@/features/degree-audit-app/course-search/course-add-modal";
+import CourseModalContextProvider from "@/features/degree-audit-app/course-search/course-modal-provider";
+import DegreePlannerPage from "@/features/degree-audit-app/planner-view/degree-planner-page";
+import AuditContextProvider from "@/features/degree-audit-app/providers/audit-provider";
 import {
   PreferencesProvider,
   usePreferences,
-} from "./providers/preferences-provider.tsx";
+} from "@/features/degree-audit-app/providers/preferences-provider";
+import Navbar from "@/features/degree-audit-app/shared/navbar";
+import Sidebar from "@/features/degree-audit-app/shared/sidebar";
+import ErrorBoundary from "@/components/error-boundary";
 
 const App = () => {
   return (
@@ -24,6 +26,7 @@ const App = () => {
             <Sidebar />
             <MainContent />
           </HStack>
+          <CourseAddModal />
         </CourseModalContextProvider>
       </AuditContextProvider>
     </PreferencesProvider>
@@ -36,7 +39,7 @@ const MainContent = () => {
   return (
     <VStack
       x="center"
-      className={clsx(
+      className={cn(
         "w-full min-w-0 h-screen overflow-hidden transition-[margin-left] duration-300 ease-out",
         {
           "ml-[365px]": sidebarIsOpen,
@@ -64,7 +67,9 @@ async function bootstrap() {
 
   root.render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 }
