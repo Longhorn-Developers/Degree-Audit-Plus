@@ -13,7 +13,7 @@ export type ExtensionMessage =
   | {
       type: "AUDIT_SCRAPE_ERROR";
       auditId: string;
-      error: "AUTH_REQUIRED" | "TABLE_NOT_FOUND";
+      error: "AUTH_REQUIRED" | "TABLE_NOT_FOUND" | "PARSE_ERROR";
     };
 
 interface MessageResponses {
@@ -22,7 +22,7 @@ interface MessageResponses {
     | { success: true; existing: boolean }
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
-  SCRAPE_ALL_AUDITS: { status: "started" };
+  SCRAPE_ALL_AUDITS: { status: "started" | "already-running" };
 }
 
 type MessageResponse<M extends ExtensionMessage> =

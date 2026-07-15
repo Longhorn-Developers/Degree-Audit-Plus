@@ -24,14 +24,29 @@ const SemesterDropdowns = () => {
     StringSemester[]
   >([]);
   const [activeDragId, setActiveDragId] = useState<CourseId | null>(null);
-  const [dragOrigin, setDragOrigin] = useState<StringSemester | null>(null);
+  const [dragSemester, setDragSemester] = useState<StringSemester | null>(null);
   const combined = useMemo(() => {
     const combined = structuredClone(semesters);
     extraEmptySemesters.forEach((semester) => {
       if (!(semester in semesters)) combined[semester] = [];
     });
+
+    const activeCourse = activeDragId ? courseMap[activeDragId] : null;
+    if (
+      activeCourse &&
+      dragSemester &&
+      dragSemester !== activeCourse.semester
+    ) {
+      combined[activeCourse.semester] = combined[activeCourse.semester].filter(
+        ({ id }) => id !== activeDragId,
+      );
+      combined[dragSemester] = [
+        ...(combined[dragSemester] ?? []),
+        activeCourse,
+      ];
+    }
     return combined;
-  }, [semesters, extraEmptySemesters]);
+  }, [activeDragId, courseMap, dragSemester, extraEmptySemesters, semesters]);
 
   function onDragOver(event: DragOverEvent) {
     const activeId = event.active.id;
@@ -41,12 +56,17 @@ const SemesterDropdowns = () => {
     if (
       typeof overId === "string" &&
       !courseMap[overId] &&
-      courseMap[activeId]?.semester !== overId
+      dragSemester !== overId
     ) {
-      void moveCourseToNewSemester(activeId, overId as StringSemester);
-    } else if (!event.over && courseMap[activeId]?.semester !== dragOrigin) {
-      void moveCourseToNewSemester(activeId, dragOrigin as StringSemester);
+      setDragSemester(overId as StringSemester);
+    } else if (!event.over) {
+      setDragSemester(courseMap[activeId]?.semester ?? null);
     }
+  }
+
+  function clearDrag() {
+    setActiveDragId(null);
+    setDragSemester(null);
   }
 
   return (
@@ -54,13 +74,26 @@ const SemesterDropdowns = () => {
       id="degree-planner-general"
       onDragStart={(event) => {
         if (typeof event.active.id !== "string") return;
-        setDragOrigin(courseMap[event.active.id]?.semester);
         setActiveDragId(event.active.id);
+        setDragSemester(courseMap[event.active.id]?.semester ?? null);
       }}
-      onDragEnd={() => {
-        setDragOrigin(null);
-        setActiveDragId(null);
+      onDragEnd={(event) => {
+        const activeId = event.active.id;
+        const overId = event.over?.id;
+        if (
+          typeof activeId === "string" &&
+          typeof overId === "string" &&
+          !courseMap[overId] &&
+          courseMap[activeId]?.semester !== overId
+        ) {
+          void moveCourseToNewSemester(activeId, overId as StringSemester)
+            .catch((error) => console.error("Failed to move course:", error))
+            .finally(clearDrag);
+          return;
+        }
+        clearDrag();
       }}
+      onDragCancel={clearDrag}
       onDragOver={onDragOver}
       collisionDetection={(args) =>
         pointerWithin({

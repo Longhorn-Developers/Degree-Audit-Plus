@@ -192,12 +192,15 @@ export function registerAuditScrapingHandlers(): void {
       }
 
       if (message.type === "SCRAPE_ALL_AUDITS") {
-        if (!batchController.start(message.auditIds)) {
+        const started = batchController.start(message.auditIds);
+        if (!started) {
           console.warn(
             "SCRAPE_ALL_AUDITS ignored: an audit batch is already running",
           );
         }
-        sendMessageResponse(message, sendResponse, { status: "started" });
+        sendMessageResponse(message, sendResponse, {
+          status: started ? "started" : "already-running",
+        });
         return true;
       }
 
