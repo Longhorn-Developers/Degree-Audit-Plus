@@ -236,7 +236,7 @@ export function AuditContextProvider({
     updateLastAuditId,
   ]);
 
-  if (!loaded || !currentAuditId || !history || !auditData) {
+  if (!loaded || !currentAuditId || !history) {
     return <LoadingPage />;
   }
 
