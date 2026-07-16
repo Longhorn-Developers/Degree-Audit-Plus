@@ -227,6 +227,11 @@ export function registerAuditScrapingHandlers(): void {
 
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
+export const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
+
+export async function openAuditHome(): Promise<void> {
+  await browser.tabs.create({ url: AUDIT_HOME_URL, active: true });
+}
 
 function clickRunAuditButton(retry = false): void {
   const click = () => {
@@ -260,6 +265,18 @@ function registerAuditNavigationHandlers(): void {
               error: error instanceof Error ? error.message : String(error),
             }),
           );
+        return true;
+      }
+
+      if (message.type === "OPEN_AUDIT_HOME") {
+        void openAuditHome().then(
+          () => sendMessageResponse(message, sendResponse, { success: true }),
+          (error) =>
+            sendMessageResponse(message, sendResponse, {
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+        );
         return true;
       }
 

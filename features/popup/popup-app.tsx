@@ -7,7 +7,7 @@ import {
   sendRuntimeMessage,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
-import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
+import { PlusIcon, SignInIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
@@ -92,9 +92,14 @@ export default function App() {
     sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
   };
 
+  const handleLogin = () => {
+    void sendRuntimeMessage({ type: "OPEN_AUDIT_HOME" });
+  };
+
   // Determine which audits to display
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
+  const needsSetup = audits.length === 0;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -113,8 +118,16 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button className="rounded-md" onClick={handleRerunAudit}>
-            {runningAudit ? (
+          <Button
+            className="rounded-md"
+            onClick={needsSetup ? handleLogin : handleRerunAudit}
+          >
+            {needsSetup ? (
+              <div className="flex items-center space-x-2">
+                <SignInIcon size={24} />
+                <p className="text-lg font-bold">Login</p>
+              </div>
+            ) : runningAudit ? (
               <div className="flex items-center space-x-2">
                 <SpinnerIcon size={24} className="animate-spin-slow" />
                 <p className="text-lg font-bold">Running Audit...</p>
@@ -153,6 +166,17 @@ export default function App() {
               Loading audit history...
             </p>
           </div>
+        ) : needsSetup ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[300px]">
+              Log in to UT Direct, then visit the Degree Audit page to load your
+              audits.
+            </p>
+            <p className="text-[14.22px] font-medium text-dap-dark max-w-[300px]">
+              If this is your first time using Degree Audit Plus, visiting that
+              page starts the initial audit sync.
+            </p>
+          </div>
         ) : error ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-red-600 max-w-[250px]">
@@ -160,15 +184,6 @@ export default function App() {
             </p>
             <p className="text-sm text-dap-gray-light">
               Please visit the UT Direct degree audits page to refresh.
-            </p>
-          </div>
-        ) : audits.length === 0 ? (
-          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[250px]">
-              Alas! Your future is veiled. I do not know what is to come.
-            </p>
-            <p className="text-[14.22px] font-medium text-dap-dark">
-              (No current audits)
             </p>
           </div>
         ) : (
