@@ -86,8 +86,7 @@ To get the development environment running locally:
 ## Contributing
 
 Contributions are **greatly appreciated**. First time contributers are encouraged to contribute to issues labeled "easy".
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Note: Please do not just "vibe code" a PR to and issue. Use AI, but make sure to write intentionally designed code. We only accept heavily optimized code. This may mean multiple iterations of review before your PR gets merged. 
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -103,10 +102,6 @@ Examples:
 - `feat: add new dashboard component`
 - `fix: resolve login redirect issue`
 - `docs: update README installation steps`
-
-### Git Hooks with Husky
-
-This project uses [Husky](https://typicode.github.io/husky/) to manage Git hooks. Husky automatically runs scripts before commits and pushes to ensure code quality and enforce commit conventions.
 
 ## The Team
 
