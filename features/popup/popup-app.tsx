@@ -104,6 +104,9 @@ export default function App() {
   const needsLogin = loggedIn === false && audits.length === 0;
   // An authenticated empty history is a valid state, even if an older sync cached an error.
   const hasAuthenticatedEmptyHistory = loggedIn === true && audits.length === 0;
+  // Only the empty state depends on auth (Login vs. empty); with cached audits we
+  // can render immediately. So wait for auth ONLY when there's nothing to show yet.
+  const resolvingLogin = loggedIn === null && audits.length === 0;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -126,7 +129,11 @@ export default function App() {
             className="rounded-md"
             onClick={needsLogin ? handleLogin : handleRerunAudit}
           >
-            {needsLogin ? (
+            {resolvingLogin ? (
+              <div className="flex items-center space-x-2">
+                <SpinnerIcon size={24} className="animate-spin-slow" />
+              </div>
+            ) : needsLogin ? (
               <div className="flex items-center space-x-2">
                 <SignInIcon size={24} />
                 <p className="text-lg font-bold">Login</p>
@@ -142,6 +149,7 @@ export default function App() {
                 <p className="text-lg font-bold">Run New Audit</p>
               </div>
             )}
+
           </Button>
         </div>
       </header>
@@ -166,9 +174,7 @@ export default function App() {
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-dap-gray-light">
-              Loading audit history...
-            </p>
+            <p className="text-base text-dap-gray-light">Syncing...</p>
           </div>
         ) : needsLogin ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
@@ -176,12 +182,8 @@ export default function App() {
               Log in to UT Direct, then visit the Degree Audit page to load your
               audits.
             </p>
-            <p className="text-[14.22px] font-medium text-dap-dark max-w-[300px]">
-              If this is your first time using Degree Audit Plus, visiting that
-              page starts the initial audit sync.
-            </p>
           </div>
-        ) : error && !hasAuthenticatedEmptyHistory ? (
+        ) : error ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-red-600 max-w-[250px]">
               Error loading audits: {error}
