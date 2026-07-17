@@ -5,26 +5,27 @@ import {
 } from "@/lib/storage/audit-storage";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { parseAuditHistory } from "./audit-history-parser";
+import { checkLoginRequired } from "./audit-page-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 
-export async function isLoggedIn(): Promise<boolean> {
-  try {
-    const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
-    return response.ok && !response.redirected;
-  } catch {
-    return false;
-  }
-}
-
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  if (response.redirected) throw new Error("Not logged in to UT Direct");
 
-  return parseAuditHistory(
-    new DOMParser().parseFromString(await response.text(), "text/html"),
+  const document = new DOMParser().parseFromString(
+    await response.text(),
+    "text/html",
   );
+  if (checkLoginRequired(document)) {
+    throw new Error("Not logged in to UT Direct");
+  }
+  // A logged-in student who has never requested an audit gets a history page
+  if (!document.querySelector("table")) return [];
+
+  return parseAuditHistory(document);
 }
 
 async function fetchAndSaveAuditHistory(): Promise<AuditHistoryEntry[]> {

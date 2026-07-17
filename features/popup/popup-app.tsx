@@ -12,10 +12,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
-import { isLoggedIn } from "@/features/audit-scraping/audit-history-sync";
+import {
+  getCachedLoginState,
+  openLoginTab,
+  refreshLoginState,
+  watchLoginState,
+} from "@/features/audit-scraping/login-state";
 import PopupAuditCard from "./popup-audit-card";
-
-const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
 
 export default function App() {
   const [audits, setAudits] = useState<AuditHistoryEntry[]>([]);
@@ -46,8 +49,12 @@ export default function App() {
       .finally(() => setLoading(false));
   }, [applyAuditHistory]);
 
+  // chache login state.
   useEffect(() => {
-    void isLoggedIn().then(setLoggedIn);
+    void getCachedLoginState().then((cached) => {
+      setLoggedIn((current) => current ?? cached ?? false);
+    });
+    void refreshLoginState().then(setLoggedIn);
   }, []);
 
   useEffect(() => {
@@ -74,10 +81,16 @@ export default function App() {
       applyAuditHistory(data);
     });
 
+    // Follow login-state writes from other contexts (content script, background)
+    const unwatchLoginState = watchLoginState((value) => {
+      if (value !== null) setLoggedIn(value);
+    });
+
     browser.runtime.onMessage.addListener(listener);
     return () => {
       browser.runtime.onMessage.removeListener(listener);
       unwatchAuditHistory();
+      unwatchLoginState();
     };
   }, [applyAuditHistory]);
 
@@ -91,22 +104,29 @@ export default function App() {
   // Send message to background script to run audit (background has access to tabs/scripting APIs)
   const handleRerunAudit = async () => {
     setRunningAudit(true);
-    sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
+    const stillLoggedIn = await refreshLoginState();
+    setLoggedIn(stillLoggedIn);
+    if (!stillLoggedIn) {
+      setRunningAudit(false);
+      handleLogin();
+      return;
+    }
+    const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
+    // Background refuses when the session is dead (it opens the login page
+    // instead) — don't leave the spinner running.
+    if (response && !response.success) setRunningAudit(false);
   };
 
   const handleLogin = () => {
-    void browser.tabs.create({ url: AUDIT_HOME_URL, active: true });
+    void openLoginTab();
   };
 
   // Determine which audits to display
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
-  const needsLogin = loggedIn === false && audits.length === 0;
-  // An authenticated empty history is a valid state, even if an older sync cached an error.
-  const hasAuthenticatedEmptyHistory = loggedIn === true && audits.length === 0;
-  // Only the empty state depends on auth (Login vs. empty); with cached audits we
-  // can render immediately. So wait for auth ONLY when there's nothing to show yet.
-  const resolvingLogin = loggedIn === null && audits.length === 0;
+  // Login button shows whenever we're not logged in, even with cached audits.
+  // null only lasts until the cache read resolves (milliseconds).
+  const needsLogin = loggedIn === false;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -129,7 +149,7 @@ export default function App() {
             className="rounded-md"
             onClick={needsLogin ? handleLogin : handleRerunAudit}
           >
-            {resolvingLogin ? (
+            {loggedIn === null ? (
               <div className="flex items-center space-x-2">
                 <SpinnerIcon size={24} className="animate-spin-slow" />
               </div>
@@ -176,7 +196,7 @@ export default function App() {
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-dap-gray-light">Syncing...</p>
           </div>
-        ) : needsLogin ? (
+        ) : needsLogin && audits.length === 0 ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[300px]">
               Log in to UT Direct, then visit the Degree Audit page to load your

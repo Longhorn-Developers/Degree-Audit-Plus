@@ -4,8 +4,11 @@ import {
 } from "@/lib/browser/messages";
 import { checkLoginRequired, parseAuditPage } from "./audit-page-parser";
 import { startAuditHistorySync } from "./audit-history-sync";
+import { recordLoginStateFromPage } from "./login-state";
 
 export function startAuditContentController(document: Document): void {
+  recordLoginStateFromPage(document);
+
   if (/^\/apps\/degree\/audits\/?$/.test(document.location.pathname)) {
     void startAuditHistorySync(document);
   }
