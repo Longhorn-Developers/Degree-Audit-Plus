@@ -9,6 +9,15 @@ import { parseAuditHistory } from "./audit-history-parser";
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 
+export async function isLoggedIn(): Promise<boolean> {
+  try {
+    const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
+    return response.ok && !response.redirected;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

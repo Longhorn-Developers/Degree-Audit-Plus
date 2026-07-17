@@ -7,12 +7,15 @@ import {
   sendRuntimeMessage,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
-import { PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
+import { PlusIcon, SignInIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
+import { isLoggedIn } from "@/features/audit-scraping/audit-history-sync";
 import PopupAuditCard from "./popup-audit-card";
+
+const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
 
 export default function App() {
   const [audits, setAudits] = useState<AuditHistoryEntry[]>([]);
@@ -21,6 +24,7 @@ export default function App() {
   const [showAll, setShowAll] = useState(false);
   const [runningAudit, setRunningAudit] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
   const applyAuditHistory = useCallback((data: AuditHistoryData | null) => {
     if (data?.error) {
@@ -35,21 +39,19 @@ export default function App() {
   // Load audit history from cached storage
   // Storage is updated ONLY when user visits UT Direct audits home page
   // This allows popup to work from any page using cached data
-  const refreshAudits = useCallback(async () => {
-    try {
-      applyAuditHistory(await getAuditHistory());
-    } catch (e) {
-      console.error("Error loading audit history:", e);
-      setError("Failed to load audit history");
-    }
+  useEffect(() => {
+    getAuditHistory()
+      .then(applyAuditHistory)
+      .catch(() => setError("Failed to load audit history"))
+      .finally(() => setLoading(false));
   }, [applyAuditHistory]);
 
   useEffect(() => {
-    refreshAudits().finally(() => setLoading(false));
-  }, [refreshAudits]);
+    void isLoggedIn().then(setLoggedIn);
+  }, []);
 
   useEffect(() => {
-    // get sycn status for ui
+    // get sync status for ui
     sendRuntimeMessage({ type: "GET_SYNC_STATUS" })
       .then((response) => {
         if (response?.isSyncing) {
@@ -92,9 +94,19 @@ export default function App() {
     sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
   };
 
+  const handleLogin = () => {
+    void browser.tabs.create({ url: AUDIT_HOME_URL, active: true });
+  };
+
   // Determine which audits to display
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
+  const needsLogin = loggedIn === false && audits.length === 0;
+  // An authenticated empty history is a valid state, even if an older sync cached an error.
+  const hasAuthenticatedEmptyHistory = loggedIn === true && audits.length === 0;
+  // Only the empty state depends on auth (Login vs. empty); with cached audits we
+  // can render immediately. So wait for auth ONLY when there's nothing to show yet.
+  const resolvingLogin = loggedIn === null && audits.length === 0;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -113,8 +125,20 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button className="rounded-md" onClick={handleRerunAudit}>
-            {runningAudit ? (
+          <Button
+            className="rounded-md"
+            onClick={needsLogin ? handleLogin : handleRerunAudit}
+          >
+            {resolvingLogin ? (
+              <div className="flex items-center space-x-2">
+                <SpinnerIcon size={24} className="animate-spin-slow" />
+              </div>
+            ) : needsLogin ? (
+              <div className="flex items-center space-x-2">
+                <SignInIcon size={24} />
+                <p className="text-lg font-bold">Login</p>
+              </div>
+            ) : runningAudit ? (
               <div className="flex items-center space-x-2">
                 <SpinnerIcon size={24} className="animate-spin-slow" />
                 <p className="text-lg font-bold">Running Audit...</p>
@@ -125,6 +149,7 @@ export default function App() {
                 <p className="text-lg font-bold">Run New Audit</p>
               </div>
             )}
+
           </Button>
         </div>
       </header>
@@ -149,8 +174,13 @@ export default function App() {
 
         {loading ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
-            <p className="text-base text-dap-gray-light">
-              Loading audit history...
+            <p className="text-base text-dap-gray-light">Syncing...</p>
+          </div>
+        ) : needsLogin ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[300px]">
+              Log in to UT Direct, then visit the Degree Audit page to load your
+              audits.
             </p>
           </div>
         ) : error ? (
