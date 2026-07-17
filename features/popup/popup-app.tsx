@@ -12,6 +12,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
+import {
+  AUDIT_HOME_URL,
+  isAuthenticatedToUTDirect,
+} from "@/features/audit-scraping/audit-history-sync";
 import PopupAuditCard from "./popup-audit-card";
 
 export default function App() {
@@ -21,6 +25,7 @@ export default function App() {
   const [showAll, setShowAll] = useState(false);
   const [runningAudit, setRunningAudit] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const applyAuditHistory = useCallback((data: AuditHistoryData | null) => {
     if (data?.error) {
@@ -32,21 +37,23 @@ export default function App() {
     setError(null);
   }, []);
 
-  // Load audit history from cached storage
-  // Storage is updated ONLY when user visits UT Direct audits home page
-  // This allows popup to work from any page using cached data
-  const refreshAudits = useCallback(async () => {
-    try {
-      applyAuditHistory(await getAuditHistory());
-    } catch (e) {
-      console.error("Error loading audit history:", e);
-      setError("Failed to load audit history");
-    }
-  }, [applyAuditHistory]);
-
+  // Load cached audits and current UT Direct authentication together
   useEffect(() => {
-    refreshAudits().finally(() => setLoading(false));
-  }, [refreshAudits]);
+    Promise.all([getAuditHistory(), isAuthenticatedToUTDirect()])
+      .then(([history, authenticated]) => {
+        setIsAuthenticated(authenticated);
+        applyAuditHistory(
+          authenticated && history?.audits.length === 0
+            ? { ...history, error: undefined }
+            : history,
+        );
+      })
+      .catch((error) => {
+        console.error("Error loading audit history:", error);
+        setError("Failed to load audit history");
+      })
+      .finally(() => setLoading(false));
+  }, [applyAuditHistory]);
 
   useEffect(() => {
     // get sycn status for ui
@@ -93,13 +100,13 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    void sendRuntimeMessage({ type: "OPEN_AUDIT_HOME" });
+    void browser.tabs.create({ url: AUDIT_HOME_URL, active: true });
   };
 
   // Determine which audits to display
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
-  const needsSetup = audits.length === 0;
+  const needsLogin = isAuthenticated === false && audits.length === 0;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -120,9 +127,9 @@ export default function App() {
         <div className="flex items-center space-x-3">
           <Button
             className="rounded-md"
-            onClick={needsSetup ? handleLogin : handleRerunAudit}
+            onClick={needsLogin ? handleLogin : handleRerunAudit}
           >
-            {needsSetup ? (
+            {needsLogin ? (
               <div className="flex items-center space-x-2">
                 <SignInIcon size={24} />
                 <p className="text-lg font-bold">Login</p>
@@ -166,7 +173,7 @@ export default function App() {
               Loading audit history...
             </p>
           </div>
-        ) : needsSetup ? (
+        ) : needsLogin ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[300px]">
               Log in to UT Direct, then visit the Degree Audit page to load your
@@ -184,6 +191,15 @@ export default function App() {
             </p>
             <p className="text-sm text-dap-gray-light">
               Please visit the UT Direct degree audits page to refresh.
+            </p>
+          </div>
+        ) : audits.length === 0 ? (
+          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+            <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[250px]">
+              Alas! Your future is veiled. I do not know what is to come.
+            </p>
+            <p className="text-[14.22px] font-medium text-dap-dark">
+              (No current audits)
             </p>
           </div>
         ) : (

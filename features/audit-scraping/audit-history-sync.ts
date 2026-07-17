@@ -5,17 +5,35 @@ import {
 } from "@/lib/storage/audit-storage";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { parseAuditHistory } from "./audit-history-parser";
+import { checkLoginRequired } from "./audit-page-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
+export const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
 
-export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+async function fetchAuditHistoryDocument(): Promise<Document> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-  return parseAuditHistory(
-    new DOMParser().parseFromString(await response.text(), "text/html"),
-  );
+  return new DOMParser().parseFromString(await response.text(), "text/html");
+}
+
+export async function isAuthenticatedToUTDirect(): Promise<boolean> {
+  try {
+    return !checkLoginRequired(await fetchAuditHistoryDocument());
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+  const document = await fetchAuditHistoryDocument();
+  if (checkLoginRequired(document)) {
+    throw new Error("Authentication required");
+  }
+  if (!document.querySelector("table")) return [];
+
+  return parseAuditHistory(document);
 }
 
 async function fetchAndSaveAuditHistory(): Promise<AuditHistoryEntry[]> {

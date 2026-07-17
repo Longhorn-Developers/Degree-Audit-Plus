@@ -3,7 +3,6 @@ import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
-  | { type: "OPEN_AUDIT_HOME" }
   | { type: "RUN_NEW_AUDIT" }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
@@ -19,7 +18,6 @@ export type ExtensionMessage =
 
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
-  OPEN_AUDIT_HOME: { success: true } | { success: false; error: string };
   RUN_NEW_AUDIT:
     | { success: true; existing: boolean }
     | { success: false; error: string };
@@ -35,7 +33,6 @@ type ResponseRequest = Extract<
   {
     type:
       | "OPEN_DEGREE_AUDIT"
-      | "OPEN_AUDIT_HOME"
       | "RUN_NEW_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS";
