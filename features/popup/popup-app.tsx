@@ -51,7 +51,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // get sycn status for ui
+    // get sync status for ui
     sendRuntimeMessage({ type: "GET_SYNC_STATUS" })
       .then((response) => {
         if (response?.isSyncing) {
