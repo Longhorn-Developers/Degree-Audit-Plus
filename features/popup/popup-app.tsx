@@ -12,11 +12,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
-import {
-  AUDIT_HOME_URL,
-  isAuthenticatedToUTDirect,
-} from "@/features/audit-scraping/audit-history-sync";
+import { isLoggedIn } from "@/features/audit-scraping/audit-history-sync";
 import PopupAuditCard from "./popup-audit-card";
+
+const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
 
 export default function App() {
   const [audits, setAudits] = useState<AuditHistoryEntry[]>([]);
@@ -25,7 +24,7 @@ export default function App() {
   const [showAll, setShowAll] = useState(false);
   const [runningAudit, setRunningAudit] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
   const applyAuditHistory = useCallback((data: AuditHistoryData | null) => {
     if (data?.error) {
@@ -37,23 +36,19 @@ export default function App() {
     setError(null);
   }, []);
 
-  // Load cached audits and current UT Direct authentication together
+  // Load audit history from cached storage
+  // Storage is updated ONLY when user visits UT Direct audits home page
+  // This allows popup to work from any page using cached data
   useEffect(() => {
-    Promise.all([getAuditHistory(), isAuthenticatedToUTDirect()])
-      .then(([history, authenticated]) => {
-        setIsAuthenticated(authenticated);
-        applyAuditHistory(
-          authenticated && history?.audits.length === 0
-            ? { ...history, error: undefined }
-            : history,
-        );
-      })
-      .catch((error) => {
-        console.error("Error loading audit history:", error);
-        setError("Failed to load audit history");
-      })
+    getAuditHistory()
+      .then(applyAuditHistory)
+      .catch(() => setError("Failed to load audit history"))
       .finally(() => setLoading(false));
   }, [applyAuditHistory]);
+
+  useEffect(() => {
+    void isLoggedIn().then(setLoggedIn);
+  }, []);
 
   useEffect(() => {
     // get sycn status for ui
@@ -106,7 +101,9 @@ export default function App() {
   // Determine which audits to display
   const displayedAudits = showAll ? audits : audits.slice(0, 3);
   const hasMoreAudits = audits.length > 3;
-  const needsLogin = isAuthenticated === false && audits.length === 0;
+  const needsLogin = loggedIn === false && audits.length === 0;
+  // An authenticated empty history is a valid state, even if an older sync cached an error.
+  const hasAuthenticatedEmptyHistory = loggedIn === true && audits.length === 0;
 
   return (
     <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
@@ -184,7 +181,7 @@ export default function App() {
               page starts the initial audit sync.
             </p>
           </div>
-        ) : error ? (
+        ) : error && !hasAuthenticatedEmptyHistory ? (
           <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
             <p className="text-base text-red-600 max-w-[250px]">
               Error loading audits: {error}

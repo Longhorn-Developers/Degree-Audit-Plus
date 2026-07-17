@@ -5,35 +5,26 @@ import {
 } from "@/lib/storage/audit-storage";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { parseAuditHistory } from "./audit-history-parser";
-import { checkLoginRequired } from "./audit-page-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
-export const AUDIT_HOME_URL = "https://utdirect.utexas.edu/apps/degree/audits/";
 
-async function fetchAuditHistoryDocument(): Promise<Document> {
-  const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-  return new DOMParser().parseFromString(await response.text(), "text/html");
-}
-
-export async function isAuthenticatedToUTDirect(): Promise<boolean> {
+export async function isLoggedIn(): Promise<boolean> {
   try {
-    return !checkLoginRequired(await fetchAuditHistoryDocument());
+    const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
+    return response.ok && !response.redirected;
   } catch {
     return false;
   }
 }
 
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
-  const document = await fetchAuditHistoryDocument();
-  if (checkLoginRequired(document)) {
-    throw new Error("Authentication required");
-  }
-  if (!document.querySelector("table")) return [];
+  const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-  return parseAuditHistory(document);
+  return parseAuditHistory(
+    new DOMParser().parseFromString(await response.text(), "text/html"),
+  );
 }
 
 async function fetchAndSaveAuditHistory(): Promise<AuditHistoryEntry[]> {
