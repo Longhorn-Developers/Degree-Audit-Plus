@@ -6,10 +6,16 @@ let listener: ((message: ExtensionMessage) => void) | undefined;
 let parseShouldThrow = false;
 let syncCalls = 0;
 let sentMessages: ExtensionMessage[] = [];
+let recordedLoginPages = 0;
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
     syncCalls++;
+  },
+}));
+mock.module("../../lib/login-state", () => ({
+  recordLoginStateFromPage: () => {
+    recordedLoginPages++;
   },
 }));
 mock.module("../../features/audit-scraping/audit-page-parser", () => ({
@@ -47,6 +53,7 @@ beforeEach(() => {
   parseShouldThrow = false;
   sentMessages = [];
   syncCalls = 0;
+  recordedLoginPages = 0;
 });
 
 function createDocument(pathname: string, body = ""): Document {
@@ -58,6 +65,8 @@ function createDocument(pathname: string, body = ""): Document {
 test("only syncs audit history on the audit landing page", () => {
   startAuditContentController(createDocument("/apps/degree/audits/"));
   expect(syncCalls).toBe(1);
+  // every page load records the login state it sees in the DOM
+  expect(recordedLoginPages).toBe(1);
 
   startAuditContentController(
     createDocument("/apps/degree/audits/results/12345/"),

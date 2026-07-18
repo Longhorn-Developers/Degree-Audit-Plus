@@ -52,7 +52,7 @@ export default defineConfig({
       "256": "icon/LHD Logo.png",
     },
 
-    permissions: ["storage", "tabs", "scripting", "windows"],
+    permissions: ["storage", "tabs", "scripting", "windows", "cookies"],
     host_permissions: ["https://utdirect.utexas.edu/*"],
     optional_host_permissions: [],
     optional_permissions: [],

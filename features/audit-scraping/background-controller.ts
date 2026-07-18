@@ -11,6 +11,11 @@ import {
   closeScraperWindow,
   createScraperTab,
 } from "./scraper-window";
+import {
+  openLoginTab,
+  refreshLoginState,
+  registerSessionCookieWatcher,
+} from "../../lib/login-state";
 
 type ScrapeFailure = Extract<
   ExtensionMessage,
@@ -283,6 +288,13 @@ function registerAuditNavigationHandlers(): void {
 }
 
 async function runNewAudit(): Promise<boolean> {
+  if (!(await refreshLoginState())) {
+    // Session is gone — send the user to log in instead of clicking into a
+    // dead page from a hidden tab.
+    await openLoginTab();
+    throw new Error("Not logged in to UT Direct");
+  }
+
   const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
   const existingTab = tabs.find((tab) => tab.url?.startsWith(NEW_AUDIT_URL));
   if (existingTab?.id !== undefined) {
@@ -317,4 +329,5 @@ async function runNewAudit(): Promise<boolean> {
 export function registerAuditBackgroundController(): void {
   registerAuditNavigationHandlers();
   registerAuditScrapingHandlers();
+  registerSessionCookieWatcher();
 }
