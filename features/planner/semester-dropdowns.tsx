@@ -118,7 +118,7 @@ const SemesterDropdowns = () => {
             />
           ))}
         <Button
-          className="w-full bg-dap-plan-green text-white font-bold"
+          className="w-full self-start bg-dap-plan-green text-white font-bold"
           onClick={() => {
             setExtraEmptySemesters((prev) => [
               ...prev,
