@@ -5,9 +5,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
 import DegreeAuditPage from "@/features/degree-audit-app/audit-view/degree-audit-page";
-import CourseAddModal from "@/features/degree-audit-app/course-search/course-add-modal";
-import CourseModalContextProvider from "@/features/degree-audit-app/course-search/course-modal-provider";
-import DegreePlannerPage from "@/features/degree-audit-app/planner-view/degree-planner-page";
+import CourseAddModal from "@/features/course-search/course-add-modal";
+import CourseModalContextProvider from "@/features/course-search/course-modal-provider";
+import DegreePlannerPage from "@/features/planner/degree-planner-page";
 import AuditContextProvider from "@/features/audit/audit-provider";
 import {
   PreferencesProvider,

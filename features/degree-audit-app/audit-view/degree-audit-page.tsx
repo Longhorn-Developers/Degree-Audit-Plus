@@ -1,7 +1,7 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
 import "@/entrypoints/styles/content.css";
-import { CourseSearchPanel } from "../course-search/course-search-panel";
+import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { groupAuditSections } from "@/features/audit/section-groups";
 import DegreeSidePanel from "../shared/degree-side-panel";

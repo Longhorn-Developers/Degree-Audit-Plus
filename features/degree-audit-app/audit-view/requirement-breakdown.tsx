@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
-import { useCourseModalContext } from "../course-search/course-modal-provider";
+import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";

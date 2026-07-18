@@ -1,7 +1,7 @@
 import type { CourseId } from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
-import CourseCard from "../course-search/course-card";
+import CourseCard from "@/features/course-search/course-card";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
 interface PlannerCourseCardProps {
