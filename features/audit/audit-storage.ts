@@ -1,9 +1,10 @@
-import type {
-  AuditHistoryData,
-  AuditHistoryEntry,
-  CachedAuditData,
-  CachedCompositeAudit,
-  CompositeAuditData,
+import {
+  type AuditHistoryData,
+  type AuditHistoryEntry,
+  type CachedAuditData,
+  type CachedCompositeAudit,
+  type CompositeAuditData,
+  getAuditDisplayName,
 } from "@/domain/audit";
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
@@ -132,7 +133,7 @@ export async function loadCompositeAuditData(
       const card = history?.audits.find((audit) => audit.auditId === id);
       return {
         ...data,
-        name: card?.title ?? card?.majors?.join("; ") ?? id,
+        name: getAuditDisplayName(card) ?? id,
       };
     }),
   );

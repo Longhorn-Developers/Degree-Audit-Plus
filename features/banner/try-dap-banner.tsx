@@ -3,10 +3,10 @@ import type { AuditHistoryData } from "@/domain/audit";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import noiseTexture from "../../assets/noise-texture.svg";
-import ArrowTopRightIcon from "../../assets/svgs/arrow-top-right";
-import DAPLogo from "../../assets/svgs/dap-logo";
-import gridBg from "../../public/Grid.png";
+import noiseTexture from "@/assets/noise-texture.svg";
+import ArrowTopRightIcon from "@/assets/svgs/arrow-top-right";
+import DAPLogo from "@/assets/svgs/dap-logo";
+import gridBg from "@/public/Grid.png";
 
 const TryDAPBanner = () => {
   const [isOpen, setIsOpen] = useState(true);

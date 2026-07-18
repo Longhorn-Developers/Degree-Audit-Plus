@@ -2,7 +2,8 @@ import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
 import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
-import { groupAuditSections } from "@/features/audit/section-groups";
+import { isGpaSection } from "@/features/audit/audit-calculations";
+import { groupAuditSections } from "./section-groups";
 import DegreeSidePanel from "./degree-side-panel";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
@@ -29,9 +30,7 @@ function parseGpaSummary(text: string | undefined) {
 
 const SidePanel = () => {
   const { sections } = useAuditContext();
-  const gpaSection = sections.find((section) =>
-    section.title.toLowerCase().includes("gpa"),
-  );
+  const gpaSection = sections.find((section) => isGpaSection(section.title));
   const gpaRule = gpaSection?.rules[0];
   const gpaSummary = parseGpaSummary(gpaRule?.text);
 

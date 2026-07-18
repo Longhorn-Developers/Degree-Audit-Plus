@@ -2,6 +2,7 @@ import { IconButton } from "@/components/ui/button";
 import { HStack, VStack } from "@/components/ui/stack";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
+import { getAuditDisplayName } from "@/domain/audit";
 import { cn } from "@/lib/utils";
 import {
   ExportIcon,
@@ -35,7 +36,7 @@ const Navbar = () => {
   } = usePreferences();
   const { currentAudit } = useAuditContext();
 
-  const title = currentAudit?.title ?? "Degree Audit Plus";
+  const title = getAuditDisplayName(currentAudit) ?? "Degree Audit Plus";
   const majors = currentAudit?.majors ?? [];
   const minors = currentAudit?.minors ?? [];
 

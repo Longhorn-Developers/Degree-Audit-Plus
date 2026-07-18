@@ -15,6 +15,10 @@ import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
 import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
+import {
+  isCoreSection,
+  isCreditSection,
+} from "@/features/audit/audit-calculations";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";
@@ -162,10 +166,8 @@ const parseRequirementCode = (
   return { code: text, description: "" };
 };
 
-const isCoreOrCreditSection = (title: string): boolean => {
-  const normalizedTitle = title.toLowerCase();
-  return normalizedTitle.includes("core") || normalizedTitle.includes("credit");
-};
+const isCoreOrCreditSection = (title: string): boolean =>
+  isCoreSection(title) || isCreditSection(title);
 
 // Individual requirement row with expandable courses
 const RequirementRow = ({

@@ -1,6 +1,6 @@
 {
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
+  "name": "degree-audit-plus",
+  "description": "Browser extension that enhances the UT Austin degree audit with an interactive dashboard, course search, and semester planner.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

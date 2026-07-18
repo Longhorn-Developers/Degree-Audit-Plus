@@ -5,7 +5,7 @@ import type {
   CatalogSemester,
   CatalogStatus,
   ScrapedCatalogCourse,
-} from "../../../domain/catalog";
+} from "@/domain/catalog";
 
 export interface ScrapedRow {
   element: Element;
