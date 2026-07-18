@@ -15,7 +15,7 @@ import RequirementBreakdown, {
 } from "./requirement-breakdown";
 
 const SidePanel = () => {
-  const { sections } = useAuditContext();
+  const { sections, currentAuditName } = useAuditContext();
 
   const gpaSection = sections.find((section) => isGpaSection(section.title));
   const gpaRule = gpaSection?.rules[0];
@@ -44,6 +44,7 @@ const SidePanel = () => {
       <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
           <GPATotalsCard
+            degreeName={currentAuditName}
             required={gpaRule.requiredHours}
             counted={gpaRule.appliedHours}
             summary={gpaSummary}
