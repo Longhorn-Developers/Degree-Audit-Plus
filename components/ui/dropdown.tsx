@@ -7,7 +7,7 @@ import React, {
   useContext,
   useState,
 } from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "@/lib/utils";
 import Container from "./container";
 import { HStack, VStack } from "./stack";
 

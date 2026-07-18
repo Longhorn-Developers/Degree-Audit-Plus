@@ -1,14 +1,9 @@
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { CourseCode } from "../domain/course";
-import { sendRuntimeMessage } from "./browser/messages";
+import type { CourseCode } from "@/domain/course";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
-}
-
-export async function openDAPMainPage() {
-  await sendRuntimeMessage({ type: "OPEN_DEGREE_AUDIT" });
 }
 
 export const CATEGORY_COLORS = [

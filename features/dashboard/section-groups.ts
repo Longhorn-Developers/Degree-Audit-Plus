@@ -3,6 +3,11 @@ import type {
   CurrentAuditProgress,
   PlannableProgress,
 } from "@/domain/progress";
+import {
+  isCoreSection,
+  isCreditSection,
+  isGpaSection,
+} from "@/features/audit/audit-calculations";
 
 export interface SectionWithProgress {
   title: string;
@@ -18,10 +23,6 @@ export interface GroupedSections {
   /** Standalone sections shown after the unified degree card (Credit). */
   post: SectionWithProgress[];
 }
-
-const isCore = (title: string) => title.toLowerCase().includes("core");
-const isCredit = (title: string) => title.toLowerCase().includes("credit");
-const isGpa = (title: string) => title.toLowerCase().includes("gpa");
 
 /**
  * Single source of truth for how audit sections map to the dashboard's
@@ -42,13 +43,16 @@ export function groupAuditSections(
         total: 0,
       },
     }))
-    .filter((section) => !isGpa(section.title) && section.progress.total > 0);
+    .filter(
+      (section) => !isGpaSection(section.title) && section.progress.total > 0,
+    );
 
   return {
-    pre: withProgress.filter((section) => isCore(section.title)),
+    pre: withProgress.filter((section) => isCoreSection(section.title)),
     unified: withProgress.filter(
-      (section) => !isCore(section.title) && !isCredit(section.title),
+      (section) =>
+        !isCoreSection(section.title) && !isCreditSection(section.title),
     ),
-    post: withProgress.filter((section) => isCredit(section.title)),
+    post: withProgress.filter((section) => isCreditSection(section.title)),
   };
 }

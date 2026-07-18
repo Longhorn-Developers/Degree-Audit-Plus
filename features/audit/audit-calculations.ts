@@ -7,6 +7,16 @@ import type {
 import type { Course, CourseCode, CourseId } from "@/domain/course";
 import type { CurrentAuditProgress } from "@/domain/progress";
 
+// Section classification by title. These are core audit vocabulary: calculations
+// and every UI surface classify sections the same way, so the string matching
+// lives here as the single source of truth.
+export const isCoreSection = (title: string): boolean =>
+  title.toLowerCase().includes("core");
+export const isCreditSection = (title: string): boolean =>
+  title.toLowerCase().includes("credit");
+export const isGpaSection = (title: string): boolean =>
+  title.toLowerCase().includes("gpa");
+
 // Give unnamed audits a readable fallback so the UI never shows a blank source.
 function getAuditName(
   audit: CompositeAuditData["audits"][number],
@@ -127,7 +137,7 @@ export function calculateWeightedDegreeCompletion(
   });
   // Only include non-GPA sections in completion totals
   const nonGPASections = results.sections.filter(
-    (section) => !section.title.toLowerCase().includes("gpa"),
+    (section) => !isGpaSection(section.title),
   );
   results.total.current = nonGPASections.reduce(
     (acc, section) => acc + section.progress.current,

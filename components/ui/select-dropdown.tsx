@@ -1,6 +1,6 @@
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "@/lib/utils";
 
 type SelectDropdownProps = {
   icon?: React.ReactNode;

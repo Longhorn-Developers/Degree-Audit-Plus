@@ -1,9 +1,10 @@
-import type {
-  AuditHistoryData,
-  AuditHistoryEntry,
-  AuditRequirement,
-  CachedAuditData,
-  CompositeAuditData,
+import {
+  type AuditHistoryData,
+  type AuditHistoryEntry,
+  type AuditRequirement,
+  type CachedAuditData,
+  type CompositeAuditData,
+  getAuditDisplayName,
 } from "@/domain/audit";
 import type {
   Course,
@@ -58,13 +59,6 @@ interface AuditContextValue {
 
 const AuditContext = createContext<AuditContextValue | null>(null);
 
-function getAuditDisplayName(
-  audit: AuditHistoryEntry | undefined,
-  auditId: string,
-): string {
-  return audit?.title ?? audit?.majors?.join("; ") ?? auditId;
-}
-
 export function AuditContextProvider({
   children,
 }: {
@@ -84,9 +78,7 @@ export function AuditContextProvider({
     [currentAuditId, history],
   );
   const currentAuditName =
-    currentAudit.majors?.join("; ") ??
-    currentAudit.title ??
-    "Degree Requirements";
+    getAuditDisplayName(currentAudit) ?? "Degree Requirements";
   const compositeAuditData = useMemo<CompositeAuditData>(
     () =>
       auditData && currentAuditId
@@ -94,7 +86,7 @@ export function AuditContextProvider({
             audits: [
               {
                 ...auditData,
-                name: getAuditDisplayName(currentAudit, currentAuditId),
+                name: getAuditDisplayName(currentAudit) ?? currentAuditId,
               },
             ],
           }

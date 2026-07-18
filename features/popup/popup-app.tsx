@@ -38,7 +38,7 @@ export default function App() {
     setError(null);
   }, []);
 
-  // chache login state.
+  // cache login state.
   useEffect(() => {
     void getCachedLoginState().then((cached) => {
       setLoggedIn((current) => current ?? cached ?? false);

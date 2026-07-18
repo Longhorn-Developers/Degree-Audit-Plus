@@ -1,4 +1,4 @@
-import type { CachedAuditData } from "../../domain/audit";
+import type { CachedAuditData } from "@/domain/audit";
 import { browser } from "wxt/browser";
 
 export type ExtensionMessage =

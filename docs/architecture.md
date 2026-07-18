@@ -13,8 +13,8 @@ global state library is needed.
 
 ```text
 features/
-├── audit/                  # Audit state, persistence, mutations, calculations, UI
-│   └── ui/                 # Audit-specific pages, cards, panels, graph, navigation
+├── audit/                  # Audit state, persistence, mutations, calculations
+├── dashboard/              # Audit pages, cards, panels, graph, navigation, display groups
 ├── audit-scraping/         # UT audit acquisition and browser controllers
 ├── catalog/                # Catalog data, IndexedDB, mapping, catalog parser
 │   └── scraping/           # Developer catalog-refresh parser
@@ -39,10 +39,10 @@ flowchart TD
     Domain["domain"]
     Catalog["catalog"]
     Preferences["preferences"]
-    AuditCore["audit core"]
+    AuditCore["audit"]
     CourseSearch["course-search"]
     Planner["planner"]
-    AuditUI["audit/ui"]
+    Dashboard["dashboard"]
     Session["session"]
     Messages["lib/browser"]
     Scraping["audit-scraping"]
@@ -59,17 +59,18 @@ flowchart TD
     Planner --> AuditCore
     Planner --> CourseSearch
     Planner --> Domain
-    Planner --> AuditUI
-    AuditUI --> AuditCore
-    AuditUI --> CourseSearch
-    AuditUI --> Preferences
+    Planner --> Dashboard
+    Dashboard --> AuditCore
+    Dashboard --> CourseSearch
+    Dashboard --> Preferences
+    Dashboard --> Domain
     Scraping --> AuditCore
     Scraping --> Session
     Scraping --> Messages
     Surfaces --> AuditCore
     Surfaces --> Session
     Surfaces --> Messages
-    Entrypoints --> AuditUI
+    Entrypoints --> Dashboard
     Entrypoints --> Planner
     Entrypoints --> Scraping
     Entrypoints --> Surfaces
@@ -79,8 +80,9 @@ The important constraints are:
 
 - Catalog is data-only. It imports domain types, Dexie, and its own files; it
   never imports Audit, Course Search, Planner, or React.
-- Audit core never imports Audit UI, Course Search, Planner, Popup, Banner, or
-  Audit Scraping.
+- Audit never imports Dashboard, Course Search, Planner, Popup, Banner, or
+  Audit Scraping. It is a pure state/storage/mutations/calculations feature plus
+  the provider seam.
 - Course Search is the explicit join between Audit and Catalog. Recommendation
   functions accept audit sections as arguments and do not use React.
 - Planner reuses Audit as the persisted state owner. Drag, menu, and preview
@@ -115,13 +117,19 @@ watched update.
 
 `audit-mutations.ts` contains immutable, browser-free changes to cached audit
 data: add, remove, wipe, and move planned courses. `audit-calculations.ts`
-contains side-effect-free composite/progress calculations. `section-groups.ts`
-contains the pure mapping from calculated sections to dashboard display groups.
+contains side-effect-free composite/progress calculations.
 
-`audit/ui/` may consume Audit core, Preferences, Course Search, domain types,
-and shared UI utilities. It never reads browser storage directly. Planner reuses
-the audit-owned degree side panel because that panel displays audit progress; the
-dependency remains one-way and Audit UI does not import Planner.
+### Dashboard
+
+`features/dashboard/` owns the audit-viewing surface: pages, cards, panels, the
+donut graph, and navigation chrome. `section-groups.ts` lives here — the pure
+mapping from calculated sections to dashboard display groups is dashboard
+vocabulary.
+
+Dashboard may consume Audit, Preferences, Course Search, domain types, and shared
+UI utilities. It never reads browser storage directly. Planner reuses the
+dashboard-owned degree side panel because that panel displays audit progress; the
+dependency remains one-way and Dashboard does not import Planner.
 
 ### Audit Scraping
 
@@ -161,8 +169,8 @@ Course Search owns the audit-aware user flow:
 - The remaining files render search results and the add-course flow. They call
   Audit Provider intents rather than accessing audit storage.
 
-This split avoids an Audit ↔ Catalog dependency cycle: Audit UI can open Course
-Search, Course Search can read Audit core and Catalog, and Catalog remains
+This split avoids an Audit ↔ Catalog dependency cycle: Dashboard can open Course
+Search, Course Search can read Audit and Catalog, and Catalog remains
 independent.
 
 ### Planner
@@ -227,11 +235,11 @@ flowchart LR
     Data["Selected CachedAuditData"] --> Provider
     Preferences["last audit preference"] --> Provider
     Provider --> Calculations["pure calculations"]
-    Provider --> AuditUI["Audit UI"]
+    Provider --> Dashboard["Dashboard"]
     Provider --> Planner["Planner"]
     Provider --> Search["Course Search"]
     Search --> Catalog["Catalog queries"]
-    AuditUI -->|intent| Provider
+    Dashboard -->|intent| Provider
     Planner -->|intent| Provider
     Search -->|add-course intent| Provider
     Provider -->|persist| Data
