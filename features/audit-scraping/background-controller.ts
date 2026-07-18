@@ -1,5 +1,5 @@
 import type { CachedAuditData } from "@/domain/audit";
-import { saveAuditData } from "@/lib/storage/audit-storage";
+import { saveAuditData } from "@/features/audit/audit-storage";
 import {
   sendMessageResponse,
   sendRuntimeMessage,
@@ -15,7 +15,7 @@ import {
   openLoginTab,
   refreshLoginState,
   registerSessionCookieWatcher,
-} from "../../lib/login-state";
+} from "@/features/session/session";
 
 type ScrapeFailure = Extract<
   ExtensionMessage,

@@ -1,10 +1,9 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
-import "@/entrypoints/styles/content.css";
-import { CourseSearchPanel } from "../course-search/course-search-panel";
-import { useAuditContext } from "../providers/audit-provider";
-import { groupAuditSections } from "../providers/section-groups";
-import DegreeSidePanel from "../shared/degree-side-panel";
+import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
+import { useAuditContext } from "@/features/audit/audit-provider";
+import { groupAuditSections } from "@/features/audit/section-groups";
+import DegreeSidePanel from "./degree-side-panel";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,

@@ -1,7 +1,6 @@
 import {
-  getAuditHistory,
-  watchAuditHistory,
-} from "@/lib/storage/audit-storage";
+  observeAuditHistory,
+} from "@/features/audit/audit-storage";
 import type { AuditHistoryData, AuditHistoryEntry } from "@/domain/audit";
 import {
   sendRuntimeMessage,
@@ -17,7 +16,7 @@ import {
   openLoginTab,
   refreshLoginState,
   watchLoginState,
-} from "@/lib/login-state";
+} from "@/features/session/session";
 import PopupAuditCard from "./popup-audit-card";
 
 export default function App() {
@@ -38,16 +37,6 @@ export default function App() {
     setAudits(data?.audits ?? []);
     setError(null);
   }, []);
-
-  // Load audit history from cached storage
-  // Storage is updated ONLY when user visits UT Direct audits home page
-  // This allows popup to work from any page using cached data
-  useEffect(() => {
-    getAuditHistory()
-      .then(applyAuditHistory)
-      .catch(() => setError("Failed to load audit history"))
-      .finally(() => setLoading(false));
-  }, [applyAuditHistory]);
 
   // chache login state.
   useEffect(() => {
@@ -76,10 +65,17 @@ export default function App() {
       }
     };
 
-    const unwatchAuditHistory = watchAuditHistory((data) => {
-      setRunningAudit(false);
-      applyAuditHistory(data);
-    });
+    const unwatchAuditHistory = observeAuditHistory(
+      (data) => {
+        setRunningAudit(false);
+        applyAuditHistory(data);
+        setLoading(false);
+      },
+      () => {
+        setError("Failed to load audit history");
+        setLoading(false);
+      },
+    );
 
     // Follow login-state writes from other contexts (content script, background)
     const unwatchLoginState = watchLoginState((value) => {

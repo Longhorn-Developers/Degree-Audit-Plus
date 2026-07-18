@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import {
   getCompositeAuditRequirements,
   getDuplicateCourseRequirementFlags,
-} from "../lib/audit-calculations";
-import { loadCompositeAuditData } from "../lib/storage/composite-storage";
+} from "../features/audit/audit-calculations";
+import { loadCompositeAuditData } from "../features/audit/audit-storage";
 import type { AuditHistoryData, CachedAuditData } from "../domain/audit";
 
 // --- Fixtures ---------------------------------------------------------------

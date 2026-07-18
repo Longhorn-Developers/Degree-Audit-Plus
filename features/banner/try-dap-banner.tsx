@@ -1,7 +1,4 @@
-import {
-  getAuditHistory,
-  watchAuditHistory,
-} from "@/lib/storage/audit-storage";
+import { observeAuditHistory } from "@/features/audit/audit-storage";
 import type { AuditHistoryData } from "@/domain/audit";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { XIcon } from "@phosphor-icons/react";
@@ -22,10 +19,7 @@ const TryDAPBanner = () => {
       setFirstAuditId(data?.audits[0]?.auditId);
     };
 
-    void getAuditHistory()
-      .then(updateFirstAudit)
-      .catch(() => {});
-    return watchAuditHistory(updateFirstAudit);
+    return observeAuditHistory(updateFirstAudit);
   }, []);
 
   const handleClose = () => {

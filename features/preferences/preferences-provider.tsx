@@ -10,7 +10,7 @@ import {
   viewModeItem,
   type PreferredLuminosity,
   type ViewMode,
-} from "@/lib/storage/preferences-storage";
+} from "./preferences-storage";
 import {
   createContext,
   useCallback,

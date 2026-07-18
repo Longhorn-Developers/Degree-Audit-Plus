@@ -11,7 +11,7 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useAuditContext } from "../providers/audit-provider";
+import { useAuditContext } from "@/features/audit/audit-provider";
 import { useCourseModalContext } from "./course-modal-provider";
 
 function FulfillingCoursesContent() {

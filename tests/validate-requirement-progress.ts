@@ -9,7 +9,7 @@ import {
   calculateWeightedDegreeCompletion,
   getDuplicateCourseRequirementFlags,
   getCompositeAuditRequirements,
-} from "../lib/audit-calculations";
+} from "../features/audit/audit-calculations";
 import { parseRequirementProgress } from "../features/audit-scraping/audit-page-parser";
 
 const parsedCases = [

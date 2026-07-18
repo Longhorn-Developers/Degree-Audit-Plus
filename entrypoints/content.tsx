@@ -1,6 +1,6 @@
 import { startAuditContentController } from "@/features/audit-scraping/content-controller";
 import { createRoot } from "react-dom/client";
-import TryDAPBanner from "@/features/misc/try-dap-banner";
+import TryDAPBanner from "@/features/banner/try-dap-banner";
 import "./styles/content.css";
 
 function loadFonts(): void {

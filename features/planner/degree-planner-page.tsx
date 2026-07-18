@@ -1,8 +1,7 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import Title from "@/components/ui/text";
-import "@/entrypoints/styles/content.css";
-import { CourseSearchPanel } from "../course-search/course-search-panel";
-import DegreeSidePanel from "../shared/degree-side-panel";
+import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
+import DegreeSidePanel from "@/features/audit/ui/degree-side-panel";
 import SemesterDropdowns from "./semester-dropdowns";
 
 const MainContent = () => {

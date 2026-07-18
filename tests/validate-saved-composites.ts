@@ -1,28 +1,15 @@
 import assert from "node:assert/strict";
+import { mock } from "bun:test";
 import {
   getCompositeAuditRequirements,
   getDuplicateCourseRequirementFlags,
-} from "../lib/audit-calculations";
+} from "../features/audit/audit-calculations";
 import type { AuditHistoryData, CachedAuditData } from "../domain/audit";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 
-// --- In-memory storage stub -------------------------------------------------
-// `wxt/browser` resolves to globalThis.chrome at import time, which is undefined
-// under Bun. Install a tiny in-memory chrome.storage.local before importing the
-// storage module so the real CRUD functions can run end-to-end.
-const store: Record<string, unknown> = {};
-(globalThis as unknown as { chrome: unknown }).chrome = {
-  storage: {
-    local: {
-      get: async (key: string) => ({ [key]: store[key] }),
-      set: async (obj: Record<string, unknown>) => {
-        Object.assign(store, obj);
-      },
-      remove: async (key: string) => {
-        delete store[key];
-      },
-    },
-  },
-};
+mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
+mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
+fakeBrowser.reset();
 
 const {
   createComposite,
@@ -30,7 +17,7 @@ const {
   updateCachedComposite,
   deleteCachedComposite,
   loadCompositeAudit,
-} = await import("../lib/storage/composite-storage");
+} = await import("../features/audit/audit-storage");
 
 // --- Fixtures ---------------------------------------------------------------
 // Two audits that share course code M 341 so the composite helpers have a
@@ -80,9 +67,11 @@ const history: AuditHistoryData = {
 };
 
 // Seed the per-audit cache + history the way the scraper/history flow would.
-store["auditData_audit-cs"] = auditWith("cs-linear-algebra");
-store["auditData_audit-math-minor"] = auditWith("minor-linear-algebra");
-store["auditHistory"] = history;
+await fakeBrowser.storage.local.set({
+  "auditData_audit-cs": auditWith("cs-linear-algebra"),
+  "auditData_audit-math-minor": auditWith("minor-linear-algebra"),
+  auditHistory: history,
+});
 
 // --- Tests ------------------------------------------------------------------
 
