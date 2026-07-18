@@ -74,7 +74,7 @@ export const GPATotalsCard = ({
   summary,
 }: GPATotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+    <div className="w-full p-5 rounded-lg border border-gray-200 bg-background shadow-md">
       <HStack x="between" y="top" fill>
         <h3 className="text-xl font-bold text-text">GPA Totals</h3>
         <InfoIcon />
@@ -82,13 +82,15 @@ export const GPATotalsCard = ({
 
       <HStack gap={6} className="mt-4">
         <VStack gap={1}>
-          <span className="text-sm text-gray-500">Required</span>
+          <span className="text-sm text-muted">Required</span>
           <div className="px-4 py-2 bg-background border border-gray-300 rounded-lg">
-            <span className="text-lg font-semibold">{required.toFixed(4)}</span>
+            <span className="text-lg font-semibold text-text">
+              {required.toFixed(4)}
+            </span>
           </div>
         </VStack>
         <VStack gap={1}>
-          <span className="text-sm text-gray-500">Counted</span>
+          <span className="text-sm text-muted">Counted</span>
           <div className="px-4 py-2 bg-dap-green rounded-lg">
             <span className="text-lg font-semibold text-white">
               {counted.toFixed(4)}
@@ -98,7 +100,7 @@ export const GPATotalsCard = ({
       </HStack>
 
       {summary ? (
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-4 text-sm text-muted">
           {summary.hoursUsed} hours for a total of {summary.points} points were
           used to calculate the GPA.
         </p>
@@ -120,14 +122,14 @@ export const CreditHourTotalsCard = ({
   requirements,
 }: CreditHourTotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+    <div className="w-full p-5 rounded-lg border border-gray-200 bg-background shadow-md">
       <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
 
       <VStack gap={3} className="mt-4">
         {requirements.map((req) => (
           <HStack key={req.text} gap={3} y="middle">
             <FramedStatusIcon state={STATUS_ICON_STATE[req.status]} />
-            <span className="text-sm text-gray-700">{req.text}</span>
+            <span className="text-sm text-muted">{req.text}</span>
           </HStack>
         ))}
       </VStack>

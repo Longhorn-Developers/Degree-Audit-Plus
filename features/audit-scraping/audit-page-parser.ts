@@ -21,8 +21,10 @@ import type { RequirementProgressUnit } from "@/domain/progress";
 // --- Helper Functions ---
 
 export function parseHours(text: string): number {
-  const match = text.match(/\d+/);
-  return match ? parseInt(match[0], 10) : 0;
+  // Match a full decimal so GPA cells like "3.7766 GPA" keep their fractional
+  // part. Hours/course columns are always integers, so this is a no-op for them.
+  const match = text.match(/\d+(?:\.\d+)?/);
+  return match ? parseFloat(match[0]) : 0;
 }
 
 export function parseRequirementProgress(text: string): {

@@ -654,7 +654,7 @@ OR
     {
       "rules": [
         {
-          "appliedHours": 3,
+          "appliedHours": 3.7766,
           "courses": [
             "course-1",
             "course-2",
@@ -677,7 +677,7 @@ OR
           "text": "A University GPA of 2.00 is required on all courses undertaken (including credit by examination, correspondence, and extension) for which a grade or symbol other than Q, W, X, or CR is recorded.",
         },
         {
-          "appliedHours": 3,
+          "appliedHours": 3.6091,
           "courses": [
             "course-1",
             "course-2",
