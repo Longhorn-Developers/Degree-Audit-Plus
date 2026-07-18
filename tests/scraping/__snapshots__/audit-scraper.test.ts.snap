@@ -674,6 +674,7 @@ OR
           "remainingHours": 0,
           "requiredHours": 2,
           "status": "Completed",
+          "summary": "42 hours for a total of 158.62 points were used to calculate the GPA.",
           "text": "A University GPA of 2.00 is required on all courses undertaken (including credit by examination, correspondence, and extension) for which a grade or symbol other than Q, W, X, or CR is recorded.",
         },
         {
@@ -693,6 +694,7 @@ OR
           "remainingHours": 0,
           "requiredHours": 2,
           "status": "Completed",
+          "summary": "24 hours for a total of 86.62 points were used to calculate the GPA.",
           "text": "Students must earn a grade point average of 2.0 in all mathematics and science courses required by the degree.",
         },
       ],

@@ -19,15 +19,12 @@ const SidePanel = () => {
 
   const gpaSection = sections.find((section) => isGpaSection(section.title));
   const gpaRule = gpaSection?.rules[0];
-  const gpaSummary = parseGpaSummary(gpaRule?.text);
+  const gpaSummary = parseGpaSummary(gpaRule?.summary);
 
-  // TODO(debug): remove once real GPA is confirmed. If `counted` logs as a whole
-  // number (e.g. 3) the stored audit was scraped before the parseFloat fix and
-  // needs a re-scrape; the raw scraped text is in gpaRule.text.
   console.log("[GPA card]", {
     required: gpaRule?.requiredHours,
     counted: gpaRule?.appliedHours,
-    ruleText: gpaRule?.text,
+    summaryText: gpaRule?.summary,
     parsedSummary: gpaSummary,
   });
 
