@@ -1,6 +1,4 @@
-import {
-  observeAuditHistory,
-} from "@/features/audit/audit-storage";
+import { observeAuditHistory } from "@/features/audit/audit-storage";
 import type { AuditHistoryData, AuditHistoryEntry } from "@/domain/audit";
 import {
   sendRuntimeMessage,

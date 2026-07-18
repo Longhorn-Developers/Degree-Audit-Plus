@@ -86,7 +86,7 @@ To get the development environment running locally:
 ## Contributing
 
 Contributions are **greatly appreciated**. First time contributers are encouraged to contribute to issues labeled "easy".
-Note: Please do not just "vibe code" a PR to and issue. Use AI, but make sure to write intentionally designed code. We only accept heavily optimized code. This may mean multiple iterations of review before your PR gets merged. 
+Note: Please do not just "vibe code" a PR to and issue. Use AI, but make sure to write intentionally designed code. We only accept heavily optimized code. This may mean multiple iterations of review before your PR gets merged.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
