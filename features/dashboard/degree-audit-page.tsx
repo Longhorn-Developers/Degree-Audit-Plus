@@ -48,7 +48,10 @@ const SidePanel = () => {
           />
         ) : null}
         {creditRequirements.length > 0 ? (
-          <CreditHourTotalsCard requirements={creditRequirements} />
+          <CreditHourTotalsCard
+            degreeName={currentAuditName}
+            requirements={creditRequirements}
+          />
         ) : null}
       </VStack>
     </DegreeSidePanel>

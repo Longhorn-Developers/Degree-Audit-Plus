@@ -1,6 +1,7 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import type { GpaSummary } from "@/features/audit/audit-calculations";
 import type { Status } from "@/domain/course";
+import { Check, X } from "@phosphor-icons/react";
 
 type FramedStatusIconState = "completed" | "not-started" | "in-progress";
 
@@ -31,43 +32,22 @@ const InfoIcon = () => (
   </svg>
 );
 
-const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 28 28"
-    className="h-6 w-6 shrink-0"
-    fill="none"
-  >
-    <rect
-      width="28"
-      height="28"
-      rx="3.5"
-      fill={
-        state === "completed"
-          ? "var(--color-dap-plan-green)"
-          : state === "in-progress"
-            ? "var(--color-dap-slate-blue)"
-            : "var(--color-ut-charcoal)"
-      }
-    />
-    {state === "completed" ? (
-      <path
-        d="M21.0525 8.6975C21.2956 8.94032 21.4337 9.26876 21.4373 9.61232C21.4409 9.95588 21.3097 10.2871 21.0718 10.535L14.0857 19.2675C13.9657 19.3968 13.8208 19.5006 13.6597 19.5726C13.4986 19.6447 13.3246 19.6835 13.1482 19.6868C12.9718 19.69 12.7965 19.6577 12.6328 19.5917C12.4692 19.5256 12.3205 19.4273 12.1957 19.3025L7.567 14.672C7.43805 14.5518 7.33462 14.4069 7.26288 14.2459C7.19115 14.0849 7.15257 13.9111 7.14946 13.7349C7.14636 13.5587 7.17877 13.3836 7.24479 13.2202C7.3108 13.0568 7.40905 12.9083 7.53368 12.7837C7.65832 12.659 7.80677 12.5608 7.9702 12.4948C8.13363 12.4288 8.30868 12.3964 8.48491 12.3995C8.66114 12.4026 8.83494 12.4411 8.99594 12.5129C9.15694 12.5846 9.30184 12.688 9.422 12.817L13.0865 16.4797L19.1642 8.736C19.2841 8.60645 19.4288 8.50239 19.5898 8.43004C19.7507 8.3577 19.9246 8.31857 20.1011 8.31497C20.2775 8.31138 20.4529 8.3434 20.6166 8.40913C20.7804 8.47485 20.9292 8.57293 21.0543 8.6975H21.0525Z"
-        fill="white"
-      />
-    ) : state === "in-progress" ? (
-      <path
-        d="M8.75 14C8.75 13.5359 8.93437 13.0908 9.26256 12.7626C9.59075 12.4344 10.0359 12.25 10.5 12.25H17.5C17.9641 12.25 18.4092 12.4344 18.7374 12.7626C19.0656 13.0908 19.25 13.5359 19.25 14C19.25 14.4641 19.0656 14.9092 18.7374 15.2374C18.4092 15.5656 17.9641 15.75 17.5 15.75H10.5C10.0359 15.75 9.59075 15.5656 9.26256 15.2374C8.93437 14.9092 8.75 14.4641 8.75 14Z"
-        fill="white"
-      />
-    ) : (
-      <path
-        d="M9.3695 8.1305L14 12.7628L18.6305 8.1305C18.7119 8.04915 18.8084 7.98461 18.9147 7.94058C19.021 7.89656 19.1349 7.87389 19.25 7.87389C19.3651 7.87389 19.479 7.89656 19.5853 7.94058C19.6916 7.98461 19.7881 8.04915 19.8695 8.1305C19.9509 8.21185 20.0154 8.30843 20.0594 8.41473C20.1034 8.52102 20.1261 8.63495 20.1261 8.75C20.1261 8.86505 20.1034 8.97898 20.0594 9.08527C20.0154 9.19157 19.9509 9.28815 19.8695 9.3695L15.2372 14L19.8695 18.6305C19.9509 18.7119 20.0154 18.8084 20.0594 18.9147C20.1034 19.021 20.1261 19.1349 20.1261 19.25C20.1261 19.3651 20.1034 19.479 20.0594 19.5853C20.0154 19.6916 19.9509 19.7881 19.8695 19.8695C19.7881 19.9509 19.6916 20.0154 19.5853 20.0594C19.479 20.1034 19.3651 20.1261 19.25 20.1261C19.1349 20.1261 19.021 20.1034 18.9147 20.0594C18.8084 20.0154 18.7119 19.9509 18.6305 19.8695L14 15.2372L9.3695 19.8695C9.28815 19.9509 9.19157 20.0154 9.08527 20.0594C8.97898 20.1034 8.86505 20.1261 8.75 20.1261C8.63495 20.1261 8.52102 20.1034 8.41473 20.0594C8.30843 20.0154 8.21185 19.9509 8.1305 19.8695C8.04915 19.7881 7.98461 19.6916 7.94058 19.5853C7.89656 19.479 7.87389 19.3651 7.87389 19.25C7.87389 19.1349 7.89656 19.021 7.94058 18.9147C7.98461 18.8084 8.04915 18.7119 8.1305 18.6305L12.7628 14L8.1305 9.3695C7.9662 9.2052 7.87389 8.98236 7.87389 8.75C7.87389 8.51764 7.9662 8.2948 8.1305 8.1305C8.2948 7.9662 8.51764 7.87389 8.75 7.87389C8.98236 7.87389 9.2052 7.9662 9.3695 8.1305Z"
-        fill="white"
-      />
-    )}
-  </svg>
-);
+const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => {
+  if (state === "completed") {
+    return (
+      <div className="flex items-center justify-center w-6 h-6 bg-dap-plan-green-light rounded shrink-0 mt-0.5">
+        <Check className="text-white w-4 h-4" weight="bold" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center w-6 h-6 bg-dap-status-slate rounded shrink-0 mt-0.5">
+      <X className="text-white w-4 h-4" weight="bold" />
+    </div>
+  );
+};
+
+
 
 export const GPATotalsCard = ({
   degreeName,
@@ -76,29 +56,29 @@ export const GPATotalsCard = ({
   summary,
 }: GPATotalsProps) => {
   return (
-    <div className="w-full p-4 rounded-2xl border border-gray-200 bg-background shadow-md">
-      <HStack x="between" y="top" fill>
-        <h3 className="text-base font-bold text-text">GPA Totals</h3>
+    <div className="w-full p-6 rounded-lg border border-gray-200 bg-background">
+      <HStack x="between" y="middle" fill>
+        <h3 className="text-xl font-bold text-text">GPA Totals</h3>
         <InfoIcon />
       </HStack>
 
-      <p className="mt-1 text-sm font-semibold text-dap-plan-green">
+      <p className="mt-1 text-sm font-semibold text-[#10B981]">
         {degreeName}
       </p>
 
-      <HStack gap={4} className="mt-3">
-        <VStack gap={1}>
-          <span className="text-xs text-muted">Required</span>
-          <div className="px-4 py-1.5 bg-background border border-gray-300 rounded-full">
-            <span className="text-base font-semibold text-text">
+      <HStack gap={6} className="mt-4">
+        <VStack gap={1.5}>
+          <span className="text-sm font-medium text-muted">Required</span>
+          <div className="px-3.5 py-1 bg-background border border-gray-200 rounded-full">
+            <span className="text-sm font-semibold text-text">
               {required.toFixed(4)}
             </span>
           </div>
         </VStack>
-        <VStack gap={1}>
-          <span className="text-xs text-muted">Counted</span>
-          <div className="px-4 py-1.5 bg-dap-green rounded-full">
-            <span className="text-base font-semibold text-white">
+        <VStack gap={1.5}>
+          <span className="text-sm font-medium text-muted">Counted</span>
+          <div className="px-3.5 py-1 bg-[#579D42] rounded-full">
+            <span className="text-sm font-semibold text-white">
               {counted.toFixed(4)}
             </span>
           </div>
@@ -106,7 +86,7 @@ export const GPATotalsCard = ({
       </HStack>
 
       {summary ? (
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-4 text-sm text-text leading-normal">
           {summary.hoursUsed} hours for a total of {summary.points} points were
           used to calculate the GPA.
         </p>
@@ -121,21 +101,28 @@ export type CreditRequirement = {
 };
 
 type CreditHourTotalsProps = {
+  degreeName?: string;
   requirements: CreditRequirement[];
 };
 
 export const CreditHourTotalsCard = ({
+  degreeName,
   requirements,
 }: CreditHourTotalsProps) => {
   return (
-    <div className="w-full p-4 rounded-2xl border border-gray-200 bg-background shadow-md">
-      <h3 className="text-base font-bold text-text">Credit Hour Totals</h3>
+    <div className="w-full p-6 rounded-lg border border-gray-200 bg-background">
+      <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
+      {degreeName && (
+        <p className="mt-1 text-sm font-semibold text-[#10B981]">
+          {degreeName}
+        </p>
+      )}
 
-      <VStack gap={2.5} className="mt-3">
+      <VStack gap={3.5} className="mt-4">
         {requirements.map((req) => (
-          <HStack key={req.text} gap={2.5} y="middle">
+          <HStack key={req.text} gap={3} y="top">
             <FramedStatusIcon state={STATUS_ICON_STATE[req.status]} />
-            <span className="text-xs text-muted">{req.text}</span>
+            <span className="text-sm font-medium text-text leading-tight mt-0.5">{req.text}</span>
           </HStack>
         ))}
       </VStack>
