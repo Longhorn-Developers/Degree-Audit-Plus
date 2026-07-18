@@ -109,6 +109,38 @@ export function watchAuditData(
   );
 }
 
+/**
+ * Observe a single audit's data: an initial read plus a subsequent storage
+ * watch behind one cleanup function. A delayed initial read never overwrites a
+ * newer watched update (mirrors {@link observeAuditHistory}). This is the single
+ * writer of audit data in the provider — callers should not also read directly.
+ */
+export function observeAuditData(
+  auditId: string,
+  listener: (audit: CachedAuditData | null) => void,
+  onError?: (error: unknown) => void,
+): () => void {
+  let active = true;
+  let receivedUpdate = false;
+  const unwatch = watchAuditData(auditId, (audit) => {
+    receivedUpdate = true;
+    if (active) listener(audit);
+  });
+
+  void getAuditData(auditId)
+    .then((audit) => {
+      if (active && !receivedUpdate) listener(audit);
+    })
+    .catch((error: unknown) => {
+      if (active && !receivedUpdate) onError?.(error);
+    });
+
+  return () => {
+    active = false;
+    unwatch();
+  };
+}
+
 export async function getUncachedAuditIds(
   auditIds: string[],
 ): Promise<string[]> {

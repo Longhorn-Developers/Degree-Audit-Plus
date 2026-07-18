@@ -106,14 +106,18 @@ the existing keys and stored shapes for:
 
 - audit history (`getAuditHistory`, `observeAuditHistory`, `saveAuditHistory`,
   `renameAudit`);
-- individual audit data (`getAuditData`, `watchAuditData`, `saveAuditData`,
-  `getUncachedAuditIds`); and
+- individual audit data (`getAuditData`, `watchAuditData`, `observeAuditData`,
+  `saveAuditData`, `getUncachedAuditIds`); and
 - saved audit combinations (`getCachedComposites`, `createComposite`,
   `updateCachedComposite`, `deleteCachedComposite`, `loadCompositeAudit`).
 
-`observeAuditHistory` hides the initial read plus subsequent storage watch behind
-one cleanup function. It prevents a delayed initial read from overwriting a newer
-watched update.
+`observeAuditHistory` and `observeAuditData` each hide the initial read plus
+subsequent storage watch behind one cleanup function. Both prevent a delayed
+initial read from overwriting a newer watched update. `observeAuditData` is the
+provider's single writer of the selected audit: one effect selects the id, a
+second observes its data, and no code path reads audit data alongside the
+observer. This keeps a single source of truth and avoids the blank-flash that two
+competing writers caused.
 
 `audit-mutations.ts` contains immutable, browser-free changes to cached audit
 data: add, remove, wipe, and move planned courses. `audit-calculations.ts`
