@@ -123,8 +123,8 @@ export default function App() {
   const needsLogin = loggedIn === false;
 
   return (
-    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-gray-100">
-      <header className="flex justify-between items-center px-5 py-4 border-b border-gray-200 flex-shrink-0">
+    <div className="w-[438px] h-full min-h-[300px] max-h-[600px] bg-background font-sans overflow-hidden flex flex-col border border-dap-border">
+      <header className="flex justify-between items-center px-5 py-4 border-b border-dap-border flex-shrink-0">
         <div className="flex items-center space-x-2">
           <img
             src={logo}
