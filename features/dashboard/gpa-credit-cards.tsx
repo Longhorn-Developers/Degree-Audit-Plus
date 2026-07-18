@@ -1,12 +1,19 @@
 import { HStack, VStack } from "@/components/ui/stack";
+import type { GpaSummary } from "@/features/audit/audit-calculations";
+import type { Status } from "@/domain/course";
 
 type FramedStatusIconState = "completed" | "not-started" | "in-progress";
+
+const STATUS_ICON_STATE: Record<Status, FramedStatusIconState> = {
+  Completed: "completed",
+  "In Progress": "in-progress",
+  "Not Started": "not-started",
+};
 
 type GPATotalsProps = {
   required: number;
   counted: number;
-  hoursUsed: number;
-  points: number;
+  summary: GpaSummary | null;
 };
 
 const InfoIcon = () => (
@@ -61,15 +68,10 @@ const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => (
   </svg>
 );
 
-const RequirementStatusIcon = ({ met }: { met: boolean }) => (
-  <FramedStatusIcon state={met ? "completed" : "not-started"} />
-);
-
 export const GPATotalsCard = ({
-  required = 2.0,
-  counted = 4.0,
-  hoursUsed = 80,
-  points = 320,
+  required,
+  counted,
+  summary,
 }: GPATotalsProps) => {
   return (
     <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
@@ -95,18 +97,19 @@ export const GPATotalsCard = ({
         </VStack>
       </HStack>
 
-      <p className="mt-4 text-sm text-gray-600">
-        {hoursUsed} hours for a total of {points} points were used to calculate
-        the GPA.
-      </p>
+      {summary ? (
+        <p className="mt-4 text-sm text-gray-600">
+          {summary.hoursUsed} hours for a total of {summary.points} points were
+          used to calculate the GPA.
+        </p>
+      ) : null}
     </div>
   );
 };
 
-type CreditRequirement = {
-  met: boolean;
-  hours: number;
-  description: string;
+export type CreditRequirement = {
+  status: Status;
+  text: string;
 };
 
 type CreditHourTotalsProps = {
@@ -114,31 +117,17 @@ type CreditHourTotalsProps = {
 };
 
 export const CreditHourTotalsCard = ({
-  requirements = [
-    {
-      met: true,
-      hours: 21,
-      description: "hours of upper-division coursework in residence.",
-    },
-    {
-      met: false,
-      hours: 36,
-      description: "hours of upper-division coursework required.",
-    },
-  ],
+  requirements,
 }: CreditHourTotalsProps) => {
   return (
     <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
       <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
 
       <VStack gap={3} className="mt-4">
-        {requirements.map((req, idx) => (
-          <HStack key={idx} gap={3} y="middle">
-            <RequirementStatusIcon met={req.met} />
-            <span className="text-sm text-gray-700">
-              <span className="font-semibold">{req.hours} hours</span> of{" "}
-              {req.description}
-            </span>
+        {requirements.map((req) => (
+          <HStack key={req.text} gap={3} y="middle">
+            <FramedStatusIcon state={STATUS_ICON_STATE[req.status]} />
+            <span className="text-sm text-gray-700">{req.text}</span>
           </HStack>
         ))}
       </VStack>
