@@ -9,6 +9,8 @@
     "dev:firefox": "bun run wxt -b firefox",
     "build": "bun run wxt build",
     "build:firefox": "bun run wxt build -b firefox",
+    "format": "bun run prettier . --write",
+    "format:check": "bun run prettier . --check",
     "zip": "bun run wxt zip",
     "zip:firefox": "bun run wxt zip -b firefox",
     "compile": "bun run tsc --noEmit",
