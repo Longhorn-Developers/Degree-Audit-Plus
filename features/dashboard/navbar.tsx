@@ -138,8 +138,8 @@ const Navbar = () => {
           className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
         />
         <IconButton
-          icon={isDarkMode() ? <MoonIcon size={24} /> : <SunIcon size={24} />}
-          label={isDarkMode() ? "Light Mode" : "Dark Mode"}
+          icon={isDarkMode ? <MoonIcon size={24} /> : <SunIcon size={24} />}
+          label={isDarkMode ? "Light Mode" : "Dark Mode"}
           onClick={toggleDarkMode}
           className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
         />

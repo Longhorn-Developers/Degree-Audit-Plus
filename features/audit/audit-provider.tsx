@@ -80,7 +80,7 @@ export function AuditContextProvider({
   // (per-audit names, duplicate-course flags) live in audit-calculations.ts
   // (getCompositeAuditRequirements) for the future multi-audit feature; no
   // single-audit UI reads them, so we don't compute them here.
-  const sections = auditData?.requirements ?? [];
+  const sections = useMemo(() => auditData?.requirements ?? [], [auditData]);
   const courseMap = useMemo(() => auditData?.courses ?? {}, [auditData]);
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections, courseMap),

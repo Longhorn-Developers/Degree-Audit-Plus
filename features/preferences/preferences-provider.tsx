@@ -18,13 +18,15 @@ import {
   useEffect,
   useMemo,
   useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 
 interface PreferencesContextValue {
   luminosity: PreferredLuminosity;
   setLuminosity: (value: PreferredLuminosity) => void;
   toggleDarkMode: () => void;
-  isDarkMode: () => boolean;
+  isDarkMode: boolean;
   sidebarIsOpen: boolean;
   setSidebarIsOpen: (value: boolean) => void;
   toggleSidebar: () => void;
@@ -37,22 +39,72 @@ interface PreferencesContextValue {
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
+interface PreferenceItem<T> {
+  setValue(value: T): Promise<void>;
+  watch(callback: (value: T) => void): () => void;
+}
+
+/**
+ * State for one preference item: a cross-context watch() subscription plus a
+ * persisting setter. The third element updates React state without writing
+ * storage — used by the initial batched load.
+ */
+function usePersistedPreference<T>(
+  item: PreferenceItem<T>,
+  initial: T,
+  label: string,
+): [T, (value: T) => void, Dispatch<SetStateAction<T>>] {
+  const [value, setLocal] = useState(initial);
+
+  useEffect(() => item.watch(setLocal), [item]);
+
+  const setAndPersist = useCallback(
+    (next: T) => {
+      setLocal(next);
+      void item
+        .setValue(next)
+        .catch((error) =>
+          console.error(`Failed to save ${label} preference:`, error),
+        );
+    },
+    [item, label],
+  );
+
+  return [value, setAndPersist, setLocal];
+}
+
 export function PreferencesProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [isMounted, setIsMounted] = useState(false);
-  const [lastAuditId, setLastAuditId] = useState(
-    DEFAULT_PREFERENCES.lastAuditId,
+  const [prefersDark, setPrefersDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
-  const [viewMode, setViewModeState] = useState(DEFAULT_PREFERENCES.viewMode);
-  const [sidebarIsOpen, setSidebarState] = useState(
-    DEFAULT_PREFERENCES.showSidebar,
+  const [sidebarIsOpen, setSidebarIsOpen, setSidebarState] =
+    usePersistedPreference(
+      showSidebarItem,
+      DEFAULT_PREFERENCES.showSidebar,
+      "sidebar",
+    );
+  const [luminosity, setLuminosity, setLuminosityState] =
+    usePersistedPreference(
+      luminosityItem,
+      DEFAULT_PREFERENCES.luminosity,
+      "luminosity",
+    );
+  const [viewMode, setViewMode, setViewModeState] = usePersistedPreference(
+    viewModeItem,
+    DEFAULT_PREFERENCES.viewMode,
+    "view",
   );
-  const [luminosity, setLuminosityState] = useState(
-    DEFAULT_PREFERENCES.luminosity,
-  );
+  const [lastAuditId, updateLastAuditId, setLastAuditId] =
+    usePersistedPreference(
+      lastAuditIdItem,
+      DEFAULT_PREFERENCES.lastAuditId,
+      "audit",
+    );
 
   // Initial load — read all prefs at once.
   useEffect(() => {
@@ -65,94 +117,27 @@ export function PreferencesProvider({
       })
       .catch((error) => console.error("Failed to load preferences:", error))
       .finally(() => setIsMounted(true));
-  }, []);
+  }, [setSidebarState, setLuminosityState, setViewModeState, setLastAuditId]);
 
-  // watch() keeps the page in sync when preferences change from another
-  // context (e.g. a background re-scrape, or the popup writing to sync
-  // storage).  Replaces the hand-rolled browser.storage.onChanged pattern.
   useEffect(() => {
-    const unwatchSidebar = showSidebarItem.watch((value: boolean) => {
-      setSidebarState(value);
-    });
-    const unwatchLuminosity = luminosityItem.watch(
-      (value: PreferredLuminosity) => {
-        setLuminosityState(value);
-      },
-    );
-    const unwatchViewMode = viewModeItem.watch((value: ViewMode) => {
-      setViewModeState(value);
-    });
-    const unwatchLastAuditId = lastAuditIdItem.watch((value: string | null) => {
-      setLastAuditId(value);
-    });
-
-    return () => {
-      unwatchSidebar();
-      unwatchLuminosity();
-      unwatchViewMode();
-      unwatchLastAuditId();
-    };
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) =>
+      setPrefersDark(event.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
   }, []);
 
-  const isDarkMode = useCallback(
-    () =>
-      luminosity === "dark" ||
-      (luminosity === "system" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches),
-    [luminosity],
-  );
+  const isDarkMode =
+    luminosity === "dark" || (luminosity === "system" && prefersDark);
 
   useEffect(() => {
     if (!isMounted) return;
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyTheme = () => {
-      document.documentElement.classList.toggle("dark", isDarkMode());
-      document.documentElement.classList.remove("light", "system");
-    };
-    applyTheme();
-
-    if (luminosity === "system") {
-      media.addEventListener("change", applyTheme);
-      return () => media.removeEventListener("change", applyTheme);
-    }
-  }, [isDarkMode, isMounted, luminosity]);
-
-  const setLuminosity = useCallback((value: PreferredLuminosity) => {
-    setLuminosityState(value);
-    void luminosityItem
-      .setValue(value)
-      .catch((error) =>
-        console.error("Failed to save luminosity preference:", error),
-      );
-  }, []);
-  const setSidebarIsOpen = useCallback((value: boolean) => {
-    setSidebarState(value);
-    void showSidebarItem
-      .setValue(value)
-      .catch((error) =>
-        console.error("Failed to save sidebar preference:", error),
-      );
-  }, []);
-  const setViewMode = useCallback((value: ViewMode) => {
-    setViewModeState(value);
-    void viewModeItem
-      .setValue(value)
-      .catch((error) =>
-        console.error("Failed to save view preference:", error),
-      );
-  }, []);
-  const updateLastAuditId = useCallback((value: string) => {
-    setLastAuditId(value);
-    void lastAuditIdItem
-      .setValue(value)
-      .catch((error) =>
-        console.error("Failed to save audit preference:", error),
-      );
-  }, []);
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    document.documentElement.classList.remove("light", "system");
+  }, [isDarkMode, isMounted]);
 
   const toggleDarkMode = useCallback(
-    () => setLuminosity(isDarkMode() ? "light" : "dark"),
+    () => setLuminosity(isDarkMode ? "light" : "dark"),
     [setLuminosity, isDarkMode],
   );
   const toggleSidebar = useCallback(
@@ -199,7 +184,7 @@ export function PreferencesProvider({
 
   return (
     <PreferencesContext.Provider value={value}>
-      <div className="min-h-screen bg-background text-text">{children}</div>
+      {children}
     </PreferencesContext.Provider>
   );
 }

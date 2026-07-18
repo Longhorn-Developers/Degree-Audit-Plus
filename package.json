@@ -14,6 +14,7 @@
     "zip": "bun run wxt zip",
     "zip:firefox": "bun run wxt zip -b firefox",
     "compile": "bun run tsc --noEmit",
+    "lint": "bun run eslint .",
     "catalog:refresh": "bun run scripts/catalog/refresh-catalog.ts",
     "catalog:validate": "bun run scripts/catalog/validate-catalog.ts",
     "catalog:departments": "bun run scripts/catalog/generate-department-map.ts",

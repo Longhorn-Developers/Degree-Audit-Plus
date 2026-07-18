@@ -1,5 +1,5 @@
 import { HStack, VStack } from "@/components/ui/stack";
-import Title from "@/components/ui/text";
+import Title from "@/components/ui/title";
 import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {

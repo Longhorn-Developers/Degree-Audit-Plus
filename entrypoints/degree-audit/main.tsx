@@ -20,15 +20,17 @@ import ErrorBoundary from "@/components/error-boundary";
 const App = () => {
   return (
     <PreferencesProvider>
-      <AuditContextProvider>
-        <CourseModalContextProvider>
-          <HStack fill className="w-screen" gap={0}>
-            <Sidebar />
-            <MainContent />
-          </HStack>
-          <CourseAddModal />
-        </CourseModalContextProvider>
-      </AuditContextProvider>
+      <div className="min-h-screen bg-background text-text">
+        <AuditContextProvider>
+          <CourseModalContextProvider>
+            <HStack fill className="w-screen" gap={0}>
+              <Sidebar />
+              <MainContent />
+            </HStack>
+            <CourseAddModal />
+          </CourseModalContextProvider>
+        </AuditContextProvider>
+      </div>
     </PreferencesProvider>
   );
 };
