@@ -13,7 +13,7 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     syncCalls++;
   },
 }));
-mock.module("../../features/audit-scraping/login-state", () => ({
+mock.module("../../lib/login-state", () => ({
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
   },

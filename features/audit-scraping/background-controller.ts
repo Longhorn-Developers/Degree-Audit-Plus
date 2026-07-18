@@ -15,7 +15,7 @@ import {
   openLoginTab,
   refreshLoginState,
   registerSessionCookieWatcher,
-} from "./login-state";
+} from "../../lib/login-state";
 
 type ScrapeFailure = Extract<
   ExtensionMessage,

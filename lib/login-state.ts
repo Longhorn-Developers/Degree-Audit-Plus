@@ -1,5 +1,5 @@
 import { storage } from "wxt/utils/storage";
-import { checkLoginRequired } from "./audit-page-parser";
+import { checkLoginRequired } from "../features/audit-scraping/audit-page-parser";
 
 // Single owner of UT Direct login state: a cached value for instant UI, a
 // live probe for truth, and event-driven writers that keep the cache fresh.

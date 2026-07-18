@@ -17,7 +17,7 @@ import {
   openLoginTab,
   refreshLoginState,
   watchLoginState,
-} from "@/features/audit-scraping/login-state";
+} from "@/lib/login-state";
 import PopupAuditCard from "./popup-audit-card";
 
 export default function App() {
@@ -169,7 +169,6 @@ export default function App() {
                 <p className="text-lg font-bold">Run New Audit</p>
               </div>
             )}
-
           </Button>
         </div>
       </header>
