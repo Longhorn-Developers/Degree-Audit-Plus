@@ -74,7 +74,7 @@ export const GPATotalsCard = ({
   summary,
 }: GPATotalsProps) => {
   return (
-    <div className="w-full p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+    <div className="w-full p-5 rounded-2xl border border-gray-200 bg-background shadow-md">
       <HStack x="between" y="top" fill>
         <h3 className="text-xl font-bold text-text">GPA Totals</h3>
         <InfoIcon />
@@ -83,7 +83,7 @@ export const GPATotalsCard = ({
       <HStack gap={6} className="mt-4">
         <VStack gap={1}>
           <span className="text-sm text-muted">Required</span>
-          <div className="px-4 py-2 bg-background border border-gray-300 rounded-lg">
+          <div className="px-5 py-2 bg-background border border-gray-300 rounded-full">
             <span className="text-lg font-semibold text-text">
               {required.toFixed(4)}
             </span>
@@ -91,7 +91,7 @@ export const GPATotalsCard = ({
         </VStack>
         <VStack gap={1}>
           <span className="text-sm text-muted">Counted</span>
-          <div className="px-4 py-2 bg-dap-green rounded-lg">
+          <div className="px-5 py-2 bg-dap-green rounded-full">
             <span className="text-lg font-semibold text-white">
               {counted.toFixed(4)}
             </span>
@@ -122,7 +122,7 @@ export const CreditHourTotalsCard = ({
   requirements,
 }: CreditHourTotalsProps) => {
   return (
-    <div className="w-full p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+    <div className="w-full p-5 rounded-2xl border border-gray-200 bg-background shadow-md">
       <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
 
       <VStack gap={3} className="mt-4">
