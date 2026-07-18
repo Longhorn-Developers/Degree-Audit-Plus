@@ -13,7 +13,7 @@ export default function DegreeSidePanel({
 }: DegreeSidePanelProps) {
   return (
     <VStack
-      className="self-start sticky top-0 z-20 bg-background"
+      className="w-sm shrink-0 self-start bg-background"
       y="stretch"
       x="center"
     >

@@ -60,7 +60,7 @@ const MainContent = () => {
   const { pre, unified, post } = groupAuditSections(sections, progresses);
 
   return (
-    <VStack className="w-full">
+    <VStack className="min-w-0 flex-1">
       <Title text="Degree Progress Overview" />
       {pre.map((section, idx) => (
         <RequirementBreakdown
