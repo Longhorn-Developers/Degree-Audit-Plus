@@ -1,6 +1,10 @@
 import Dexie from "dexie";
 import type { CatalogCourse } from "@/domain/catalog";
 import type { CoreArea } from "@/domain/course";
+import {
+  dedupeCatalogCoursesByCode,
+  matchesCatalogQuery,
+} from "./catalog-course-mappers";
 import { DEPARTMENT_MAP } from "./department-map";
 
 export class UTDatabase extends Dexie {
@@ -34,19 +38,8 @@ export async function searchCores(
   }
 
   const courses = await findCoursesByCore(core);
-  const seenCourseCodes = new Set<string>();
 
-  return courses
-    .filter((course) => {
-      const courseCode = `${course.department} ${course.number}`;
-      if (seenCourseCodes.has(courseCode)) {
-        return false;
-      }
-
-      seenCourseCodes.add(courseCode);
-      return true;
-    })
-    .slice(0, limit);
+  return dedupeCatalogCoursesByCode(courses).slice(0, limit);
 }
 
 function getDepartmentCodesByName(departmentName: string): string[] {
@@ -71,11 +64,8 @@ export function searchCatalogCourses(filters: {
   return db.courses
     .toCollection()
     .filter((course) => {
-      // Match the search text against the catalog title fields.
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        course.fullName.toLowerCase().includes(normalizedQuery) ||
-        course.courseName.toLowerCase().includes(normalizedQuery);
+      // Match the search text against code, title, short name, and instructors.
+      const matchesQuery = matchesCatalogQuery(course, normalizedQuery);
 
       // Match the selected department name against the stored department codes.
       const matchesDepartment =

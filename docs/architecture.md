@@ -34,6 +34,10 @@ scripts/catalog/            # Developer-only catalog refresh and validation
 
 ## Dependency direction
 
+This graph is lint-enforced: `eslint.config.ts` restricts each area's
+`@/`-alias imports to exactly the edges below (`bun run lint`). An import that
+crosses the graph fails CI rather than silently rotting the architecture.
+
 ```mermaid
 flowchart TD
     Domain["domain"]
@@ -106,14 +110,18 @@ the existing keys and stored shapes for:
 
 - audit history (`getAuditHistory`, `observeAuditHistory`, `saveAuditHistory`,
   `renameAudit`);
-- individual audit data (`getAuditData`, `watchAuditData`, `saveAuditData`,
-  `getUncachedAuditIds`); and
+- individual audit data (`getAuditData`, `watchAuditData`, `observeAuditData`,
+  `saveAuditData`, `getUncachedAuditIds`); and
 - saved audit combinations (`getCachedComposites`, `createComposite`,
   `updateCachedComposite`, `deleteCachedComposite`, `loadCompositeAudit`).
 
-`observeAuditHistory` hides the initial read plus subsequent storage watch behind
-one cleanup function. It prevents a delayed initial read from overwriting a newer
-watched update.
+`observeAuditHistory` and `observeAuditData` each hide the initial read plus
+subsequent storage watch behind one cleanup function. Both prevent a delayed
+initial read from overwriting a newer watched update. `observeAuditData` is the
+provider's single writer of the selected audit: one effect selects the id, a
+second observes its data, and no code path reads audit data alongside the
+observer. This keeps a single source of truth and avoids the blank-flash that two
+competing writers caused.
 
 `audit-mutations.ts` contains immutable, browser-free changes to cached audit
 data: add, remove, wipe, and move planned courses. `audit-calculations.ts`
@@ -254,7 +262,8 @@ copies of the same state.
 `domain/` contains plain TypeScript vocabulary and semester helpers with no
 React, browser, storage, or Dexie dependencies. `components/ui/` contains only
 genuinely reusable UI primitives. `lib/browser/messages.ts` owns the typed
-extension message union and send/response helpers.
+extension message union and its send (`sendRuntimeMessage`, `sendTabMessage`),
+subscribe (`onExtensionMessage`), and response-typing helpers.
 
 Entrypoints stay thin:
 
@@ -262,7 +271,8 @@ Entrypoints stay thin:
 - `content.tsx` starts the Audit content controller and mounts the UT-page
   banner.
 - `degree-audit/main.tsx` seeds Catalog, composes Preferences → Audit → Course
-  Search providers, and selects Audit versus Planner view.
+  Search providers, owns the page-level layout wrapper, and selects Audit
+  versus Planner view. Providers provide state only; they render no chrome.
 - `popup-app/main.tsx` creates the popup root and renders Popup.
 
 ## Adding functionality

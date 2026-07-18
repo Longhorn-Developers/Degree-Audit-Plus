@@ -17,6 +17,31 @@ export const isCreditSection = (title: string): boolean =>
 export const isGpaSection = (title: string): boolean =>
   title.toLowerCase().includes("gpa");
 
+export interface GpaSummary {
+  hoursUsed: number;
+  points: number;
+}
+
+/**
+ * Extract the "X hours … Y points" figures from a GPA rule's sentence, if
+ * present. Real scraped GPA text often does not carry these numbers (it states
+ * the required average instead), in which case this returns null and the UI
+ * omits the footer rather than fabricating zeros.
+ */
+export function parseGpaSummary(text: string | undefined): GpaSummary | null {
+  if (!text) return null;
+
+  const match = text.match(
+    /(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i,
+  );
+  if (!match) return null;
+
+  return {
+    hoursUsed: Number(match[1]),
+    points: Number(match[2]),
+  };
+}
+
 // Give unnamed audits a readable fallback so the UI never shows a blank source.
 function getAuditName(
   audit: CompositeAuditData["audits"][number],

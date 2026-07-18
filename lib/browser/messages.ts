@@ -54,6 +54,21 @@ export function sendTabMessage<M extends ExtensionMessage>(
   >;
 }
 
+/**
+ * Subscribes to runtime messages with the typed `ExtensionMessage` union.
+ * Returns an unsubscribe function.
+ */
+export function onExtensionMessage(
+  listener: (message: ExtensionMessage) => void,
+): () => void {
+  browser.runtime.onMessage.addListener(listener);
+  return () => browser.runtime.onMessage.removeListener(listener);
+}
+
+/**
+ * Purely a type-narrowing shim: links a request's `type` to its response
+ * shape so background handlers can't reply with the wrong payload.
+ */
 export function sendMessageResponse<M extends ResponseRequest>(
   _request: M,
   sendResponse: (response: MessageResponse<M>) => void,

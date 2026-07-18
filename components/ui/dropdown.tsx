@@ -8,7 +8,6 @@ import React, {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
-import Container from "./container";
 import { HStack, VStack } from "./stack";
 
 // Context to share dropdown state with sub-components
@@ -95,7 +94,7 @@ const Dropdown = forwardRef<
     gap?: number;
   }
 >((props, ref) => {
-  const { children, gap, ...rest } = props;
+  const { children, gap, className, ...rest } = props;
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleDropdown = () => {
@@ -118,12 +117,19 @@ const Dropdown = forwardRef<
 
   return (
     <DropdownContext.Provider value={{ isOpen, toggleDropdown }}>
-      <Container ref={ref} {...rest}>
+      <div
+        ref={ref}
+        className={cn(
+          "w-full h-full p-4 border-2 border-gray-700 rounded-md",
+          className,
+        )}
+        {...rest}
+      >
         <VStack fill gap={gap}>
           {headerChild}
           {contentChild}
         </VStack>
-      </Container>
+      </div>
     </DropdownContext.Provider>
   );
 });

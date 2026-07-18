@@ -37,6 +37,23 @@ export function catalogCourseToPlannedCourse(
   };
 }
 
+// Matches a catalog course against an already-normalized (trimmed, lowercased)
+// query across code, title, short name, and instructor names. Shared by the
+// in-memory filter and the Dexie-backed search so both stay in sync.
+export function matchesCatalogQuery(
+  course: CatalogCourse,
+  normalizedQuery: string,
+): boolean {
+  if (!normalizedQuery) return true;
+
+  return [
+    `${course.department} ${course.number}`,
+    course.fullName,
+    course.courseName,
+    course.instructors.map(({ fullName }) => fullName).join(" "),
+  ].some((value) => value.toLowerCase().includes(normalizedQuery));
+}
+
 export function filterCatalogCourses(
   courses: CatalogCourse[],
   query: string,
@@ -45,11 +62,6 @@ export function filterCatalogCourses(
   if (!normalizedQuery) return courses;
 
   return courses.filter((course) =>
-    [
-      `${course.department} ${course.number}`,
-      course.fullName,
-      course.courseName,
-      course.instructors.map(({ fullName }) => fullName).join(" "),
-    ].some((value) => value.toLowerCase().includes(normalizedQuery)),
+    matchesCatalogQuery(course, normalizedQuery),
   );
 }

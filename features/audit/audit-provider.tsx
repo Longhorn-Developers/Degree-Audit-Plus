@@ -3,7 +3,6 @@ import {
   type AuditHistoryEntry,
   type AuditRequirement,
   type CachedAuditData,
-  type CompositeAuditData,
   getAuditDisplayName,
 } from "@/domain/audit";
 import type {
@@ -14,22 +13,19 @@ import type {
 } from "@/domain/course";
 import type { CurrentAuditProgress } from "@/domain/progress";
 import LoadingPage from "@/components/loading-page";
+import { calculateWeightedDegreeCompletion } from "./audit-calculations";
 import {
-  calculateWeightedDegreeCompletion,
-  getCompositeAuditRequirements,
-} from "./audit-calculations";
-import {
-  getAuditData,
+  observeAuditData,
   observeAuditHistory,
   renameAudit,
   saveAuditData,
-  watchAuditData,
 } from "./audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,
+  removePlannedCourse as removeCourse,
 } from "./audit-mutations";
 
 type SemesterInfo = Record<StringSemester, Course[]>;
@@ -55,6 +51,7 @@ interface AuditContextValue {
     requirementTitle: string,
     ruleTitle: string,
   ) => Promise<CourseId | null>;
+  removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
 }
 
 const AuditContext = createContext<AuditContextValue | null>(null);
@@ -79,24 +76,11 @@ export function AuditContextProvider({
   );
   const currentAuditName =
     getAuditDisplayName(currentAudit) ?? "Degree Requirements";
-  const compositeAuditData = useMemo<CompositeAuditData>(
-    () =>
-      auditData && currentAuditId
-        ? {
-            audits: [
-              {
-                ...auditData,
-                name: getAuditDisplayName(currentAudit) ?? currentAuditId,
-              },
-            ],
-          }
-        : { audits: [] },
-    [auditData, currentAudit, currentAuditId],
-  );
-  const sections = useMemo(
-    () => getCompositeAuditRequirements(compositeAuditData),
-    [compositeAuditData],
-  );
+  // Single-audit hot path reads requirements directly. The composite decorations
+  // (per-audit names, duplicate-course flags) live in audit-calculations.ts
+  // (getCompositeAuditRequirements) for the future multi-audit feature; no
+  // single-audit UI reads them, so we don't compute them here.
+  const sections = useMemo(() => auditData?.requirements ?? [], [auditData]);
   const courseMap = useMemo(() => auditData?.courses ?? {}, [auditData]);
   const progresses = useMemo(
     () => calculateWeightedDegreeCompletion(sections, courseMap),
@@ -123,48 +107,43 @@ export function AuditContextProvider({
     );
   }, []);
 
-  useEffect(() => {
-    if (!currentAuditId) return;
-
-    setAuditData(null);
-    return watchAuditData(currentAuditId, setAuditData);
-  }, [currentAuditId]);
-
+  // Effect A (ids only): keep currentAuditId valid against history. If the
+  // current id isn't a known audit, fall back to the first valid one. Never
+  // touches auditData.
   useEffect(() => {
     if (!history) return;
 
-    const storedHistory = history;
-    let cancelled = false;
-    setLoaded(false);
+    const isKnown = history.audits.some(
+      ({ auditId }) => auditId === currentAuditId,
+    );
+    if (isKnown) return;
 
-    async function loadAudit() {
-      try {
-        const selectedId = storedHistory.audits.some(
-          ({ auditId }) => auditId === currentAuditId,
-        )
-          ? currentAuditId
-          : storedHistory.audits.find(({ auditId }) => auditId)?.auditId;
-        if (!selectedId) return;
-
-        if (selectedId !== currentAuditId) {
-          setCurrentAuditIdState(selectedId);
-          updateLastAuditId(selectedId);
-          return;
-        }
-        const storedAudit = await getAuditData(selectedId);
-        if (!cancelled) setAuditData(storedAudit);
-      } catch (error) {
-        console.error("Failed to load audit:", error);
-      } finally {
-        if (!cancelled) setLoaded(true);
-      }
+    const fallbackId = history.audits.find(({ auditId }) => auditId)?.auditId;
+    if (fallbackId && fallbackId !== currentAuditId) {
+      setCurrentAuditIdState(fallbackId);
+      updateLastAuditId(fallbackId);
     }
-
-    void loadAudit();
-    return () => {
-      cancelled = true;
-    };
   }, [currentAuditId, history, updateLastAuditId]);
+
+  // Effect B (sole auditData writer): observe the selected audit. The watch wins
+  // over a late initial read, so switching audits never flashes null — the
+  // `loaded` gate shows LoadingPage until the observed data arrives.
+  useEffect(() => {
+    if (!currentAuditId) return;
+
+    setLoaded(false);
+    return observeAuditData(
+      currentAuditId,
+      (audit) => {
+        setAuditData(audit);
+        setLoaded(true);
+      },
+      (error) => {
+        console.error("Failed to load audit:", error);
+        setLoaded(true);
+      },
+    );
+  }, [currentAuditId]);
 
   const value = useMemo<AuditContextValue>(() => {
     // currentAuditId and history are guaranteed non-null past the loading
@@ -214,6 +193,13 @@ export function AuditContextProvider({
         if (!result) return null;
         await saveAuditData(currentAuditId, result.audit);
         return result.courseId;
+      },
+      removePlannedCourse: async (courseId) => {
+        if (!auditData || !currentAuditId) return false;
+        const updated = removeCourse(auditData, courseId);
+        if (!updated) return false;
+        await saveAuditData(currentAuditId, updated);
+        return true;
       },
     };
   }, [

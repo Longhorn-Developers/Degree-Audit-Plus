@@ -1,14 +1,8 @@
-import {
-  observeAuditHistory,
-} from "@/features/audit/audit-storage";
+import { observeAuditHistory } from "@/features/audit/audit-storage";
 import type { AuditHistoryData, AuditHistoryEntry } from "@/domain/audit";
-import {
-  sendRuntimeMessage,
-  type ExtensionMessage,
-} from "@/lib/browser/messages";
+import { onExtensionMessage, sendRuntimeMessage } from "@/lib/browser/messages";
 import { PlusIcon, SignInIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useState } from "react";
-import { browser } from "wxt/browser";
 import Button from "@/components/ui/button";
 import logo from "@/public/logo.png";
 import {
@@ -18,6 +12,14 @@ import {
   watchLoginState,
 } from "@/features/session/session";
 import PopupAuditCard from "./popup-audit-card";
+
+function EmptyStateMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+      {children}
+    </div>
+  );
+}
 
 export default function App() {
   const [audits, setAudits] = useState<AuditHistoryEntry[]>([]);
@@ -56,14 +58,14 @@ export default function App() {
       })
       .catch(() => {});
 
-    const listener = (message: ExtensionMessage) => {
+    const unwatchMessages = onExtensionMessage((message) => {
       if (message.type === "SCRAPE_ALL_STARTED") {
         setIsSyncing(true);
       }
       if (message.type === "SCRAPE_ALL_COMPLETE") {
         setIsSyncing(false);
       }
-    };
+    });
 
     const unwatchAuditHistory = observeAuditHistory(
       (data) => {
@@ -82,9 +84,8 @@ export default function App() {
       if (value !== null) setLoggedIn(value);
     });
 
-    browser.runtime.onMessage.addListener(listener);
     return () => {
-      browser.runtime.onMessage.removeListener(listener);
+      unwatchMessages();
       unwatchAuditHistory();
       unwatchLoginState();
     };
@@ -188,40 +189,40 @@ export default function App() {
         </div>
 
         {loading ? (
-          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+          <EmptyStateMessage>
             <p className="text-base text-dap-gray-light">Syncing...</p>
-          </div>
+          </EmptyStateMessage>
         ) : needsLogin && audits.length === 0 ? (
-          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+          <EmptyStateMessage>
             <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[300px]">
               Log in to UT Direct, then visit the Degree Audit page to load your
               audits.
             </p>
-          </div>
+          </EmptyStateMessage>
         ) : error ? (
-          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+          <EmptyStateMessage>
             <p className="text-base text-red-600 max-w-[250px]">
               Error loading audits: {error}
             </p>
             <p className="text-sm text-dap-gray-light">
               Please visit the UT Direct degree audits page to refresh.
             </p>
-          </div>
+          </EmptyStateMessage>
         ) : audits.length === 0 ? (
-          <div className="flex flex-col gap-2 items-center justify-center text-center mb-6 py-8">
+          <EmptyStateMessage>
             <p className="text-base text-dap-gray-light tracking-[0.32px] max-w-[250px]">
               Alas! Your future is veiled. I do not know what is to come.
             </p>
             <p className="text-[14.22px] font-medium text-dap-dark">
               (No current audits)
             </p>
-          </div>
+          </EmptyStateMessage>
         ) : (
           <>
             <div className="space-y-4 mb-4">
               {displayedAudits.map((audit, index) => (
                 <div
-                  key={index}
+                  key={audit.auditId ?? index}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenDegreeAuditPage(audit?.auditId);

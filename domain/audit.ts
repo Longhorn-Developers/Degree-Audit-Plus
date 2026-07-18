@@ -9,6 +9,7 @@ export interface RequirementRule {
   progressUnit: RequirementProgressUnit;
   status: Status;
   courses: CourseId[];
+  summary?: string;
 }
 
 export interface AuditRequirement {
@@ -56,11 +57,6 @@ export interface AuditHistoryData {
   error?: string;
 }
 
-/**
- * The display name for an audit history entry, title-first: the audit's own
- * title, else its majors joined, else null. Callers supply their own final
- * fallback (an id, "Degree Requirements", etc.).
- */
 export function getAuditDisplayName(
   entry: AuditHistoryEntry | undefined,
 ): string | null {

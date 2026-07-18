@@ -1,8 +1,12 @@
 import { HStack, VStack } from "@/components/ui/stack";
-import Title from "@/components/ui/text";
+import Title from "@/components/ui/title";
 import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
-import { isGpaSection } from "@/features/audit/audit-calculations";
+import {
+  isCreditSection,
+  isGpaSection,
+  parseGpaSummary,
+} from "@/features/audit/audit-calculations";
 import { groupAuditSections } from "./section-groups";
 import DegreeSidePanel from "./degree-side-panel";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
@@ -10,55 +14,42 @@ import RequirementBreakdown, {
   UnifiedDegreeCard,
 } from "./requirement-breakdown";
 
-function parseGpaSummary(text: string | undefined) {
-  if (!text) {
-    return null;
-  }
-
-  const match = text.match(
-    /(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i,
-  );
-  if (!match) {
-    return null;
-  }
-
-  return {
-    hoursUsed: Number(match[1]),
-    points: Number(match[2]),
-  };
-}
-
 const SidePanel = () => {
-  const { sections } = useAuditContext();
+  const { sections, currentAuditName } = useAuditContext();
+
   const gpaSection = sections.find((section) => isGpaSection(section.title));
   const gpaRule = gpaSection?.rules[0];
-  const gpaSummary = parseGpaSummary(gpaRule?.text);
+  const gpaSummary = parseGpaSummary(gpaRule?.summary);
+
+  console.log("[GPA card]", {
+    required: gpaRule?.requiredHours,
+    counted: gpaRule?.appliedHours,
+    summaryText: gpaRule?.summary,
+    parsedSummary: gpaSummary,
+  });
+
+  const creditSection = sections.find((section) =>
+    isCreditSection(section.title),
+  );
+  const creditRequirements = (creditSection?.rules ?? []).map((rule) => ({
+    status: rule.status,
+    text: rule.text,
+  }));
 
   return (
     <DegreeSidePanel searchPanel={<CourseSearchPanel />}>
       <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
           <GPATotalsCard
+            degreeName={currentAuditName}
             required={gpaRule.requiredHours}
             counted={gpaRule.appliedHours}
-            hoursUsed={gpaSummary?.hoursUsed ?? 0}
-            points={gpaSummary?.points ?? 0}
+            summary={gpaSummary}
           />
         ) : null}
-        <CreditHourTotalsCard
-          requirements={[
-            {
-              met: true,
-              hours: 21,
-              description: "upper-division coursework in residence.",
-            },
-            {
-              met: false,
-              hours: 36,
-              description: "upper-division coursework required.",
-            },
-          ]}
-        />
+        {creditRequirements.length > 0 ? (
+          <CreditHourTotalsCard requirements={creditRequirements} />
+        ) : null}
       </VStack>
     </DegreeSidePanel>
   );
