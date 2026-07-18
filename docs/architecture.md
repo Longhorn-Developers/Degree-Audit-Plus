@@ -283,7 +283,214 @@ persistence behind its storage interface, and keep temporary interaction state
 local to the UI. A new cross-feature module is justified only when it represents
 a real user workflow, as Course Search does between Audit and Catalog.
 
-Tests mirror ownership: audit state/storage tests live in `tests/audit`, browser
-controller tests in `tests/audit-scraping`, parser snapshots in `tests/scraping`,
-and catalog refresh tests in `tests/catalog`. Standalone validation scripts cover
-major parsing, requirement progress, composite loading, and saved combinations.
+
+## Visual Diagram 
+
+```text
++============================================================================================+
+|                              EXTERNAL SYSTEMS                                                |
+|                                                                                            |
+|  +-------------------------+     +----------------------+     +---------------------------+ |
+|  | UT Direct               |     | Browser runtime      |     | Bundled catalog JSON      | |
+|  |                         |     |                      |     |                           | |
+|  | audit history/results   |     | tabs, messages,      |     | CatalogCourse[]           | |
+|  | login/session cookies   |     | storage, cookies     |     |                           | |
+|  +------------+------------+     +----------+-----------+     +-------------+-------------+ |
++---------------|-----------------------------|-------------------------------|---------------+
+                |                             |                               |
+                v                             v                               v
++============================================================================================+
+| [A] WXT ENTRYPOINT ADAPTERS                                                                 |
+|                                                                                            |
+|  content.tsx                 background.ts              popup-app/main.tsx                 |
+|  +----------------------+    +----------------------+   +-----------------------------+    |
+|  | adapts UT page load  |    | adapts background   |   | adapts popup document       |    |
+|  | to content module    |    | worker lifecycle    |   | to Popup module             |    |
+|  |                      |    |                      |   +-----------------------------+    |
+|  | starts controller    |    | registers audit and |                                          |
+|  | mounts banner        |    | session handlers    |   degree-audit/main.tsx               |
+|  +----------+-----------+    +----------+-----------+   +-----------------------------+    |
+|             |                           |               | composition root            |    |
+|             |                           |               | seeds catalog               |    |
+|             |                           |               | nests providers             |    |
+|             |                           |               +--------------+--------------+    |
++-------------|---------------------------|------------------------------|-------------------+
+              |                           |                              |
+              v                           v                              v
++============================================================================================+
+| AUDIT ACQUISITION MODULES                                                                   |
+|                                                                                            |
+| [M] Content Controller                   [M] Background Controller                          |
+| Interface:                               Interface:                                         |
+|   startAuditContentController(doc)         registerAuditBackgroundController()              |
+|                                                                                            |
+| Implementation hides:                    Implementation hides:                              |
+|   recordLoginStateFromPage()               navigation handlers                             |
+|   startAuditHistorySync()                   scrape handlers                                 |
+|   RUN_SCRAPER handling                     session cookie watcher                           |
+|   login/table validation                                                                   |
+|   parseAuditPage()                      +-----------------------------------------------+   |
+|                                        | [M] AuditBatchController                       |   |
+| [M] Audit History Sync                 |                                               |   |
+| Interface:                             | Interface:                                    |   |
+|   fetchAuditHistory()                  |   start(auditIds)                             |   |
+|   startAuditHistorySync(doc)           |   receiveResult(id, audit, tabId?)            |   |
+|                                        |   receiveFailure(id, failure, tabId?)          |   |
+| Implementation hides:                  |   waitForIdle()                               |   |
+|   fetch + authentication checks        |                                               |   |
+|   history parsing                      | Implementation hides:                          |   |
+|   storage updates                      |   sequencing, delays, timeouts                 |   |
+|   DOM observation                      |   pending requests, cleanup, broadcasts        |   |
+|   uncached-audit detection             +----------------------+------------------------+   |
++------------------+--------------------------------------------|----------------------------+
+                   |                                            |
+                   |              +-----------------------------+
+                   |              |
+                   v              v
++============================================================================================+
+| [S] CROSS-CONTEXT MESSAGE SEAM                                                              |
+| lib/browser/messages.ts                                                                     |
+|                                                                                            |
+| [I] ExtensionMessage                                                                        |
+|                                                                                            |
+|   OPEN_DEGREE_AUDIT       RUN_NEW_AUDIT       GET_SYNC_STATUS                               |
+|   SCRAPE_ALL_AUDITS       RUN_SCRAPER         AUDIT_RESULTS                                 |
+|   SCRAPE_ALL_STARTED      SCRAPE_ALL_COMPLETE AUDIT_SCRAPE_ERROR                            |
+|                                                                                            |
+| Interface functions:                                                                        |
+|   sendRuntimeMessage()   sendTabMessage()   onExtensionMessage()   sendMessageResponse()    |
+|                                                                                            |
+| [A] WXT browser.runtime / browser.tabs messaging                                             |
++-------------------------------+------------------------------------+-----------------------+
+                                |                                    |
+                audit/history results                      navigation and sync events
+                                |                                    |
+                                v                                    v
++============================================================================================+
+| PERSISTENCE AND SESSION MODULES                                                              |
+|                                                                                            |
+| [M] Audit Storage                         [M] Session                                       |
+| Main persisted-state seam                 UT authentication knowledge seam                  |
+|                                                                                            |
+| Interface:                                Interface:                                        |
+|   observeAuditHistory()                     getCachedLoginState()                            |
+|   saveAuditHistory()                        watchLoginState()                                |
+|   renameAudit()                             refreshLoginState()                              |
+|   observeAuditData()                        recordLoginStateFromPage()                       |
+|   saveAuditData()                           isLoginPage()                                    |
+|   getUncachedAuditIds()                     registerSessionCookieWatcher()                   |
+|   composite audit functions                 openLoginTab()                                   |
+|                                                                                            |
+| Implementation hides:                     Implementation hides:                             |
+|   storage keys and shapes                  cookie name                                      |
+|   initial-read/watch races                 login probe URL                                  |
+|   audit key prefixes                       cached login state                               |
+|   composite loading                        browser cookie events                            |
+|                                                                                            |
+| [A] WXT storage + browser.storage.local    [A] fetch + WXT cookies/storage                  |
+|                                                                                            |
+| [M] Preferences Storage                                                                    |
+| Interface: initPreferences() and typed preference items                                     |
+| [A] WXT storage                                                                           |
++----------------------+--------------------------------------------+------------------------+
+                       | observe                                    | watch
+                       v                                            v
++============================================================================================+
+| [S] REACT PROVIDER SEAMS                                                                    |
+|                                                                                            |
+| degree-audit/main.tsx composes:                                                             |
+|                                                                                            |
+|  +--------------------------------------------------------------------------------------+  |
+|  | [M] PreferencesProvider                                                             |  |
+|  |                                                                                      |  |
+|  | [I] luminosity, dark mode, sidebar state, view mode, lastAuditId                     |  |
+|  |                                                                                      |  |
+|  |  +--------------------------------------------------------------------------------+  |  |
+|  |  | [M] AuditContextProvider                                                       |  |  |
+|  |  |                                                                                |  |  |
+|  |  | [I] Read model:                                                               |  |  |
+|  |  |   sections, history, progresses, courseMap, semesters, currentAudit           |  |  |
+|  |  |                                                                                |  |  |
+|  |  | [I] User intents:                                                             |  |  |
+|  |  |   setCurrentAuditId()                                                         |  |  |
+|  |  |   renameAuditTitle()                                                          |  |  |
+|  |  |   addPlannedCourse()                                                          |  |  |
+|  |  |   removePlannedCourse()                                                       |  |  |
+|  |  |   moveCourseToNewSemester()                                                   |  |  |
+|  |  |                                                                                |  |  |
+|  |  | Implementation hides:                                                         |  |  |
+|  |  |   storage observation and audit selection                                     |  |  |
+|  |  |   URL/preference synchronization                                              |  |  |
+|  |  |   progress calculation                                                        |  |  |
+|  |  |   course-to-semester grouping                                                 |  |  |
+|  |  |   immutable mutations followed by persistence                                 |  |  |
+|  |  |                                                                                |  |  |
+|  |  |  +-------------------------------------------------------------------------+  |  |  |
+|  |  |  | [M] CourseModalContextProvider                                           |  |  |  |
+|  |  |  |                                                                         |  |  |  |
+|  |  |  | [I] openModal(), closeModal(), recommendations, scope, loading          |  |  |  |
+|  |  |  |                                                                         |  |  |  |
+|  |  |  | Implementation hides: recommendation selection and async lifecycle      |  |  |  |
+|  |  |  +-------------------------------------------------------------------------+  |  |  |
+|  |  +--------------------------------------------------------------------------------+  |  |
+|  +--------------------------------------------------------------------------------------+  |
++------------------------------+----------------------------------------+--------------------+
+                               |                                        |
+                               | current audit data                     | recommendation scope
+                               v                                        v
++============================================================================================+
+| APPLICATION FEATURE MODULES                                                                 |
+|                                                                                            |
+| +--------------------------------------+  +----------------------------------------------+ |
+| | [M] Dashboard                        |  | [M] Planner                                  | |
+| |                                      |  |                                              | |
+| | degree progress overview             |  | semester cards                               | |
+| | requirement breakdowns               |  | drag-and-drop preview                        | |
+| | degree completion donut              |  | future semester creation                     | |
+| | GPA and credit totals                |  |                                              | |
+| | sidebar and navigation               |  | Persisted intents go through Audit Provider  | |
+| | section display grouping             |  | Temporary interaction state stays local      | |
+| +------------------+-------------------+  +----------------------+-----------------------+ |
+|                    |                                             |                         |
+|                    +---------------------+-----------------------+                         |
+|                                          |                                                 |
+|                                          v                                                 |
+|                           +-------------------------------+                                |
+|                           | [M] Course Search             |                                |
+|                           |                               |                                |
+|                           | search and filters            |                                |
+|                           | Core recommendations          |                                |
+|                           | add-course modal              |                                |
+|                           | catalog-to-planned mapping    |                                |
+|                           +---------------+---------------+                                |
++-------------------------------------------|------------------------------------------------+
+                                            |
+                                            v
++============================================================================================+
+| CATALOG MODULES                                                                             |
+|                                                                                            |
+| [M] Catalog Seed                    [M] Catalog Database                                    |
+| Interface: seedDatabase()           Interface:                                              |
+|                                      searchCatalogCourses(filters)                          |
+| JSON --> validation --> bulkPut      findCoursesByCore(core)                                |
+|                                      searchCores(limit, core)                               |
+|                                                                                            |
+|                                    Implementation hides:                                    |
+| [A] assets/ut-courses.json           Dexie schema and indexes                               |
+| [A] Dexie / IndexedDB                filtering, department mapping, deduplication           |
+|                                                                                            |
+| [M] Course Recommendations                                                                 |
+| Interface:                                                                                 |
+|   getMissingCoreRequirements(sections)                                                     |
+|   getSuggestedCoreCourses(sections)                                                        |
+|   getSuggestedCoursesForRequirement(requirement, rule)                                     |
+|                                                                                            |
+| This module is the explicit join between Audit vocabulary and Catalog queries.             |
++============================================================================================+
+| SHARED FOUNDATIONS                                                                          |
+|                                                                                            |
+| domain/                  Framework-free audit, course, catalog, and progress vocabulary     |
+| components/ui/           Reusable UI modules                                                |
+| lib/utils.ts             Shared presentation helpers                                        |
++============================================================================================+
+```
