@@ -21,9 +21,9 @@ _(Add a screenshot or a GIF of your extension in action here!)_
 
 - **Frontend:** React, TypeScript
 - **Styling:** Tailwind CSS
-- **State Management:** Redux Toolkit
-- **Backend & Data:** Supabase (for storing user-created plans)
-- **Platform:** Chrome Extension API (Manifest V3)
+- **State Management:** React Context and local component state
+- **Data:** Browser storage for audits/preferences and IndexedDB (Dexie) for the course catalog; no external backend
+- **Platform:** Chrome (Manifest V3) and Firefox extension APIs via WXT
 - **Build Tools:** WXT, Vite, Bun
 
 ## Installation
