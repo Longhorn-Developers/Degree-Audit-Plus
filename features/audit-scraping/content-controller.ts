@@ -2,9 +2,12 @@ import {
   sendRuntimeMessage,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
-import { checkLoginRequired, parseAuditPage } from "./audit-page-parser";
+import {
+  isLoginPage,
+  recordLoginStateFromPage,
+} from "@/features/session/session";
+import { parseAuditPage } from "./audit-page-parser";
 import { startAuditHistorySync } from "./audit-history-sync";
-import { recordLoginStateFromPage } from "../../lib/login-state";
 
 export function startAuditContentController(document: Document): void {
   recordLoginStateFromPage(document);
@@ -16,7 +19,7 @@ export function startAuditContentController(document: Document): void {
   browser.runtime.onMessage.addListener((message: ExtensionMessage) => {
     if (message.type !== "RUN_SCRAPER") return;
 
-    if (checkLoginRequired(document)) {
+    if (isLoginPage(document)) {
       void sendRuntimeMessage({
         type: "AUDIT_SCRAPE_ERROR",
         auditId: message.auditId,

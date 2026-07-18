@@ -3,9 +3,9 @@ import type {
   CompositeAuditData,
   CompositeAuditRequirement,
   DuplicateCourseRequirementFlag,
-} from "../domain/audit";
-import type { Course, CourseCode, CourseId } from "../domain/course";
-import type { CurrentAuditProgress } from "../domain/progress";
+} from "@/domain/audit";
+import type { Course, CourseCode, CourseId } from "@/domain/course";
+import type { CurrentAuditProgress } from "@/domain/progress";
 
 // Give unnamed audits a readable fallback so the UI never shows a blank source.
 function getAuditName(

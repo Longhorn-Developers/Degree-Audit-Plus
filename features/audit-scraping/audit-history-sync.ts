@@ -2,10 +2,10 @@ import type { AuditHistoryEntry } from "@/domain/audit";
 import {
   getUncachedAuditIds,
   saveAuditHistory,
-} from "@/lib/storage/audit-storage";
+} from "@/features/audit/audit-storage";
+import { isLoginPage } from "@/features/session/session";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
 import { parseAuditHistory } from "./audit-history-parser";
-import { checkLoginRequired } from "./audit-page-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
@@ -19,7 +19,7 @@ export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
     await response.text(),
     "text/html",
   );
-  if (checkLoginRequired(document)) {
+  if (isLoginPage(document)) {
     throw new Error("Not logged in to UT Direct");
   }
   // A logged-in student who has never requested an audit gets a history page

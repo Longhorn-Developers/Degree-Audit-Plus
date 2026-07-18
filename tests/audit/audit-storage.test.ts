@@ -9,10 +9,11 @@ const {
   getAuditData,
   getAuditHistory,
   getUncachedAuditIds,
+  observeAuditHistory,
   saveAuditData,
   saveAuditHistory,
   watchAuditHistory,
-} = await import("../../lib/storage/audit-storage");
+} = await import("../../features/audit/audit-storage");
 
 beforeEach(() => {
   fakeBrowser.reset();
@@ -38,6 +39,77 @@ test("watches audit history through the typed storage item", async () => {
 
   expect(updates).toHaveLength(1);
   expect(updates[0]?.audits).toEqual([{ auditId: "audit-1" }]);
+});
+
+test("observes the initial audit history and later updates", async () => {
+  const initial: AuditHistoryData = {
+    audits: [{ auditId: "audit-1" }],
+    timestamp: 1,
+  };
+  await fakeBrowser.storage.local.set({ auditHistory: initial });
+
+  const updates: Array<AuditHistoryData | null> = [];
+  const unobserve = observeAuditHistory((history) => updates.push(history));
+  await Bun.sleep(0);
+
+  await saveAuditHistory([{ auditId: "audit-2" }]);
+  unobserve();
+
+  expect(updates[0]).toEqual(initial);
+  expect(updates[1]?.audits).toEqual([{ auditId: "audit-2" }]);
+});
+
+test("stops initial and watched audit history delivery after cleanup", async () => {
+  const updates: Array<AuditHistoryData | null> = [];
+  const unobserve = observeAuditHistory((history) => updates.push(history));
+
+  unobserve();
+  await Bun.sleep(0);
+  await saveAuditHistory([{ auditId: "audit-1" }]);
+
+  expect(updates).toEqual([]);
+});
+
+test("reports an initial audit history read failure", async () => {
+  const failure = new Error("history read failed");
+  const get = spyOn(fakeBrowser.storage.local, "get").mockRejectedValueOnce(
+    failure,
+  );
+  const errors: unknown[] = [];
+
+  const unobserve = observeAuditHistory(() => {}, (error) =>
+    errors.push(error),
+  );
+  await Bun.sleep(0);
+  unobserve();
+  get.mockRestore();
+
+  expect(errors).toEqual([failure]);
+});
+
+test("does not let a stale initial read replace a newer watched update", async () => {
+  const stale: AuditHistoryData = {
+    audits: [{ auditId: "stale" }],
+    timestamp: 1,
+  };
+  let resolveInitialRead!: (value: Record<string, unknown>) => void;
+  const initialRead = new Promise<Record<string, unknown>>((resolve) => {
+    resolveInitialRead = resolve;
+  });
+  const get = spyOn(fakeBrowser.storage.local, "get").mockImplementationOnce(
+    () => initialRead,
+  );
+  const updates: Array<AuditHistoryData | null> = [];
+
+  const unobserve = observeAuditHistory((history) => updates.push(history));
+  await saveAuditHistory([{ auditId: "newer" }]);
+  resolveInitialRead({ auditHistory: stale });
+  await Bun.sleep(0);
+  unobserve();
+  get.mockRestore();
+
+  expect(updates).toHaveLength(1);
+  expect(updates[0]?.audits).toEqual([{ auditId: "newer" }]);
 });
 
 test("finds uncached audits with one storage read", async () => {

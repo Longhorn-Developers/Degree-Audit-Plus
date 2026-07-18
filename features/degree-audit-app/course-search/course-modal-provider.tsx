@@ -11,7 +11,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useAuditContext } from "../providers/audit-provider";
+import { useAuditContext } from "@/features/audit/audit-provider";
 
 // Context for sharing audit data betw sidebar and main
 export type RecommendationScope = {

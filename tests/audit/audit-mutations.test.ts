@@ -5,7 +5,7 @@ import {
   moveCourseToSemester,
   removePlannedCourse,
   wipePlannedCourses,
-} from "../../features/degree-audit-app/providers/audit-mutations";
+} from "../../features/audit/audit-mutations";
 
 function createAudit(): CachedAuditData {
   return {

@@ -8,11 +8,11 @@ import DegreeAuditPage from "@/features/degree-audit-app/audit-view/degree-audit
 import CourseAddModal from "@/features/degree-audit-app/course-search/course-add-modal";
 import CourseModalContextProvider from "@/features/degree-audit-app/course-search/course-modal-provider";
 import DegreePlannerPage from "@/features/degree-audit-app/planner-view/degree-planner-page";
-import AuditContextProvider from "@/features/degree-audit-app/providers/audit-provider";
+import AuditContextProvider from "@/features/audit/audit-provider";
 import {
   PreferencesProvider,
   usePreferences,
-} from "@/features/degree-audit-app/providers/preferences-provider";
+} from "@/features/preferences/preferences-provider";
 import Navbar from "@/features/degree-audit-app/shared/navbar";
 import Sidebar from "@/features/degree-audit-app/shared/sidebar";
 import ErrorBoundary from "@/components/error-boundary";

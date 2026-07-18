@@ -1,5 +1,5 @@
+import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
-import { checkLoginRequired } from "../features/audit-scraping/audit-page-parser";
 
 // Single owner of UT Direct login state: a cached value for instant UI, a
 // live probe for truth, and event-driven writers that keep the cache fresh.
@@ -67,7 +67,14 @@ export async function refreshLoginState(): Promise<boolean> {
 // Content-script writer. A real UT Direct page is a definitive signal:
 // a login form in the DOM means the session is gone.
 export function recordLoginStateFromPage(document: Document): void {
-  void saveLoginState(!checkLoginRequired(document));
+  void saveLoginState(!isLoginPage(document));
+}
+
+export function isLoginPage(document: Document): boolean {
+  return Boolean(
+    document.querySelector('form[action*="login"]') ||
+      document.querySelector('input[type="password"]'),
+  );
 }
 
 // Event-driven cache updates from the background service worker: react the

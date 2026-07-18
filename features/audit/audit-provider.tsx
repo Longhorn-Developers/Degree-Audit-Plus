@@ -16,17 +16,16 @@ import LoadingPage from "@/components/loading-page";
 import {
   calculateWeightedDegreeCompletion,
   getCompositeAuditRequirements,
-} from "@/lib/audit-calculations";
+} from "./audit-calculations";
 import {
   getAuditData,
-  getAuditHistory,
+  observeAuditHistory,
   renameAudit,
   saveAuditData,
   watchAuditData,
-  watchAuditHistory,
-} from "@/lib/storage/audit-storage";
+} from "./audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { usePreferences } from "./preferences-provider";
+import { usePreferences } from "@/features/preferences/preferences-provider";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,
@@ -124,9 +123,12 @@ export function AuditContextProvider({
   );
 
   useEffect(() => {
-    return watchAuditHistory((storedHistory) => {
-      if (storedHistory) setHistory(storedHistory);
-    });
+    return observeAuditHistory(
+      (storedHistory) => {
+        if (storedHistory) setHistory(storedHistory);
+      },
+      (error) => console.error("Failed to load audit history:", error),
+    );
   }, []);
 
   useEffect(() => {
@@ -137,15 +139,14 @@ export function AuditContextProvider({
   }, [currentAuditId]);
 
   useEffect(() => {
+    if (!history) return;
+
+    const storedHistory = history;
     let cancelled = false;
     setLoaded(false);
 
     async function loadAudit() {
       try {
-        const storedHistory = await getAuditHistory();
-        if (!storedHistory || cancelled) return;
-        setHistory(storedHistory);
-
         const selectedId = storedHistory.audits.some(
           ({ auditId }) => auditId === currentAuditId,
         )
@@ -171,7 +172,7 @@ export function AuditContextProvider({
     return () => {
       cancelled = true;
     };
-  }, [currentAuditId, updateLastAuditId]);
+  }, [currentAuditId, history, updateLastAuditId]);
 
   const value = useMemo<AuditContextValue>(() => {
     // currentAuditId and history are guaranteed non-null past the loading

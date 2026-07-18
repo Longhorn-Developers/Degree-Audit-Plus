@@ -8,9 +8,9 @@ mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
 mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
 
 const { default: AuditContextProvider } =
-  await import("../../features/degree-audit-app/providers/audit-provider");
+  await import("../../features/audit/audit-provider");
 const { PreferencesProvider } =
-  await import("../../features/degree-audit-app/providers/preferences-provider");
+  await import("../../features/preferences/preferences-provider");
 
 let dom: JSDOM;
 let root: Root;

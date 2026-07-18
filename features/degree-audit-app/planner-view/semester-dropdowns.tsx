@@ -1,6 +1,6 @@
 import Button from "@/components/ui/button";
 import { Grid } from "@/components/ui/stack";
-import { useAuditContext } from "../providers/audit-provider";
+import { useAuditContext } from "@/features/audit/audit-provider";
 import {
   CourseId,
   nextSemester,

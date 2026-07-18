@@ -13,13 +13,13 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     syncCalls++;
   },
 }));
-mock.module("../../lib/login-state", () => ({
+mock.module("../../features/session/session", () => ({
+  isLoginPage: () => false,
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
   },
 }));
 mock.module("../../features/audit-scraping/audit-page-parser", () => ({
-  checkLoginRequired: () => false,
   parseAuditPage: () => {
     if (parseShouldThrow) throw new Error("Unexpected markup");
     return { courses: {}, requirements: [] };

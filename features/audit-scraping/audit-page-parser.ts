@@ -35,13 +35,6 @@ export function parseRequirementProgress(text: string): {
   };
 }
 
-export function checkLoginRequired(doc: Document): boolean {
-  return !!(
-    doc.querySelector('form[action*="login"]') ||
-    doc.querySelector('input[type="password"]')
-  );
-}
-
 export function getRuleStatus(classList: DOMTokenList): Status {
   if (classList.contains("fulfilled")) return "Completed";
   if (classList.contains("partial")) return "In Progress";
