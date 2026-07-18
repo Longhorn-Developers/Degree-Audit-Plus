@@ -15,11 +15,18 @@ import RequirementBreakdown, {
 } from "./requirement-breakdown";
 
 const SidePanel = () => {
-  const { sections } = useAuditContext();
+  const { sections, currentAuditName } = useAuditContext();
 
   const gpaSection = sections.find((section) => isGpaSection(section.title));
   const gpaRule = gpaSection?.rules[0];
-  const gpaSummary = parseGpaSummary(gpaRule?.text);
+  const gpaSummary = parseGpaSummary(gpaRule?.summary);
+
+  console.log("[GPA card]", {
+    required: gpaRule?.requiredHours,
+    counted: gpaRule?.appliedHours,
+    summaryText: gpaRule?.summary,
+    parsedSummary: gpaSummary,
+  });
 
   const creditSection = sections.find((section) =>
     isCreditSection(section.title),
@@ -34,6 +41,7 @@ const SidePanel = () => {
       <VStack gap={4} className="w-sm mt-4">
         {gpaRule ? (
           <GPATotalsCard
+            degreeName={currentAuditName}
             required={gpaRule.requiredHours}
             counted={gpaRule.appliedHours}
             summary={gpaSummary}

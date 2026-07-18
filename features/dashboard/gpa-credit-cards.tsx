@@ -11,6 +11,7 @@ const STATUS_ICON_STATE: Record<Status, FramedStatusIconState> = {
 };
 
 type GPATotalsProps = {
+  degreeName: string;
   required: number;
   counted: number;
   summary: GpaSummary | null;
@@ -20,7 +21,7 @@ const InfoIcon = () => (
   <svg
     aria-hidden="true"
     viewBox="0 0 24 24"
-    className="h-6 w-6 shrink-0 text-dap-dark"
+    className="h-5 w-5 shrink-0 text-dap-dark"
     fill="none"
   >
     <path
@@ -69,28 +70,35 @@ const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => (
 );
 
 export const GPATotalsCard = ({
+  degreeName,
   required,
   counted,
   summary,
 }: GPATotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
+    <div className="w-full p-4 rounded-2xl border border-gray-200 bg-background shadow-md">
       <HStack x="between" y="top" fill>
-        <h3 className="text-xl font-bold text-text">GPA Totals</h3>
+        <h3 className="text-base font-bold text-text">GPA Totals</h3>
         <InfoIcon />
       </HStack>
 
-      <HStack gap={6} className="mt-4">
+      <p className="mt-1 text-sm font-semibold text-dap-plan-green">
+        {degreeName}
+      </p>
+
+      <HStack gap={4} className="mt-3">
         <VStack gap={1}>
-          <span className="text-sm text-gray-500">Required</span>
-          <div className="px-4 py-2 bg-background border border-gray-300 rounded-lg">
-            <span className="text-lg font-semibold">{required.toFixed(4)}</span>
+          <span className="text-xs text-muted">Required</span>
+          <div className="px-4 py-1.5 bg-background border border-gray-300 rounded-full">
+            <span className="text-base font-semibold text-text">
+              {required.toFixed(4)}
+            </span>
           </div>
         </VStack>
         <VStack gap={1}>
-          <span className="text-sm text-gray-500">Counted</span>
-          <div className="px-4 py-2 bg-dap-green rounded-lg">
-            <span className="text-lg font-semibold text-white">
+          <span className="text-xs text-muted">Counted</span>
+          <div className="px-4 py-1.5 bg-dap-green rounded-full">
+            <span className="text-base font-semibold text-white">
               {counted.toFixed(4)}
             </span>
           </div>
@@ -98,7 +106,7 @@ export const GPATotalsCard = ({
       </HStack>
 
       {summary ? (
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-3 text-xs text-muted">
           {summary.hoursUsed} hours for a total of {summary.points} points were
           used to calculate the GPA.
         </p>
@@ -120,14 +128,14 @@ export const CreditHourTotalsCard = ({
   requirements,
 }: CreditHourTotalsProps) => {
   return (
-    <div className="p-5 rounded-lg border border-gray-200 bg-background shadow-md">
-      <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
+    <div className="w-full p-4 rounded-2xl border border-gray-200 bg-background shadow-md">
+      <h3 className="text-base font-bold text-text">Credit Hour Totals</h3>
 
-      <VStack gap={3} className="mt-4">
+      <VStack gap={2.5} className="mt-3">
         {requirements.map((req) => (
-          <HStack key={req.text} gap={3} y="middle">
+          <HStack key={req.text} gap={2.5} y="middle">
             <FramedStatusIcon state={STATUS_ICON_STATE[req.status]} />
-            <span className="text-sm text-gray-700">{req.text}</span>
+            <span className="text-xs text-muted">{req.text}</span>
           </HStack>
         ))}
       </VStack>

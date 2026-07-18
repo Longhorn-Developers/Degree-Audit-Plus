@@ -71,4 +71,30 @@ describe("degree audit scraper", () => {
       log.mockRestore();
     }
   });
+
+  test("captures the GPA summary sentence, not course-rule previews", async () => {
+    const document = await loadAuditDocument("audit-results-real.html");
+    const log = spyOn(console, "log").mockImplementation(() => {});
+
+    try {
+      const { requirements } = parseAuditPage(document);
+      const rules = requirements.flatMap((requirement) => requirement.rules);
+
+      const summaries = rules
+        .map((rule) => rule.summary)
+        .filter((summary): summary is string => summary !== undefined);
+
+      // The GPA rules carry their calculation sentence...
+      expect(summaries.length).toBeGreaterThan(0);
+      // ...and every captured summary is that sentence — never a course preview
+      // or other trailing-cell content.
+      for (const summary of summaries) {
+        expect(summary).toMatch(
+          /^\d+(?:\.\d+)? hours for a total of \d+(?:\.\d+)? points/,
+        );
+      }
+    } finally {
+      log.mockRestore();
+    }
+  });
 });

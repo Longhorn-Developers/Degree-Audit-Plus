@@ -21,8 +21,10 @@ import type { RequirementProgressUnit } from "@/domain/progress";
 // --- Helper Functions ---
 
 export function parseHours(text: string): number {
-  const match = text.match(/\d+/);
-  return match ? parseInt(match[0], 10) : 0;
+  // Match a full decimal so GPA cells like "3.7766 GPA" keep their fractional
+  // part. Hours/course columns are always integers, so this is a no-op for them.
+  const match = text.match(/\d+(?:\.\d+)?/);
+  return match ? parseFloat(match[0]) : 0;
 }
 
 export function parseRequirementProgress(text: string): {
@@ -145,6 +147,21 @@ export function scrapeRequirementSections(
         (cells[5] as HTMLElement).innerText,
       );
 
+      // After the progress columns, GPA rules carry a summary sentence
+      // ("X hours for a total of Y points were used to calculate the GPA.")
+      // while course-based rules carry a course-preview cell. Capture the
+      // former: the first trailing cell that is neither a course preview nor
+      // the show/hide-details link.
+      const summaryCell = Array.from(cells)
+        .slice(6)
+        .find(
+          (cell) =>
+            !cell.classList.contains("course_preview") &&
+            !cell.querySelector("a.details"),
+        );
+      const summary =
+        (summaryCell as HTMLElement | undefined)?.innerText.trim() || undefined;
+
       const rule: RequirementRule = {
         text: (cells[2] as HTMLElement).innerText.trim(),
         requiredHours: requiredProgress.value,
@@ -153,6 +170,7 @@ export function scrapeRequirementSections(
         progressUnit: requiredProgress.unit,
         status: getRuleStatus(row.classList),
         courses: [],
+        ...(summary ? { summary } : {}),
       };
 
       // Parse details row (courses)
