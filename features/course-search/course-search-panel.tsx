@@ -12,7 +12,6 @@ import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,
   CircleNotchIcon,
-  GraduationCapIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import CourseCard from "./course-card";
@@ -156,22 +155,6 @@ function CourseSearchContent({
         />
 
         <div className="flex items-center gap-3 my-4" />
-
-        <div className="mb-4">
-          <SelectDropdown
-            icon={<GraduationCapIcon size={28} />}
-            placeholder="Requirement"
-            options={DEPARTMENTS}
-            value={formData.department}
-            onChange={(value) =>
-              setFormData((previous) => ({
-                ...previous,
-                department: value,
-              }))
-            }
-            disabled={isSearching}
-          />
-        </div>
 
         <div className="mb-4">
           <SelectDropdown

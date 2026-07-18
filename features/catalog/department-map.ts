@@ -227,7 +227,7 @@ export const DEPARTMENT_MAP: Record<string, string> = {
   VIA: "Viola",
   VIO: "Violin",
   VOI: "Voice",
-  WGS: "Women&#x27;s and Gender Studies",
+  WGS: "Women's and Gender Studies",
   WRT: "Writing",
   YID: "Yiddish",
   YOR: "Yoruba",
