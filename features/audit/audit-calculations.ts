@@ -31,7 +31,9 @@ export interface GpaSummary {
 export function parseGpaSummary(text: string | undefined): GpaSummary | null {
   if (!text) return null;
 
-  const match = text.match(/(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i);
+  const match = text.match(
+    /(\d+(?:\.\d+)?)\s+hours.*?(\d+(?:\.\d+)?)\s+points/i,
+  );
   if (!match) return null;
 
   return {

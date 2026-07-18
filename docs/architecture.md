@@ -34,6 +34,10 @@ scripts/catalog/            # Developer-only catalog refresh and validation
 
 ## Dependency direction
 
+This graph is lint-enforced: `eslint.config.ts` restricts each area's
+`@/`-alias imports to exactly the edges below (`bun run lint`). An import that
+crosses the graph fails CI rather than silently rotting the architecture.
+
 ```mermaid
 flowchart TD
     Domain["domain"]
@@ -258,7 +262,8 @@ copies of the same state.
 `domain/` contains plain TypeScript vocabulary and semester helpers with no
 React, browser, storage, or Dexie dependencies. `components/ui/` contains only
 genuinely reusable UI primitives. `lib/browser/messages.ts` owns the typed
-extension message union and send/response helpers.
+extension message union and its send (`sendRuntimeMessage`, `sendTabMessage`),
+subscribe (`onExtensionMessage`), and response-typing helpers.
 
 Entrypoints stay thin:
 
@@ -266,7 +271,8 @@ Entrypoints stay thin:
 - `content.tsx` starts the Audit content controller and mounts the UT-page
   banner.
 - `degree-audit/main.tsx` seeds Catalog, composes Preferences → Audit → Course
-  Search providers, and selects Audit versus Planner view.
+  Search providers, owns the page-level layout wrapper, and selects Audit
+  versus Planner view. Providers provide state only; they render no chrome.
 - `popup-app/main.tsx` creates the popup root and renders Popup.
 
 ## Adding functionality
