@@ -73,7 +73,7 @@ export function recordLoginStateFromPage(document: Document): void {
 export function isLoginPage(document: Document): boolean {
   return Boolean(
     document.querySelector('form[action*="login"]') ||
-      document.querySelector('input[type="password"]'),
+    document.querySelector('input[type="password"]'),
   );
 }
 

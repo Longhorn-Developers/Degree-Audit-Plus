@@ -77,8 +77,9 @@ test("reports an initial audit history read failure", async () => {
   );
   const errors: unknown[] = [];
 
-  const unobserve = observeAuditHistory(() => {}, (error) =>
-    errors.push(error),
+  const unobserve = observeAuditHistory(
+    () => {},
+    (error) => errors.push(error),
   );
   await Bun.sleep(0);
   unobserve();
