@@ -4,7 +4,7 @@ import "@/entrypoints/styles/content.css";
 import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { groupAuditSections } from "@/features/audit/section-groups";
-import DegreeSidePanel from "../shared/degree-side-panel";
+import DegreeSidePanel from "./degree-side-panel";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,

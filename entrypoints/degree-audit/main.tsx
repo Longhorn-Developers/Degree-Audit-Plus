@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
-import DegreeAuditPage from "@/features/degree-audit-app/audit-view/degree-audit-page";
+import DegreeAuditPage from "@/features/audit/ui/degree-audit-page";
 import CourseAddModal from "@/features/course-search/course-add-modal";
 import CourseModalContextProvider from "@/features/course-search/course-modal-provider";
 import DegreePlannerPage from "@/features/planner/degree-planner-page";
@@ -13,8 +13,8 @@ import {
   PreferencesProvider,
   usePreferences,
 } from "@/features/preferences/preferences-provider";
-import Navbar from "@/features/degree-audit-app/shared/navbar";
-import Sidebar from "@/features/degree-audit-app/shared/sidebar";
+import Navbar from "@/features/audit/ui/navbar";
+import Sidebar from "@/features/audit/ui/sidebar";
 import ErrorBoundary from "@/components/error-boundary";
 
 const App = () => {
