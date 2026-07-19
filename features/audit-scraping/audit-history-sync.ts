@@ -5,17 +5,22 @@ import {
   saveAuditHistory,
 } from "@/features/audit/audit-storage";
 import { isLoginPage } from "@/features/session/session";
-import { sendRuntimeMessage } from "@/lib/browser/messages";
+import {
+  sendRuntimeMessage,
+  type FetchAuditResult,
+} from "@/lib/browser/messages";
 import { storage } from "wxt/utils/storage";
 import { parseAuditHistory } from "./audit-history-parser";
+import { parseAuditPage } from "./audit-page-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
+const AUDIT_RESULTS_URL =
+  "https://utdirect.utexas.edu/apps/degree/audits/results/";
 
 // UT's markup for the button that submits a new audit request. The background
 // controller clicks it programmatically, so detecting and clicking must agree.
 export const RUN_AUDIT_BUTTON_SELECTOR = ".run_button";
-
 
 const POLL_INITIAL_DELAY_MS = 1_000;
 const POLL_INTERVAL_MS = 500;
@@ -49,6 +54,31 @@ export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
   if (!document.querySelector("table")) return [];
 
   return parseAuditHistory(document);
+}
+
+// Fetch and parse one audit's results page. Runs in a content script on a UT
+// page: same-origin, so the session cookies ride along and DOMParser exists.
+// Never throws — failures collapse into the typed result the background expects.
+export async function fetchAuditResults(
+  auditId: string,
+): Promise<FetchAuditResult> {
+  try {
+    const response = await fetch(`${AUDIT_RESULTS_URL}${auditId}/`, {
+      credentials: "include",
+    });
+    if (response.redirected) return { error: "AUTH_REQUIRED" };
+    if (!response.ok) return { error: "SCRAPE_FAILED" };
+
+    const document = new DOMParser().parseFromString(
+      await response.text(),
+      "text/html",
+    );
+    if (isLoginPage(document)) return { error: "AUTH_REQUIRED" };
+    return { audit: parseAuditPage(document) };
+  } catch (error) {
+    console.error(`Failed to fetch audit ${auditId}:`, error);
+    return { error: "SCRAPE_FAILED" };
+  }
 }
 
 // One sync pass: pull the history page, persist it, and dispatch scraping for
@@ -186,7 +216,22 @@ function observeHistoryTable(document: Document): void {
 
 export async function startAuditHistorySync(document: Document): Promise<void> {
   try {
-    if (!(await resumePendingAuditPoll())) await refreshAuditHistory();
+    if (!(await resumePendingAuditPoll())) {
+      const audits = await fetchAuditHistory();
+      await processAuditHistory(audits);
+      // Poll for a completing audit even though we never saw the run happen —
+      // custom audits are submitted from pages the click watcher doesn't
+      // cover. Signals: UT's post-submit redirect (?submit_success=Y), or a
+      // history entry without a result link (an audit still generating).
+      const justSubmitted =
+        new URLSearchParams(document.location.search).get("submit_success") ===
+        "Y";
+      if (justSubmitted || audits.some((audit) => !hasAuditResult(audit))) {
+        const startedAt = Date.now();
+        await getPendingRunItem().setValue(startedAt);
+        void pollForRequestedAudit(startedAt);
+      }
+    }
     observeHistoryTable(document);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

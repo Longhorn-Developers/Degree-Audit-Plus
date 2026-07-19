@@ -1,13 +1,10 @@
 import {
-  sendRuntimeMessage,
+  sendMessageResponse,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
+import { recordLoginStateFromPage } from "@/features/session/session";
 import {
-  isLoginPage,
-  recordLoginStateFromPage,
-} from "@/features/session/session";
-import { parseAuditPage } from "./audit-page-parser";
-import {
+  fetchAuditResults,
   resumePendingAuditPoll,
   startAuditHistorySync,
   watchForAuditRunClicks,
@@ -21,7 +18,7 @@ const SYNC_PAGE_PATTERNS = [
 
 // The page audits are run from; a pending run's poll resumes here on reload.
 const RUN_PAGE_PATTERN =
-  /^\/apps\/degree\/audits\/submissions\/student_individual\/?$/;
+  /^\/apps\/degree\/audits\/(?:submissions|requests)\/student_individual\/?$/;
 
 export function startAuditContentController(document: Document): void {
   recordLoginStateFromPage(document);
@@ -34,40 +31,16 @@ export function startAuditContentController(document: Document): void {
     void resumePendingAuditPoll();
   }
 
-  browser.runtime.onMessage.addListener((message: ExtensionMessage) => {
-    if (message.type !== "RUN_SCRAPER") return;
+  // The background delegates audit fetches here: this page's origin carries
+  // the UT session, and the service worker has no DOMParser of its own.
+  browser.runtime.onMessage.addListener(
+    (message: ExtensionMessage, _sender, sendResponse) => {
+      if (message.type !== "FETCH_AUDIT") return;
 
-    if (isLoginPage(document)) {
-      void sendRuntimeMessage({
-        type: "AUDIT_SCRAPE_ERROR",
-        auditId: message.auditId,
-        error: "AUTH_REQUIRED",
-      });
-      return;
-    }
-
-    if (!document.querySelector("#coursework table.results")) {
-      void sendRuntimeMessage({
-        type: "AUDIT_SCRAPE_ERROR",
-        auditId: message.auditId,
-        error: "TABLE_NOT_FOUND",
-      });
-      return;
-    }
-
-    try {
-      void sendRuntimeMessage({
-        type: "AUDIT_RESULTS",
-        auditId: message.auditId,
-        audit: parseAuditPage(document),
-      });
-    } catch (error) {
-      console.error("Failed to parse audit page:", error);
-      void sendRuntimeMessage({
-        type: "AUDIT_SCRAPE_ERROR",
-        auditId: message.auditId,
-        error: "PARSE_ERROR",
-      });
-    }
-  });
+      void fetchAuditResults(message.auditId).then((result) =>
+        sendMessageResponse(message, sendResponse, result),
+      );
+      return true;
+    },
+  );
 }

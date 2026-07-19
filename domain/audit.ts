@@ -64,7 +64,6 @@ export function getAuditDisplayName(
   return entry?.title ?? entry?.majors?.join("; ") ?? null;
 }
 
-
 export function hasAuditResult(
   entry: AuditHistoryEntry,
 ): entry is AuditHistoryEntry & { auditId: string } {
