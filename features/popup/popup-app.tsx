@@ -1,5 +1,9 @@
 import { observeAuditHistory } from "@/features/audit/audit-storage";
-import type { AuditHistoryData, AuditHistoryEntry } from "@/domain/audit";
+import {
+  hasAuditResult,
+  type AuditHistoryData,
+  type AuditHistoryEntry,
+} from "@/domain/audit";
 import { onExtensionMessage, sendRuntimeMessage } from "@/lib/browser/messages";
 import { PlusIcon, SignInIcon, SpinnerIcon } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useState } from "react";
@@ -220,20 +224,23 @@ export default function App() {
         ) : (
           <>
             <div className="space-y-4 mb-4">
-              {displayedAudits.map((audit, index) => (
-                <div
-                  key={audit.auditId ?? index}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenDegreeAuditPage(audit?.auditId);
-                  }}
-                >
-                  <PopupAuditCard
-                    title={audit.title}
-                    percentage={audit.percentage}
-                  />
-                </div>
-              ))}
+              {displayedAudits.map((audit, index) => {
+                const pending = !hasAuditResult(audit);
+                return (
+                  <div
+                    key={audit.auditId || index}
+                    onClick={() => {
+                      if (!pending) handleOpenDegreeAuditPage(audit.auditId);
+                    }}
+                  >
+                    <PopupAuditCard
+                      title={audit.title}
+                      percentage={audit.percentage}
+                      pending={pending}
+                    />
+                  </div>
+                );
+              })}
             </div>
             {hasMoreAudits && (
               <button

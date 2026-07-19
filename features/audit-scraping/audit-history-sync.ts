@@ -1,14 +1,37 @@
-import type { AuditHistoryEntry } from "@/domain/audit";
+// Syncs the extension's audit cache with UT's audit history page.
+import { hasAuditResult, type AuditHistoryEntry } from "@/domain/audit";
 import {
   getUncachedAuditIds,
   saveAuditHistory,
 } from "@/features/audit/audit-storage";
 import { isLoginPage } from "@/features/session/session";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
+import { storage } from "wxt/utils/storage";
 import { parseAuditHistory } from "./audit-history-parser";
 
 const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
+
+// UT's markup for the button that submits a new audit request. The background
+// controller clicks it programmatically, so detecting and clicking must agree.
+export const RUN_AUDIT_BUTTON_SELECTOR = ".run_button";
+
+
+const POLL_INITIAL_DELAY_MS = 1_000;
+const POLL_INTERVAL_MS = 500;
+const POLL_WINDOW_MS = 90_000;
+
+// Timestamp of a run-audit click whose result hasn't been picked up yet.
+const createPendingRunItem = () =>
+  storage.defineItem<number | null>("local:pendingAuditRunAt", {
+    defaultValue: null,
+  });
+let pendingRunItem: ReturnType<typeof createPendingRunItem> | undefined;
+
+function getPendingRunItem() {
+  // Avoid touching extension storage when consumers only import this module.
+  return (pendingRunItem ??= createPendingRunItem());
+}
 
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
@@ -28,25 +51,98 @@ export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
   return parseAuditHistory(document);
 }
 
-async function fetchAndSaveAuditHistory(): Promise<AuditHistoryEntry[]> {
-  const audits = await fetchAuditHistory();
-  await saveAuditHistory(audits);
-  return audits;
+// One sync pass: pull the history page, persist it, and dispatch scraping for
+// any audits not yet cached. Returns whether anything was dispatched.
+async function refreshAuditHistory(): Promise<boolean> {
+  return processAuditHistory(await fetchAuditHistory());
 }
 
-async function refreshAuditHistory(): Promise<void> {
-  const audits = await fetchAndSaveAuditHistory();
+async function processAuditHistory(
+  audits: AuditHistoryEntry[],
+): Promise<boolean> {
+  const auditIds = audits.filter(hasAuditResult).map((audit) => audit.auditId);
+  const [, uncachedIds] = await Promise.all([
+    saveAuditHistory(audits),
+    getUncachedAuditIds(auditIds),
+  ]);
+  if (!uncachedIds.length) return false;
 
-  const auditIds = audits
-    .map(({ auditId }) => auditId)
-    .filter((auditId): auditId is string => Boolean(auditId));
-  const uncachedIds = await getUncachedAuditIds(auditIds);
-  if (uncachedIds.length) {
-    await sendRuntimeMessage({
-      type: "SCRAPE_ALL_AUDITS",
-      auditIds: uncachedIds,
-    });
+  await sendRuntimeMessage({
+    type: "SCRAPE_ALL_AUDITS",
+    auditIds: uncachedIds,
+  });
+  return true;
+}
+
+let activePoll: Promise<void> | null = null;
+
+// Poll until the requested audit lands.
+function pollForRequestedAudit(startedAt: number): Promise<void> {
+  return (activePoll ??= (async () => {
+    let lastSeen: string | undefined;
+    const tick = async (): Promise<boolean> => {
+      // Another audits page may have picked up the run and finished first.
+      if ((await getPendingRunItem().getValue()) === null) return true;
+
+      const audits = await fetchAuditHistory();
+      // Skip storage writes (and their watcher fan-out into live UI) while
+      // UT still serves the same history as the previous tick.
+      const snapshot = JSON.stringify(audits);
+      if (snapshot === lastSeen) return false;
+
+      lastSeen = snapshot;
+      return processAuditHistory(audits);
+    };
+
+    try {
+      const initialDelay = Math.max(
+        0,
+        startedAt + POLL_INITIAL_DELAY_MS - Date.now(),
+      );
+      await new Promise((resolve) => setTimeout(resolve, initialDelay));
+
+      const deadline = startedAt + POLL_WINDOW_MS;
+      while (Date.now() < deadline) {
+        if (await tick()) break;
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      }
+    } catch (error) {
+      console.error("Error polling for a requested audit:", error);
+    } finally {
+      await getPendingRunItem().removeValue();
+      activePoll = null;
+    }
+  })());
+}
+
+// Marks a run as pending when UT's run button is clicked, then polls for it.
+export function watchForAuditRunClicks(document: Document): void {
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (!(event.target instanceof Element)) return;
+      if (!event.target.closest(RUN_AUDIT_BUTTON_SELECTOR)) return;
+
+      const startedAt = Date.now();
+      void getPendingRunItem()
+        .setValue(startedAt)
+        .then(() => pollForRequestedAudit(startedAt));
+    },
+    { capture: true },
+  );
+}
+
+// Resumes polling for a marked-but-unretrieved.
+export async function resumePendingAuditPoll(): Promise<boolean> {
+  const startedAt = await getPendingRunItem().getValue();
+  if (startedAt === null) return false;
+
+  if (Date.now() - startedAt >= POLL_WINDOW_MS) {
+    await getPendingRunItem().removeValue();
+    return false;
   }
+  void pollForRequestedAudit(startedAt);
+  return true;
 }
 
 function observeHistoryTable(document: Document): void {
@@ -75,7 +171,7 @@ function observeHistoryTable(document: Document): void {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(async () => {
         try {
-          await fetchAndSaveAuditHistory();
+          await refreshAuditHistory();
           lastRowCount = currentRowCount;
         } catch (error) {
           console.error("Error refreshing audit history:", error);
@@ -90,7 +186,7 @@ function observeHistoryTable(document: Document): void {
 
 export async function startAuditHistorySync(document: Document): Promise<void> {
   try {
-    await refreshAuditHistory();
+    if (!(await resumePendingAuditPoll())) await refreshAuditHistory();
     observeHistoryTable(document);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -7,13 +7,31 @@ import {
   recordLoginStateFromPage,
 } from "@/features/session/session";
 import { parseAuditPage } from "./audit-page-parser";
-import { startAuditHistorySync } from "./audit-history-sync";
+import {
+  resumePendingAuditPoll,
+  startAuditHistorySync,
+  watchForAuditRunClicks,
+} from "./audit-history-sync";
+
+// look at /audits and /submissions/history -> for when to scrape
+const SYNC_PAGE_PATTERNS = [
+  /^\/apps\/degree\/audits\/?$/,
+  /^\/apps\/degree\/audits\/(?:submissions|requests)\/history\/?$/,
+];
+
+// The page audits are run from; a pending run's poll resumes here on reload.
+const RUN_PAGE_PATTERN =
+  /^\/apps\/degree\/audits\/submissions\/student_individual\/?$/;
 
 export function startAuditContentController(document: Document): void {
   recordLoginStateFromPage(document);
+  watchForAuditRunClicks(document);
 
-  if (/^\/apps\/degree\/audits\/?$/.test(document.location.pathname)) {
+  const pathname = document.location.pathname;
+  if (SYNC_PAGE_PATTERNS.some((pattern) => pattern.test(pathname))) {
     void startAuditHistorySync(document);
+  } else if (RUN_PAGE_PATTERN.test(pathname)) {
+    void resumePendingAuditPoll();
   }
 
   browser.runtime.onMessage.addListener((message: ExtensionMessage) => {

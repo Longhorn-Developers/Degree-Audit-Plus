@@ -5,12 +5,21 @@ import type { ExtensionMessage } from "../../lib/browser/messages";
 let listener: ((message: ExtensionMessage) => void) | undefined;
 let parseShouldThrow = false;
 let syncCalls = 0;
+let resumeCalls = 0;
+let watchedRunClicks = 0;
 let sentMessages: ExtensionMessage[] = [];
 let recordedLoginPages = 0;
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
     syncCalls++;
+  },
+  resumePendingAuditPoll: async () => {
+    resumeCalls++;
+    return false;
+  },
+  watchForAuditRunClicks: () => {
+    watchedRunClicks++;
   },
 }));
 mock.module("../../features/session/session", () => ({
@@ -53,6 +62,8 @@ beforeEach(() => {
   parseShouldThrow = false;
   sentMessages = [];
   syncCalls = 0;
+  resumeCalls = 0;
+  watchedRunClicks = 0;
   recordedLoginPages = 0;
 });
 
@@ -62,16 +73,36 @@ function createDocument(pathname: string, body = ""): Document {
   }).window.document;
 }
 
-test("only syncs audit history on the audit landing page", () => {
-  startAuditContentController(createDocument("/apps/degree/audits/"));
-  expect(syncCalls).toBe(1);
+test("syncs audit history on the landing and request-history pages", () => {
+  for (const pathname of [
+    "/apps/degree/audits/",
+    "/apps/degree/audits/submissions/history/",
+    "/apps/degree/audits/requests/history/",
+  ]) {
+    startAuditContentController(createDocument(pathname));
+  }
+  expect(syncCalls).toBe(3);
+  expect(resumeCalls).toBe(0);
   // every page load records the login state it sees in the DOM
-  expect(recordedLoginPages).toBe(1);
+  expect(recordedLoginPages).toBe(3);
+});
 
+test("resumes a pending run's poll on the run-audit page", () => {
+  startAuditContentController(
+    createDocument("/apps/degree/audits/submissions/student_individual/"),
+  );
+  expect(syncCalls).toBe(0);
+  expect(resumeCalls).toBe(1);
+});
+
+test("neither syncs nor polls on audit result pages", () => {
   startAuditContentController(
     createDocument("/apps/degree/audits/results/12345/"),
   );
-  expect(syncCalls).toBe(1);
+  expect(syncCalls).toBe(0);
+  expect(resumeCalls).toBe(0);
+  // run-button clicks are still watched on every audits page
+  expect(watchedRunClicks).toBe(1);
 });
 
 test("reports unexpected parser failures immediately", () => {

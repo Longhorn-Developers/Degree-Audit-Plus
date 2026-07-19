@@ -16,6 +16,7 @@ import {
   refreshLoginState,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
+import { RUN_AUDIT_BUTTON_SELECTOR } from "./audit-history-sync";
 
 type ScrapeFailure = Extract<
   ExtensionMessage,
@@ -108,9 +109,12 @@ export class AuditBatchController {
           result.failed.push(auditId);
         }
 
-        await (this.dependencies.delay ?? defaultDelay)(
-          this.dependencies.requestDelayMs ?? 150,
-        );
+        const delayMs = this.dependencies.requestDelayMs ?? 150;
+        if (this.dependencies.delay) {
+          await this.dependencies.delay(delayMs);
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
     } finally {
       await this.dependencies.closeWindow();
@@ -150,10 +154,6 @@ export class AuditBatchController {
         );
     }).finally(() => this.pending.delete(auditId));
   }
-}
-
-function defaultDelay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function broadcastSyncState(state: "started" | "complete") {
@@ -233,9 +233,11 @@ export function registerAuditScrapingHandlers(): void {
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
-function clickRunAuditButton(retry = false): void {
+function clickRunAuditButton(selector: string, retry = false): void {
+  // Serialized into the page by executeScript — the selector must arrive as an
+  // argument because this function cannot close over module imports.
   const click = () => {
-    const button = document.querySelector<HTMLButtonElement>(".run_button");
+    const button = document.querySelector<HTMLButtonElement>(selector);
     button?.click();
     return Boolean(button);
   };
@@ -301,6 +303,7 @@ async function runNewAudit(): Promise<boolean> {
     await browser.scripting.executeScript({
       target: { tabId: existingTab.id },
       func: clickRunAuditButton,
+      args: [RUN_AUDIT_BUTTON_SELECTOR],
     });
     return true;
   }
@@ -318,7 +321,7 @@ async function runNewAudit(): Promise<boolean> {
     await browser.scripting.executeScript({
       target: { tabId },
       func: clickRunAuditButton,
-      args: [true],
+      args: [RUN_AUDIT_BUTTON_SELECTOR, true],
     });
     setTimeout(() => void browser.tabs.remove(tabId).catch(() => {}), 30_000);
   };
