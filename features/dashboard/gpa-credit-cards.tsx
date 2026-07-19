@@ -35,19 +35,21 @@ const InfoIcon = () => (
 const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => {
   if (state === "completed") {
     return (
-      <div className="flex items-center justify-center w-6 h-6 bg-dap-plan-green-light rounded shrink-0 mt-0.5">
-        <Check className="text-white w-4 h-4" weight="bold" />
+      <div
+        className="bg-dap-plan-green-light mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded"
+      >
+        <Check className="h-4 w-4 text-white" weight="bold" />
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-center w-6 h-6 bg-dap-status-slate rounded shrink-0 mt-0.5">
-      <X className="text-white w-4 h-4" weight="bold" />
+    <div
+      className="bg-dap-status-slate mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded"
+    >
+      <X className="h-4 w-4 text-white" weight="bold" />
     </div>
   );
 };
-
-
 
 export const GPATotalsCard = ({
   degreeName,
@@ -122,7 +124,9 @@ export const CreditHourTotalsCard = ({
         {requirements.map((req) => (
           <HStack key={req.text} gap={3} y="top">
             <FramedStatusIcon state={STATUS_ICON_STATE[req.status]} />
-            <span className="text-sm font-medium text-text leading-tight mt-0.5">{req.text}</span>
+            <span className="mt-0.5 text-sm font-medium leading-tight text-text">
+              {req.text}
+            </span>
           </HStack>
         ))}
       </VStack>
