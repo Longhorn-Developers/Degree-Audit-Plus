@@ -58,6 +58,18 @@ export interface AuditHistoryData {
   error?: string;
 }
 
+// UT form values are submitted verbatim; degree-plan codes include trailing spaces.
+export interface CustomAuditRunRequest {
+  catalog: string;
+  college: string;
+  degreePlan: string;
+  minor?: string;
+  certificate?: string;
+  includeCurrent?: boolean;
+  includeFuture?: boolean;
+  includePlanned?: boolean;
+}
+
 export function getAuditDisplayName(
   entry: AuditHistoryEntry | undefined,
 ): string | null {
