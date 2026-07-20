@@ -15,7 +15,6 @@ function createController(
     scrapeAudit: async () => audit,
     saveAudit: async () => {},
     broadcast: async () => {},
-    delay: async () => {},
     scrapeTimeoutMs: 20,
     ...overrides,
   });
@@ -69,6 +68,7 @@ describe("audit batch controller", () => {
         scrapes++;
         throw new Error("AUTH_REQUIRED");
       },
+      concurrency: 1,
     });
 
     controller.start(["1", "2", "3"], TAB_ID);
@@ -77,6 +77,26 @@ describe("audit batch controller", () => {
       failed: ["1", "2", "3"],
     });
     expect(scrapes).toBe(1);
+  });
+
+  test("fetches audits in parallel up to the concurrency limit", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const controller = createController({
+      scrapeAudit: async () => {
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        inFlight--;
+        return audit;
+      },
+      concurrency: 2,
+    });
+
+    controller.start(["1", "2", "3", "4"], TAB_ID);
+    const result = await controller.waitForIdle();
+    expect(result?.succeeded.toSorted()).toEqual(["1", "2", "3", "4"]);
+    expect(maxInFlight).toBe(2);
   });
 
   test("times out a scrape that never responds", async () => {

@@ -102,9 +102,7 @@ export default function App() {
     });
   };
 
-  // The background owns the auth checks: it refuses on a known-dead session
-  // and the run's own form fetch is a live check, either way opening the
-  // login page — no need for a slow probe from here first.
+  // The background owns the auth checks: 
   const handleRerunAudit = async () => {
     setRunningAudit(true);
     try {

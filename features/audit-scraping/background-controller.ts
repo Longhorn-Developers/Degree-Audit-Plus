@@ -22,9 +22,8 @@ export interface AuditBatchDependencies {
   scrapeAudit: (auditId: string, tabId: number) => Promise<CachedAuditData>;
   saveAudit: (auditId: string, audit: CachedAuditData) => Promise<void>;
   broadcast: (state: "started" | "complete") => Promise<void>;
-  delay?: (milliseconds: number) => Promise<void>;
   scrapeTimeoutMs?: number;
-  requestDelayMs?: number;
+  concurrency?: number;
 }
 
 export class AuditBatchController {
@@ -59,8 +58,17 @@ export class AuditBatchController {
     const result: AuditBatchResult = { succeeded: [], failed: [] };
     await this.dependencies.broadcast("started");
 
-    try {
-      for (const [index, auditId] of auditIds.entries()) {
+    // A few plain page fetches in flight at once — fewer than a normal page
+    // load opens against one host — keeps the "Syncing" window short.
+    const queue = [...auditIds];
+    let aborted = false;
+
+    const worker = async (): Promise<void> => {
+      for (
+        let auditId = queue.shift();
+        auditId !== undefined && !aborted;
+        auditId = queue.shift()
+      ) {
         try {
           const audit = await this.scrapeWithTimeout(auditId, tabId);
           await this.dependencies.saveAudit(auditId, audit);
@@ -71,20 +79,25 @@ export class AuditBatchController {
           // A dead session fails every remaining audit the same way; stop
           // instead of hammering the login redirect.
           if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-            result.failed.push(...auditIds.slice(index + 1));
-            break;
-          }
-        }
-
-        if (index < auditIds.length - 1) {
-          const delayMs = this.dependencies.requestDelayMs ?? 150;
-          if (this.dependencies.delay) {
-            await this.dependencies.delay(delayMs);
-          } else {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            aborted = true;
+            result.failed.push(...queue.splice(0));
           }
         }
       }
+    };
+
+    try {
+      await Promise.all(
+        Array.from(
+          {
+            length: Math.min(
+              this.dependencies.concurrency ?? 3,
+              auditIds.length,
+            ),
+          },
+          () => worker(),
+        ),
+      );
     } finally {
       await this.dependencies.broadcast("complete");
       const summary = `Audit batch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed`;
