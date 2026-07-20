@@ -8,13 +8,12 @@ export type ExtensionMessage =
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
   | { type: "SCRAPE_ALL_COMPLETE" }
-  | { type: "RUN_SCRAPER"; auditId: string }
-  | { type: "AUDIT_RESULTS"; auditId: string; audit: CachedAuditData }
-  | {
-      type: "AUDIT_SCRAPE_ERROR";
-      auditId: string;
-      error: "AUTH_REQUIRED" | "TABLE_NOT_FOUND" | "PARSE_ERROR";
-    };
+  | { type: "FETCH_AUDIT"; auditId: string };
+
+// Sent by a content script asked to fetch and parse one audit's results page.
+export type FetchAuditResult =
+  | { audit: CachedAuditData }
+  | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
@@ -22,7 +21,10 @@ interface MessageResponses {
     | { success: true; existing: boolean }
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
-  SCRAPE_ALL_AUDITS: { status: "started" | "already-running" };
+  SCRAPE_ALL_AUDITS: {
+    status: "started" | "already-running" | "auth-required" | "no-source-tab";
+  };
+  FETCH_AUDIT: FetchAuditResult;
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -35,7 +37,8 @@ type ResponseRequest = Extract<
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
       | "GET_SYNC_STATUS"
-      | "SCRAPE_ALL_AUDITS";
+      | "SCRAPE_ALL_AUDITS"
+      | "FETCH_AUDIT";
   }
 >;
 
