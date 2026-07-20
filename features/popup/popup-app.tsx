@@ -102,20 +102,18 @@ export default function App() {
     });
   };
 
-  // Send message to background script to run audit (background has access to tabs/scripting APIs)
+  // The background owns the auth checks: it refuses on a known-dead session
+  // and the run's own form fetch is a live check, either way opening the
+  // login page — no need for a slow probe from here first.
   const handleRerunAudit = async () => {
     setRunningAudit(true);
-    const stillLoggedIn = await refreshLoginState();
-    setLoggedIn(stillLoggedIn);
-    if (!stillLoggedIn) {
+    try {
+      const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
+      if (response && !response.success) setRunningAudit(false);
+    } catch (error) {
+      console.error("Failed to run audit:", error);
       setRunningAudit(false);
-      handleLogin();
-      return;
     }
-    const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
-    // Background refuses when the session is dead (it opens the login page
-    // instead) — don't leave the spinner running.
-    if (response && !response.success) setRunningAudit(false);
   };
 
   const handleLogin = () => {
