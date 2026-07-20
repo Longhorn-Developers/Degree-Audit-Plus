@@ -1,3 +1,4 @@
+// Contains small helper functions and types for the audit feature.
 import type { Course, CourseCode, CourseId, Status } from "./course";
 import type { RequirementProgressUnit } from "./progress";
 
@@ -61,4 +62,10 @@ export function getAuditDisplayName(
   entry: AuditHistoryEntry | undefined,
 ): string | null {
   return entry?.title ?? entry?.majors?.join("; ") ?? null;
+}
+
+export function hasAuditResult(
+  entry: AuditHistoryEntry,
+): entry is AuditHistoryEntry & { auditId: string } {
+  return Boolean(entry.auditId);
 }

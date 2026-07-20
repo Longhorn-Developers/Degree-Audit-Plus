@@ -6,15 +6,14 @@ import {
 } from "../../features/audit-scraping/background-controller";
 
 const audit: CachedAuditData = { courses: {}, requirements: [] };
+const TAB_ID = 7;
 
 function createController(
   overrides: Partial<AuditBatchDependencies> = {},
 ): AuditBatchController {
   return new AuditBatchController({
-    startScrape: async () => {},
+    scrapeAudit: async () => audit,
     saveAudit: async () => {},
-    closeTab: async () => {},
-    closeWindow: async () => {},
     broadcast: async () => {},
     delay: async () => {},
     scrapeTimeoutMs: 20,
@@ -23,70 +22,94 @@ function createController(
 }
 
 describe("audit batch controller", () => {
-  test("completes a batch after each audit result is saved", async () => {
+  test("scrapes and saves every audit in a batch", async () => {
     const saved: string[] = [];
+    const scraped: Array<[string, number]> = [];
     const controller = createController({
-      startScrape: async (auditId) => {
-        queueMicrotask(() => void controller.receiveResult(auditId, audit));
+      scrapeAudit: async (auditId, tabId) => {
+        scraped.push([auditId, tabId]);
+        return audit;
       },
       saveAudit: async (auditId) => {
         saved.push(auditId);
       },
     });
 
-    expect(controller.start(["101", "102"])).toBe(true);
+    expect(controller.start(["101", "102"], TAB_ID)).toBe(true);
     expect(await controller.waitForIdle()).toEqual({
       succeeded: ["101", "102"],
       failed: [],
     });
     expect(saved).toEqual(["101", "102"]);
+    expect(scraped).toEqual([
+      ["101", TAB_ID],
+      ["102", TAB_ID],
+    ]);
+  });
+
+  test("continues past individual scrape failures", async () => {
+    const controller = createController({
+      scrapeAudit: async (auditId) => {
+        if (auditId === "bad") throw new Error("SCRAPE_FAILED");
+        return audit;
+      },
+    });
+
+    controller.start(["bad", "good"], TAB_ID);
+    expect(await controller.waitForIdle()).toEqual({
+      succeeded: ["good"],
+      failed: ["bad"],
+    });
+  });
+
+  test("aborts the rest of the batch when the session dies", async () => {
+    let scrapes = 0;
+    const controller = createController({
+      scrapeAudit: async () => {
+        scrapes++;
+        throw new Error("AUTH_REQUIRED");
+      },
+    });
+
+    controller.start(["1", "2", "3"], TAB_ID);
+    expect(await controller.waitForIdle()).toEqual({
+      succeeded: [],
+      failed: ["1", "2", "3"],
+    });
+    expect(scrapes).toBe(1);
   });
 
   test("times out a scrape that never responds", async () => {
-    const controller = createController({ scrapeTimeoutMs: 1 });
+    const controller = createController({
+      scrapeAudit: () => new Promise<never>(() => {}),
+      scrapeTimeoutMs: 10,
+    });
 
-    controller.start(["timeout"]);
-
+    controller.start(["stuck"], TAB_ID);
     expect(await controller.waitForIdle()).toEqual({
       succeeded: [],
-      failed: ["timeout"],
+      failed: ["stuck"],
     });
   });
 
-  test("rejects a concurrent batch without disturbing the active batch", async () => {
-    const controller = createController({
-      startScrape: async (auditId) => {
-        queueMicrotask(() => void controller.receiveResult(auditId, audit));
-      },
-    });
-
-    expect(controller.start(["active"])).toBe(true);
-    expect(controller.start(["duplicate"])).toBe(false);
-    expect(await controller.waitForIdle()).toEqual({
-      succeeded: ["active"],
-      failed: [],
-    });
+  test("refuses to start while a batch is running", async () => {
+    const controller = createController();
+    expect(controller.start(["1"], TAB_ID)).toBe(true);
+    expect(controller.start(["2"], TAB_ID)).toBe(false);
+    await controller.waitForIdle();
+    expect(controller.isSyncing).toBe(false);
   });
 
-  test("records authentication failures and closes their tab", async () => {
-    const closedTabs: number[] = [];
+  test("broadcasts start and completion around a batch", async () => {
+    const states: string[] = [];
     const controller = createController({
-      startScrape: async (auditId) => {
-        queueMicrotask(() =>
-          controller.receiveFailure(auditId, "AUTH_REQUIRED", 42),
-        );
-      },
-      closeTab: async (tabId) => {
-        closedTabs.push(tabId);
+      broadcast: async (state) => {
+        states.push(state);
       },
     });
 
-    controller.start(["private"]);
-
-    expect(await controller.waitForIdle()).toEqual({
-      succeeded: [],
-      failed: ["private"],
-    });
-    expect(closedTabs).toEqual([42]);
+    controller.start(["1"], TAB_ID);
+    await controller.waitForIdle();
+    expect(states).toEqual(["started", "complete"]);
   });
 });

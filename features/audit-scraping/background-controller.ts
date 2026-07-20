@@ -7,25 +7,11 @@ import {
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import {
-  closeScraperTab,
-  closeScraperWindow,
-  createScraperTab,
-} from "./scraper-window";
-import {
   openLoginTab,
   refreshLoginState,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
-
-type ScrapeFailure = Extract<
-  ExtensionMessage,
-  { type: "AUDIT_SCRAPE_ERROR" }
->["error"];
-
-interface PendingScrape {
-  resolve: () => void;
-  reject: (error: Error) => void;
-}
+import { RUN_AUDIT_BUTTON_SELECTOR } from "./audit-history-sync";
 
 export interface AuditBatchResult {
   succeeded: string[];
@@ -33,10 +19,9 @@ export interface AuditBatchResult {
 }
 
 export interface AuditBatchDependencies {
-  startScrape: (auditId: string) => Promise<void>;
+  // Fetches and parses one audit inside the content script of `tabId`.
+  scrapeAudit: (auditId: string, tabId: number) => Promise<CachedAuditData>;
   saveAudit: (auditId: string, audit: CachedAuditData) => Promise<void>;
-  closeTab: (tabId: number) => Promise<void>;
-  closeWindow: () => Promise<void>;
   broadcast: (state: "started" | "complete") => Promise<void>;
   delay?: (milliseconds: number) => Promise<void>;
   scrapeTimeoutMs?: number;
@@ -44,7 +29,6 @@ export interface AuditBatchDependencies {
 }
 
 export class AuditBatchController {
-  private readonly pending = new Map<string, PendingScrape>();
   private activeBatch: Promise<AuditBatchResult> | null = null;
 
   constructor(private readonly dependencies: AuditBatchDependencies) {}
@@ -53,10 +37,10 @@ export class AuditBatchController {
     return this.activeBatch !== null;
   }
 
-  start(auditIds: string[]): boolean {
+  start(auditIds: string[], tabId: number): boolean {
     if (this.activeBatch) return false;
 
-    const batch = this.run(auditIds);
+    const batch = this.run(auditIds, tabId);
     this.activeBatch = batch;
     void batch.then(
       () => (this.activeBatch = null),
@@ -69,51 +53,37 @@ export class AuditBatchController {
     return this.activeBatch ?? Promise.resolve(undefined);
   }
 
-  async receiveResult(
-    auditId: string,
-    audit: CachedAuditData,
-    tabId?: number,
-  ): Promise<void> {
-    try {
-      await this.dependencies.saveAudit(auditId, audit);
-      this.pending.get(auditId)?.resolve();
-    } catch (error) {
-      this.pending
-        .get(auditId)
-        ?.reject(error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      if (tabId !== undefined) await this.dependencies.closeTab(tabId);
-    }
-  }
-
-  receiveFailure(
-    auditId: string,
-    failure: ScrapeFailure,
-    tabId?: number,
-  ): void {
-    if (tabId !== undefined) void this.dependencies.closeTab(tabId);
-    this.pending.get(auditId)?.reject(new Error(failure));
-  }
-
-  private async run(auditIds: string[]): Promise<AuditBatchResult> {
+  private async run(
+    auditIds: string[],
+    tabId: number,
+  ): Promise<AuditBatchResult> {
     const result: AuditBatchResult = { succeeded: [], failed: [] };
     await this.dependencies.broadcast("started");
 
     try {
-      for (const auditId of auditIds) {
+      for (const [index, auditId] of auditIds.entries()) {
         try {
-          await this.scrape(auditId);
+          const audit = await this.scrapeWithTimeout(auditId, tabId);
+          await this.dependencies.saveAudit(auditId, audit);
           result.succeeded.push(auditId);
-        } catch {
+        } catch (error) {
           result.failed.push(auditId);
+          // A dead session fails every remaining audit the same way; stop
+          // instead of hammering the login redirect.
+          if (error instanceof Error && error.message === "AUTH_REQUIRED") {
+            result.failed.push(...auditIds.slice(index + 1));
+            break;
+          }
         }
 
-        await (this.dependencies.delay ?? defaultDelay)(
-          this.dependencies.requestDelayMs ?? 150,
-        );
+        const delayMs = this.dependencies.requestDelayMs ?? 150;
+        if (this.dependencies.delay) {
+          await this.dependencies.delay(delayMs);
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
     } finally {
-      await this.dependencies.closeWindow();
       await this.dependencies.broadcast("complete");
       const summary = `Audit batch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed`;
       if (result.failed.length) {
@@ -126,34 +96,27 @@ export class AuditBatchController {
     return result;
   }
 
-  private scrape(auditId: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(
+  private async scrapeWithTimeout(
+    auditId: string,
+    tabId: number,
+  ): Promise<CachedAuditData> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
         () => reject(new Error("Scrape timeout")),
-        this.dependencies.scrapeTimeoutMs ?? 35_000,
+        this.dependencies.scrapeTimeoutMs ?? 30_000,
       );
-      const finish = (callback: () => void) => {
-        clearTimeout(timeout);
-        callback();
-      };
+    });
 
-      this.pending.set(auditId, {
-        resolve: () => finish(resolve),
-        reject: (error) => finish(() => reject(error)),
-      });
-      void this.dependencies
-        .startScrape(auditId)
-        .catch((error) =>
-          this.pending
-            .get(auditId)
-            ?.reject(error instanceof Error ? error : new Error(String(error))),
-        );
-    }).finally(() => this.pending.delete(auditId));
+    try {
+      return await Promise.race([
+        this.dependencies.scrapeAudit(auditId, tabId),
+        timeout,
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
-}
-
-function defaultDelay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function broadcastSyncState(state: "started" | "complete") {
@@ -169,22 +132,39 @@ async function broadcastSyncState(state: "started" | "complete") {
   ]);
 }
 
-async function startScrape(auditId: string): Promise<void> {
-  await createScraperTab({
-    url: `https://utdirect.utexas.edu/apps/degree/audits/results/${auditId}/`,
-    mode: "background",
-    timeout: 30_000,
-    messageOnLoad: { type: "RUN_SCRAPER", auditId },
-  });
+// Delegates the fetch+parse to the content script that requested the sync —
+// it runs on a UT page, so it has the session cookies and a DOMParser.
+async function scrapeAuditInTab(
+  auditId: string,
+  tabId: number,
+): Promise<CachedAuditData> {
+  const result = await sendTabMessage(tabId, { type: "FETCH_AUDIT", auditId });
+  if (!result) throw new Error("No response from audit page");
+  if ("error" in result) throw new Error(result.error);
+  return result.audit;
 }
 
 const batchController = new AuditBatchController({
-  startScrape,
+  scrapeAudit: scrapeAuditInTab,
   saveAudit: saveAuditData,
-  closeTab: closeScraperTab,
-  closeWindow: closeScraperWindow,
   broadcast: broadcastSyncState,
 });
+
+async function startAuditBatch(
+  auditIds: string[],
+  tabId: number | undefined,
+): Promise<"started" | "already-running" | "auth-required" | "no-source-tab"> {
+  if (tabId === undefined) return "no-source-tab";
+
+  // Catch a dead session up front and send the user to log in, instead of
+  // silently failing every fetch.
+  if (!(await refreshLoginState())) {
+    await openLoginTab();
+    return "auth-required";
+  }
+
+  return batchController.start(auditIds, tabId) ? "started" : "already-running";
+}
 
 export function registerAuditScrapingHandlers(): void {
   browser.runtime.onMessage.addListener(
@@ -197,34 +177,15 @@ export function registerAuditScrapingHandlers(): void {
       }
 
       if (message.type === "SCRAPE_ALL_AUDITS") {
-        const started = batchController.start(message.auditIds);
-        if (!started) {
-          console.warn(
-            "SCRAPE_ALL_AUDITS ignored: an audit batch is already running",
-          );
-        }
-        sendMessageResponse(message, sendResponse, {
-          status: started ? "started" : "already-running",
-        });
+        void startAuditBatch(message.auditIds, sender.tab?.id).then(
+          (status) => {
+            if (status !== "started") {
+              console.warn(`SCRAPE_ALL_AUDITS not started: ${status}`);
+            }
+            sendMessageResponse(message, sendResponse, { status });
+          },
+        );
         return true;
-      }
-
-      if (message.type === "AUDIT_RESULTS") {
-        void batchController.receiveResult(
-          message.auditId,
-          message.audit,
-          sender.tab?.id,
-        );
-        return false;
-      }
-
-      if (message.type === "AUDIT_SCRAPE_ERROR") {
-        batchController.receiveFailure(
-          message.auditId,
-          message.error,
-          sender.tab?.id,
-        );
-        return false;
       }
     },
   );
@@ -233,9 +194,11 @@ export function registerAuditScrapingHandlers(): void {
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
-function clickRunAuditButton(retry = false): void {
+function clickRunAuditButton(selector: string, retry = false): void {
+  // Serialized into the page by executeScript — the selector must arrive as an
+  // argument because this function cannot close over module imports.
   const click = () => {
-    const button = document.querySelector<HTMLButtonElement>(".run_button");
+    const button = document.querySelector<HTMLButtonElement>(selector);
     button?.click();
     return Boolean(button);
   };
@@ -301,6 +264,7 @@ async function runNewAudit(): Promise<boolean> {
     await browser.scripting.executeScript({
       target: { tabId: existingTab.id },
       func: clickRunAuditButton,
+      args: [RUN_AUDIT_BUTTON_SELECTOR],
     });
     return true;
   }
@@ -318,7 +282,7 @@ async function runNewAudit(): Promise<boolean> {
     await browser.scripting.executeScript({
       target: { tabId },
       func: clickRunAuditButton,
-      args: [true],
+      args: [RUN_AUDIT_BUTTON_SELECTOR, true],
     });
     setTimeout(() => void browser.tabs.remove(tabId).catch(() => {}), 30_000);
   };
