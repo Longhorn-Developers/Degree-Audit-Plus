@@ -2,21 +2,23 @@ import DegreeAuditCard from "./audit-card";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import logo from "@/public/logo.png";
 import {
-  ArrowUpRight,
-  DiscordLogo,
-  Gear,
-  GithubLogo,
-  InstagramLogo,
-  LinkedinLogo,
-  Moon,
-  Plus,
-  Sidebar as SidebarIcon,
+  ArrowUpRightIcon,
+  DiscordLogoIcon,
+  GearIcon,
+  GithubLogoIcon,
+  InstagramLogoIcon,
+  LinkedinLogoIcon,
+  MoonIcon,
+  PlusIcon,
+  SidebarIcon,
+  SunIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
 const Sidebar = () => {
-  const { sidebarIsOpen, toggleSidebar } = usePreferences();
+  const { sidebarIsOpen, toggleSidebar, toggleDarkMode, isDarkMode } =
+    usePreferences();
   const { currentAuditId, setCurrentAuditId, history, renameAuditTitle } =
     useAuditContext();
   return (
@@ -55,7 +57,7 @@ const Sidebar = () => {
             MY AUDITS
           </span>
           <button className="p-1 hover:bg-black/5 rounded">
-            <Plus size={24} className="text-text" />
+            <PlusIcon size={24} className="text-text" />
           </button>
         </div>
 
@@ -102,25 +104,25 @@ const Sidebar = () => {
             href="#"
             className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            UT Core Requirements <ArrowUpRight size={14} />
+            UT Core Requirements <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
             className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            UT Degree Plans <ArrowUpRight size={14} />
+            UT Degree Plans <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
             className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            Registration Info Sheet (RIS) <ArrowUpRight size={14} />
+            Registration Info Sheet (RIS) <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
             className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
           >
-            Register for Courses <ArrowUpRight size={14} />
+            Register for Courses <ArrowUpRightIcon size={14} />
           </a>
         </div>
 
@@ -132,7 +134,7 @@ const Sidebar = () => {
           href="#"
           className="text-dap-orange font-semibold hover:underline flex items-center gap-1"
         >
-          Send us Feedback! <ArrowUpRight size={14} />
+          Send us Feedback! <ArrowUpRightIcon size={14} />
         </a>
       </div>
 
@@ -152,22 +154,28 @@ const Sidebar = () => {
         </div>
         <div className="flex items-center w-full gap-4 text-text">
           <a href="#" aria-label="Discord">
-            <DiscordLogo size={24} />
+            <DiscordLogoIcon size={24} />
           </a>
           <a href="#" aria-label="Instagram">
-            <InstagramLogo size={24} />
+            <InstagramLogoIcon size={24} />
           </a>
           <a href="#" aria-label="LinkedIn">
-            <LinkedinLogo size={24} />
+            <LinkedinLogoIcon size={24} />
           </a>
           <a href="#" aria-label="GitHub">
-            <GithubLogo size={24} />
+            <GithubLogoIcon size={24} />
           </a>
-          <a href="#" aria-label="Dark Mode" className="ml-auto">
-            <Moon size={24} />
-          </a>
+          <button
+            className="ml-auto"
+            onClick={toggleDarkMode}
+            aria-label={
+              isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+            }
+          >
+            {isDarkMode ? <SunIcon size={24} /> : <MoonIcon size={24} />}
+          </button>
           <a href="#" aria-label="Settings">
-            <Gear size={24} />
+            <GearIcon size={24} />
           </a>
         </div>
       </div>
