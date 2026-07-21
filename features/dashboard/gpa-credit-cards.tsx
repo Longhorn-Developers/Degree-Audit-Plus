@@ -35,17 +35,13 @@ const InfoIcon = () => (
 const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => {
   if (state === "completed") {
     return (
-      <div
-        className="bg-dap-plan-green-light mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded"
-      >
+      <div className="bg-dap-plan-green-light mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded">
         <Check className="h-4 w-4 text-white" weight="bold" />
       </div>
     );
   }
   return (
-    <div
-      className="bg-dap-status-slate mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded"
-    >
+    <div className="bg-dap-status-slate mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded">
       <X className="h-4 w-4 text-white" weight="bold" />
     </div>
   );
@@ -64,9 +60,7 @@ export const GPATotalsCard = ({
         <InfoIcon />
       </HStack>
 
-      <p className="mt-1 text-sm font-semibold text-[#10B981]">
-        {degreeName}
-      </p>
+      <p className="mt-1 text-sm font-semibold text-[#10B981]">{degreeName}</p>
 
       <HStack gap={6} className="mt-4">
         <VStack gap={1.5}>
