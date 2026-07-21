@@ -4,11 +4,7 @@ import { usePreferences } from "@/features/preferences/preferences-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { getAuditDisplayName } from "@/domain/audit";
 import { cn } from "@/lib/utils";
-import {
-  ExportIcon,
-  PencilIcon,
-  Sidebar as SidebarIcon,
-} from "@phosphor-icons/react";
+import { ExportIcon, PencilIcon, SidebarIcon } from "@phosphor-icons/react";
 
 const MAJOR_TAG_STYLES = [
   "bg-[#18a770] text-[#f3fff8]",

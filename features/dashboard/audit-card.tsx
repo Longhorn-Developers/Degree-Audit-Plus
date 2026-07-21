@@ -1,8 +1,8 @@
 import {
-  CopySimple,
-  DotsThree,
-  PencilSimpleLine,
-  Trash,
+  CopySimpleIcon,
+  DotsThreeIcon,
+  PencilSimpleLineIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import React from "react";
 
@@ -124,7 +124,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             }}
             aria-label="Audit options"
           >
-            <DotsThree size={22} weight="bold" />
+            <DotsThreeIcon size={22} weight="bold" />
           </button>
         </div>
       </div>
@@ -138,15 +138,15 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg"
             onClick={startRename}
           >
-            <PencilSimpleLine size={20} className="shrink-0" />
+            <PencilSimpleLineIcon size={20} className="shrink-0" />
             <span>Rename</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg">
-            <CopySimple size={20} className="shrink-0" />
+            <CopySimpleIcon size={20} className="shrink-0" />
             <span>Duplicate</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg">
-            <Trash size={20} className="shrink-0" />
+            <TrashIcon size={20} className="shrink-0" />
             <span>Delete Audit</span>
           </button>
         </div>
