@@ -1,4 +1,4 @@
-import type { CachedAuditData } from "@/domain/audit";
+import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
 import { saveAuditData } from "@/features/audit/audit-storage";
 import {
   sendMessageResponse,
@@ -7,11 +7,10 @@ import {
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import {
+  getCachedLoginState,
   openLoginTab,
-  refreshLoginState,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
-import { RUN_AUDIT_BUTTON_SELECTOR } from "./audit-history-sync";
 
 export interface AuditBatchResult {
   succeeded: string[];
@@ -23,9 +22,8 @@ export interface AuditBatchDependencies {
   scrapeAudit: (auditId: string, tabId: number) => Promise<CachedAuditData>;
   saveAudit: (auditId: string, audit: CachedAuditData) => Promise<void>;
   broadcast: (state: "started" | "complete") => Promise<void>;
-  delay?: (milliseconds: number) => Promise<void>;
   scrapeTimeoutMs?: number;
-  requestDelayMs?: number;
+  concurrency?: number;
 }
 
 export class AuditBatchController {
@@ -60,29 +58,46 @@ export class AuditBatchController {
     const result: AuditBatchResult = { succeeded: [], failed: [] };
     await this.dependencies.broadcast("started");
 
-    try {
-      for (const [index, auditId] of auditIds.entries()) {
+    // A few plain page fetches in flight at once — fewer than a normal page
+    // load opens against one host — keeps the "Syncing" window short.
+    const queue = [...auditIds];
+    let aborted = false;
+
+    const worker = async (): Promise<void> => {
+      for (
+        let auditId = queue.shift();
+        auditId !== undefined && !aborted;
+        auditId = queue.shift()
+      ) {
         try {
           const audit = await this.scrapeWithTimeout(auditId, tabId);
           await this.dependencies.saveAudit(auditId, audit);
           result.succeeded.push(auditId);
         } catch (error) {
+          console.error(`Failed to scrape audit ${auditId}:`, error);
           result.failed.push(auditId);
           // A dead session fails every remaining audit the same way; stop
           // instead of hammering the login redirect.
           if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-            result.failed.push(...auditIds.slice(index + 1));
-            break;
+            aborted = true;
+            result.failed.push(...queue.splice(0));
           }
         }
-
-        const delayMs = this.dependencies.requestDelayMs ?? 150;
-        if (this.dependencies.delay) {
-          await this.dependencies.delay(delayMs);
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
       }
+    };
+
+    try {
+      await Promise.all(
+        Array.from(
+          {
+            length: Math.min(
+              this.dependencies.concurrency ?? 3,
+              auditIds.length,
+            ),
+          },
+          () => worker(),
+        ),
+      );
     } finally {
       await this.dependencies.broadcast("complete");
       const summary = `Audit batch complete: ${result.succeeded.length} succeeded, ${result.failed.length} failed`;
@@ -156,9 +171,10 @@ async function startAuditBatch(
 ): Promise<"started" | "already-running" | "auth-required" | "no-source-tab"> {
   if (tabId === undefined) return "no-source-tab";
 
-  // Catch a dead session up front and send the user to log in, instead of
-  // silently failing every fetch.
-  if (!(await refreshLoginState())) {
+  // Catch a known-dead session up front and send the user to log in. The
+  // cached read is instant; a stale cache still fails fast via the fetches'
+  // own AUTH_REQUIRED handling.
+  if ((await getCachedLoginState()) === false) {
     await openLoginTab();
     return "auth-required";
   }
@@ -194,22 +210,6 @@ export function registerAuditScrapingHandlers(): void {
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
-function clickRunAuditButton(selector: string, retry = false): void {
-  // Serialized into the page by executeScript — the selector must arrive as an
-  // argument because this function cannot close over module imports.
-  const click = () => {
-    const button = document.querySelector<HTMLButtonElement>(selector);
-    button?.click();
-    return Boolean(button);
-  };
-
-  if (click() || !retry) return;
-  let attempts = 0;
-  const timer = setInterval(() => {
-    if (click() || ++attempts >= 120) clearInterval(timer);
-  }, 500);
-}
-
 function registerAuditNavigationHandlers(): void {
   browser.runtime.onMessage.addListener(
     (message: ExtensionMessage, _sender, sendResponse) => {
@@ -232,17 +232,19 @@ function registerAuditNavigationHandlers(): void {
       }
 
       if (message.type === "RUN_NEW_AUDIT") {
-        void runNewAudit().then(
+        void runNewAudit(message.custom).then(
           (existing) =>
             sendMessageResponse(message, sendResponse, {
               success: true,
               existing,
             }),
-          (error) =>
+          (error) => {
+            console.error("Failed to run audit:", error);
             sendMessageResponse(message, sendResponse, {
               success: false,
               error: error instanceof Error ? error.message : String(error),
-            }),
+            });
+          },
         );
         return true;
       }
@@ -250,44 +252,67 @@ function registerAuditNavigationHandlers(): void {
   );
 }
 
-async function runNewAudit(): Promise<boolean> {
-  if (!(await refreshLoginState())) {
-    // Session is gone — send the user to log in instead of clicking into a
-    // dead page from a hidden tab.
+// Submits the run through a content script on a UT audits page — the only
+// context whose origin passes UT's CSRF checks. Returns whether an existing
+// tab was used.
+async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
+  // Catch a known-dead session up front — the run itself re-checks via its
+  // own responses, so the instant cached read is enough here.
+  if ((await getCachedLoginState()) === false) {
     await openLoginTab();
     throw new Error("Not logged in to UT Direct");
   }
 
-  const tabs = await browser.tabs.query({ url: "*://utdirect.utexas.edu/*" });
-  const existingTab = tabs.find((tab) => tab.url?.startsWith(NEW_AUDIT_URL));
-  if (existingTab?.id !== undefined) {
-    await browser.scripting.executeScript({
-      target: { tabId: existingTab.id },
-      func: clickRunAuditButton,
-      args: [RUN_AUDIT_BUTTON_SELECTOR],
-    });
-    return true;
+  const { tabId, created } = await getAuditPageTab();
+  let submitted = false;
+  try {
+    const result = await sendRunRequest(tabId, custom);
+    if (!result.ok) {
+      if (result.error === "AUTH_REQUIRED") await openLoginTab();
+      throw new Error(result.error);
+    }
+    submitted = true;
+    return !created;
+  } finally {
+    // After a submission the created tab hosts the poll that picks up the
+    // finished audit — give it time to complete. A failed run has nothing to
+    // wait for.
+    if (created) {
+      setTimeout(
+        () => void browser.tabs.remove(tabId).catch(() => {}),
+        submitted ? 30_000 : 0,
+      );
+    }
   }
+}
+
+// Any open audits page can host the run; otherwise open one in the background.
+async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
+  const tabs = await browser.tabs.query({
+    url: "*://utdirect.utexas.edu/apps/degree/audits/*",
+  });
+  const existing = tabs.find((tab) => tab.id !== undefined);
+  if (existing?.id !== undefined) return { tabId: existing.id, created: false };
 
   const tab = await browser.tabs.create({ url: NEW_AUDIT_URL, active: false });
   if (tab.id === undefined) throw new Error("Failed to open audit page");
+  return { tabId: tab.id, created: true };
+}
 
-  const listener = async (
-    tabId: number,
-    changeInfo: Browser.tabs.OnUpdatedInfo,
-  ) => {
-    if (tabId !== tab.id || changeInfo.status !== "complete") return;
-
-    browser.tabs.onUpdated.removeListener(listener);
-    await browser.scripting.executeScript({
-      target: { tabId },
-      func: clickRunAuditButton,
-      args: [RUN_AUDIT_BUTTON_SELECTOR, true],
-    });
-    setTimeout(() => void browser.tabs.remove(tabId).catch(() => {}), 30_000);
-  };
-  browser.tabs.onUpdated.addListener(listener);
-  return false;
+// A created tab's content script needs a moment to register; retry until it
+// answers instead of waiting out the page's full load event.
+async function sendRunRequest(tabId: number, custom?: CustomAuditRunRequest) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    try {
+      return await sendTabMessage(tabId, {
+        type: "RUN_AUDIT_VIA_FETCH",
+        custom,
+      });
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  throw new Error("Audit page did not respond");
 }
 
 export function registerAuditBackgroundController(): void {

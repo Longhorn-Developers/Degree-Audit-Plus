@@ -22,7 +22,6 @@ const AUDIT_RESULTS_URL =
 // controller clicks it programmatically, so detecting and clicking must agree.
 export const RUN_AUDIT_BUTTON_SELECTOR = ".run_button";
 
-const POLL_INITIAL_DELAY_MS = 1_000;
 const POLL_INTERVAL_MS = 500;
 const POLL_WINDOW_MS = 90_000;
 
@@ -125,12 +124,6 @@ function pollForRequestedAudit(startedAt: number): Promise<void> {
     };
 
     try {
-      const initialDelay = Math.max(
-        0,
-        startedAt + POLL_INITIAL_DELAY_MS - Date.now(),
-      );
-      await new Promise((resolve) => setTimeout(resolve, initialDelay));
-
       const deadline = startedAt + POLL_WINDOW_MS;
       while (Date.now() < deadline) {
         if (await tick()) break;
@@ -145,6 +138,14 @@ function pollForRequestedAudit(startedAt: number): Promise<void> {
   })());
 }
 
+// Marks a run as pending and polls for its result. The marker survives page
+// navigation; resumePendingAuditPoll picks it up on the next audits page.
+export async function markAuditRunPending(): Promise<void> {
+  const startedAt = Date.now();
+  await getPendingRunItem().setValue(startedAt);
+  void pollForRequestedAudit(startedAt);
+}
+
 // Marks a run as pending when UT's run button is clicked, then polls for it.
 export function watchForAuditRunClicks(document: Document): void {
   document.addEventListener(
@@ -152,11 +153,7 @@ export function watchForAuditRunClicks(document: Document): void {
     (event) => {
       if (!(event.target instanceof Element)) return;
       if (!event.target.closest(RUN_AUDIT_BUTTON_SELECTOR)) return;
-
-      const startedAt = Date.now();
-      void getPendingRunItem()
-        .setValue(startedAt)
-        .then(() => pollForRequestedAudit(startedAt));
+      void markAuditRunPending();
     },
     { capture: true },
   );
@@ -227,9 +224,7 @@ export async function startAuditHistorySync(document: Document): Promise<void> {
         new URLSearchParams(document.location.search).get("submit_success") ===
         "Y";
       if (justSubmitted || audits.some((audit) => !hasAuditResult(audit))) {
-        const startedAt = Date.now();
-        await getPendingRunItem().setValue(startedAt);
-        void pollForRequestedAudit(startedAt);
+        await markAuditRunPending();
       }
     }
     observeHistoryTable(document);

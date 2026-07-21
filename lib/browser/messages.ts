@@ -1,14 +1,18 @@
-import type { CachedAuditData } from "@/domain/audit";
+import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
 import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
-  | { type: "RUN_NEW_AUDIT" }
+  // UI -> background: orchestrates an audit submission.
+  | { type: "RUN_NEW_AUDIT"; custom?: CustomAuditRunRequest }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
   | { type: "SCRAPE_ALL_COMPLETE" }
-  | { type: "FETCH_AUDIT"; auditId: string };
+  // Background -> UT tab: fetches and parses one result.
+  | { type: "FETCH_AUDIT"; auditId: string }
+  // Background -> UT tab: submits the authenticated form.
+  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -25,6 +29,7 @@ interface MessageResponses {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
   };
   FETCH_AUDIT: FetchAuditResult;
+  RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -38,7 +43,8 @@ type ResponseRequest = Extract<
       | "RUN_NEW_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
-      | "FETCH_AUDIT";
+      | "FETCH_AUDIT"
+      | "RUN_AUDIT_VIA_FETCH";
   }
 >;
 
