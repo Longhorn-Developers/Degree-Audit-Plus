@@ -31,6 +31,9 @@ const pluralizeUnit = (
   return `${value} ${singular}${value === 1 ? "" : "s"}`;
 };
 
+const translucent = (rgb: string): string =>
+  rgb.replace("rgb", "rgba").replace(")", ", 0.2)");
+
 const getSharedProgressUnit = (
   requirements: RequirementRule[],
 ): ProgressLabelUnit => {
@@ -104,19 +107,38 @@ const RequirementBadge = ({
   current,
   total,
   unit,
+  colorIndex,
 }: {
   current: number;
   total: number;
   unit: RequirementProgressUnit;
+  colorIndex: number;
 }) => {
   const isComplete = current >= total;
+  const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+  const percentage = total > 0 ? Math.min((current / total) * 100, 100) : 0;
+  const label = isComplete
+    ? pluralizeUnit(total, unit)
+    : current === 0
+      ? pluralizeUnit(0, unit)
+      : `${current} / ${pluralizeUnit(total, unit)}`;
+
   return (
-    <span className="text-sm text-text border border-gray-800 rounded-full px-3 py-0.5 font-medium">
-      {isComplete
-        ? pluralizeUnit(total, unit)
-        : current === 0
-          ? pluralizeUnit(0, unit)
-          : `${current} / ${pluralizeUnit(total, unit)}`}
+    <span
+      className="relative inline-block overflow-hidden whitespace-nowrap text-sm text-text border rounded-full px-3 py-0.5 font-medium"
+      style={{ borderColor: color.tailwind }}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={Math.min(current, total)}
+      aria-valuetext={label}
+    >
+      <span
+        className="absolute inset-y-0 left-0 transition-all"
+        style={{ width: `${percentage}%`, backgroundColor: translucent(color.rgb) }}
+        aria-hidden="true"
+      />
+      <span className="relative">{label}</span>
     </span>
   );
 };
@@ -173,9 +195,11 @@ const isCoreOrCreditSection = (title: string): boolean =>
 const RequirementRow = ({
   requirement,
   requirementTitle,
+  colorIndex,
 }: {
   requirement: RequirementRule;
   requirementTitle: string;
+  colorIndex: number;
 }) => {
   const { getCourseById } = useAuditContext();
   const { openModal } = useCourseModalContext();
@@ -207,6 +231,7 @@ const RequirementRow = ({
             current={requirement.appliedHours}
             total={requirement.requiredHours}
             unit={requirement.progressUnit ?? "hours"}
+            colorIndex={colorIndex}
           />
           {isExpanded ? (
             <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
@@ -264,7 +289,7 @@ const ProgressBar = ({
   const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
   const percentage = Math.min((current / total) * 100, 100);
 
-  const trackColor = color.rgb.replace("rgb", "rgba").replace(")", ", 0.2)");
+  const trackColor = translucent(color.rgb);
 
   return (
     <div
@@ -360,6 +385,7 @@ const RequirementBreakdown = ({
             key={`${requirement.text.slice(0, 20)}-${idx}`}
             requirement={requirement}
             requirementTitle={title}
+            colorIndex={colorIndex}
           />
         ))}
       </div>
@@ -413,6 +439,7 @@ export const UnifiedDegreeCard = ({
                 key={`${requirement.text.slice(0, 20)}-${rIdx}`}
                 requirement={requirement}
                 requirementTitle={section.title}
+                colorIndex={5}
               />
             ))}
           </div>
