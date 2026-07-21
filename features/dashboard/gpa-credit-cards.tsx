@@ -1,7 +1,7 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import type { GpaSummary } from "@/features/audit/audit-calculations";
 import type { Status } from "@/domain/course";
-import { Check, X } from "@phosphor-icons/react";
+import { CheckIcon, XIcon } from "@phosphor-icons/react";
 
 type FramedStatusIconState = "completed" | "not-started" | "in-progress";
 
@@ -36,13 +36,13 @@ const FramedStatusIcon = ({ state }: { state: FramedStatusIconState }) => {
   if (state === "completed") {
     return (
       <div className="bg-dap-plan-green-light mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded">
-        <Check className="h-4 w-4 text-white" weight="bold" />
+        <CheckIcon className="h-4 w-4 text-white" weight="bold" />
       </div>
     );
   }
   return (
     <div className="bg-dap-status-slate mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded">
-      <X className="h-4 w-4 text-white" weight="bold" />
+      <XIcon className="h-4 w-4 text-white" weight="bold" />
     </div>
   );
 };
