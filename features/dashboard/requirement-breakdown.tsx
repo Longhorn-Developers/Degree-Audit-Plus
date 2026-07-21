@@ -111,7 +111,7 @@ const RequirementBadge = ({
 }) => {
   const isComplete = current >= total;
   return (
-    <span className="text-sm text-text border border-gray-800 rounded-full px-3 py-0.5 font-medium">
+    <span className="text-sm text-text border border-text rounded-full px-3 py-0.5 font-medium">
       {isComplete
         ? pluralizeUnit(total, unit)
         : current === 0
