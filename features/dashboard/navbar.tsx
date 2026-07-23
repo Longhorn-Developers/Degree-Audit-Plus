@@ -4,13 +4,7 @@ import { usePreferences } from "@/features/preferences/preferences-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { getAuditDisplayName } from "@/domain/audit";
 import { cn } from "@/lib/utils";
-import {
-  ExportIcon,
-  MoonIcon,
-  PencilIcon,
-  Sidebar as SidebarIcon,
-  SunIcon,
-} from "@phosphor-icons/react";
+import { ExportIcon, PencilIcon, SidebarIcon } from "@phosphor-icons/react";
 
 const MAJOR_TAG_STYLES = [
   "bg-[#18a770] text-[#f3fff8]",
@@ -26,14 +20,8 @@ const MINOR_TAG_STYLES = [
 ];
 
 const Navbar = () => {
-  const {
-    toggleSidebar,
-    toggleViewMode,
-    viewMode,
-    sidebarIsOpen,
-    toggleDarkMode,
-    isDarkMode,
-  } = usePreferences();
+  const { toggleSidebar, toggleViewMode, viewMode, sidebarIsOpen } =
+    usePreferences();
   const { currentAudit } = useAuditContext();
 
   const title = getAuditDisplayName(currentAudit) ?? "Degree Audit Plus";
@@ -135,12 +123,6 @@ const Navbar = () => {
         <IconButton
           icon={<ExportIcon className="w-5 h-5" />}
           label="Share"
-          className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
-        />
-        <IconButton
-          icon={isDarkMode ? <MoonIcon size={24} /> : <SunIcon size={24} />}
-          label={isDarkMode ? "Light Mode" : "Dark Mode"}
-          onClick={toggleDarkMode}
           className="h-10 rounded-[5px] px-[18px] bg-dap-orange gap-1.5 text-sm font-bold"
         />
       </HStack>

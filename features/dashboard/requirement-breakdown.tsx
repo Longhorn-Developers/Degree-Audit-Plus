@@ -7,9 +7,9 @@ import { CATEGORY_COLORS, cn } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
-  Check,
-  Minus,
-  X,
+  CheckIcon,
+  MinusIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
@@ -82,20 +82,20 @@ const RequirementStatusIcon = ({
   if (state === "completed") {
     return (
       <div className="flex items-center justify-center w-6 h-6 bg-dap-plan-green-light rounded shrink-0 mt-0.5">
-        <Check className="text-white w-4 h-4" weight="bold" />
+        <CheckIcon className="text-white w-4 h-4" weight="bold" />
       </div>
     );
   }
   if (state === "not-started") {
     return (
       <div className="flex items-center justify-center w-6 h-6 bg-dap-status-slate rounded shrink-0 mt-0.5">
-        <X className="text-white w-4 h-4" weight="bold" />
+        <XIcon className="text-white w-4 h-4" weight="bold" />
       </div>
     );
   }
   return (
     <div className="flex items-center justify-center w-6 h-6 bg-dap-gray rounded shrink-0 mt-0.5">
-      <Minus className="text-white w-4 h-4" weight="bold" />
+      <MinusIcon className="text-white w-4 h-4" weight="bold" />
     </div>
   );
 };
@@ -111,7 +111,7 @@ const RequirementBadge = ({
 }) => {
   const isComplete = current >= total;
   return (
-    <span className="text-sm text-text border border-gray-800 rounded-full px-3 py-0.5 font-medium">
+    <span className="text-sm text-text border border-text rounded-full px-3 py-0.5 font-medium">
       {isComplete
         ? pluralizeUnit(total, unit)
         : current === 0
