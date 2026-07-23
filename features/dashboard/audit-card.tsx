@@ -1,8 +1,9 @@
 import {
-  CopySimpleIcon,
-  DotsThreeIcon,
-  PencilSimpleLineIcon,
-  TrashIcon,
+  CopySimple,
+  DotsThree,
+  PencilSimpleLine,
+  PushPin,
+  Trash,
 } from "@phosphor-icons/react";
 import React from "react";
 
@@ -10,8 +11,10 @@ export interface DegreeAuditCardProps {
   title?: string;
   percentage?: number;
   isSelected?: boolean;
+  isPinned?: boolean;
   onToggle?: () => void;
   onRename?: (title: string) => void;
+  onTogglePin?: () => void;
 }
 
 /**
@@ -21,8 +24,10 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   title,
   percentage,
   isSelected = false,
+  isPinned = false,
   onToggle,
   onRename,
+  onTogglePin,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -124,7 +129,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             }}
             aria-label="Audit options"
           >
-            <DotsThreeIcon size={22} weight="bold" />
+            <DotsThree size={22} weight="bold" />
           </button>
         </div>
       </div>
@@ -136,17 +141,24 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
         >
           <button
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg"
+            onClick={onTogglePin}
+          >
+            <PushPin size={20} className="shrink-0" />
+            <span>{isPinned ? "Unpin" : "Pin"}</span>
+          </button>
+          <button
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg"
             onClick={startRename}
           >
-            <PencilSimpleLineIcon size={20} className="shrink-0" />
+            <PencilSimpleLine size={20} className="shrink-0" />
             <span>Rename</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg">
-            <CopySimpleIcon size={20} className="shrink-0" />
+            <CopySimple size={20} className="shrink-0" />
             <span>Duplicate</span>
           </button>
           <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg">
-            <TrashIcon size={20} className="shrink-0" />
+            <Trash size={20} className="shrink-0" />
             <span>Delete Audit</span>
           </button>
         </div>

@@ -18,6 +18,7 @@ import {
   observeAuditData,
   observeAuditHistory,
   renameAudit,
+  togglePinAudit,
   saveAuditData,
 } from "./audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -38,6 +39,7 @@ interface AuditContextValue {
   currentAuditName: string;
   setCurrentAuditId: (id: string) => void;
   renameAuditTitle: (auditId: string, title: string) => Promise<boolean>;
+  togglePin: (auditId: string) => Promise<boolean>;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
@@ -171,6 +173,12 @@ export function AuditContextProvider({
         const cleanTitle = title.trim();
         if (!cleanTitle) return false;
         const updatedHistory = await renameAudit(auditId, cleanTitle);
+        if (!updatedHistory) return false;
+        setHistory(updatedHistory);
+        return true;
+      },
+      togglePin: async (auditId) => {
+        const updatedHistory = await togglePinAudit(auditId);
         if (!updatedHistory) return false;
         setHistory(updatedHistory);
         return true;
