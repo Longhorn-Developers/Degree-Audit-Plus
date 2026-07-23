@@ -2,6 +2,7 @@ import {
   CopySimple,
   DotsThree,
   PencilSimpleLine,
+  PushPin,
   Trash,
 } from "@phosphor-icons/react";
 import React from "react";
@@ -10,8 +11,10 @@ export interface DegreeAuditCardProps {
   title?: string;
   percentage?: number;
   isSelected?: boolean;
+  isPinned?: boolean;
   onToggle?: () => void;
   onRename?: (title: string) => void;
+  onTogglePin?: () => void;
 }
 
 /**
@@ -21,8 +24,10 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   title,
   percentage,
   isSelected = false,
+  isPinned = false,
   onToggle,
   onRename,
+  onTogglePin,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -134,6 +139,13 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
           className="absolute right-0 top-full z-30 mt-2 min-w-[180px] rounded-[8px] border border-dap-border bg-background p-2 shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg"
+            onClick={onTogglePin}
+          >
+            <PushPin size={20} className="shrink-0" />
+            <span>{isPinned ? "Unpin" : "Pin"}</span>
+          </button>
           <button
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] hover:bg-hover-bg"
             onClick={startRename}
