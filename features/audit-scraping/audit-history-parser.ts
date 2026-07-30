@@ -29,7 +29,6 @@ export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
     if (seenAudits.has(auditKey)) continue;
 
     audits.push({
-      title: `Degree Audit ${audits.length + 1}`,
       majors: [major],
       minors: credential ? [credential] : [],
       percentage,
@@ -38,5 +37,8 @@ export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
     seenAudits.add(auditKey);
   }
 
-  return audits;
+  return audits.reverse().map((audit, index) => ({
+    ...audit,
+    title: `Degree Audit ${index + 1}`,
+  }));
 }
