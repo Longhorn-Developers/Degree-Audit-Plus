@@ -23,7 +23,32 @@ export function parseCourseDescription(doc: Document): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Resolve the "Next page" link of a results page, or null on the last page.
+ * UT splits a field of study across pages, so a scrape that reads only the
+ * page it asked for silently drops every course after it.
+ */
+export function parseNextResultsUrl(
+  doc: Document,
+  baseUrl: string = doc.URL,
+): string | null {
+  const href = doc
+    .querySelector(ResultsNavSelector.NEXT_PAGE)
+    ?.getAttribute("href");
+  if (!href) return null;
+
+  try {
+    return new URL(href, baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
 // --- Selectors ---
+
+const ResultsNavSelector = {
+  NEXT_PAGE: "#next_nav_link",
+} as const;
 
 const TableDataSelector = {
   COURSE_HEADER: "td.course_header",

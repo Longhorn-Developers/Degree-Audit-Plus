@@ -3,6 +3,7 @@ import { JSDOM } from "jsdom";
 import {
   CourseCatalogScraper,
   parseCourseDescription,
+  parseNextResultsUrl,
 } from "../../features/catalog/scraping/catalog-parser";
 import type { ScrapedCatalogCourse } from "../../domain/catalog";
 
@@ -52,6 +53,23 @@ describe("course catalog scraper", () => {
     expect(courses.every((c) => c.description.length === 0)).toBe(true);
 
     expect(normalizeCourses(courses)).toMatchSnapshot();
+  });
+
+  test("reads the next-page link from a real results page", async () => {
+    const document = await loadDocument(
+      "catalog-results-real.html",
+      catalogUrl,
+    );
+
+    expect(parseNextResultsUrl(document)).toBe(
+      "https://utdirect.utexas.edu/apps/registrar/course_schedule/20259/results/?fos_fl=C%20S&level=U&search_type_main=FIELD&next_unique=55105",
+    );
+  });
+
+  test("reports no next page when the results page has no such link", async () => {
+    const document = await loadDocument("catalog-results.html", catalogUrl);
+
+    expect(parseNextResultsUrl(document)).toBeNull();
   });
 
   test("parses course descriptions from a real detail-page capture", async () => {

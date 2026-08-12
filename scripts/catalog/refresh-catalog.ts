@@ -5,6 +5,7 @@ import type { ScrapedCatalogCourse } from "../../domain/catalog";
 import {
   CourseCatalogScraper,
   parseCourseDescription,
+  parseNextResultsUrl,
 } from "../../features/catalog/scraping/catalog-parser";
 import { DEPARTMENT_MAP } from "../../features/catalog/department-map";
 import { validateCatalog } from "./validate-catalog";
@@ -14,6 +15,9 @@ const catalogPath = fileURLToPath(
 );
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Stops a malformed next-page chain from walking UT forever.
+const MAX_RESULT_PAGES = 100;
+
 export async function fetchAndScrapeCourses(
   semester: string,
   department: string,
@@ -21,17 +25,33 @@ export async function fetchAndScrapeCourses(
   fetchImpl: typeof fetch = fetch,
   descriptionDelayMs = 100,
 ): Promise<ScrapedCatalogCourse[]> {
-  const url = `https://utdirect.utexas.edu/apps/registrar/course_schedule/${semester}/results/?fos_fl=${encodeURIComponent(department)}&level=${level}&search_type_main=FIELD`;
-  const response = await fetchImpl(url);
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
-  }
+  const courses: ScrapedCatalogCourse[] = [];
+  const fetchedPages = new Set<string>();
+  let url = `https://utdirect.utexas.edu/apps/registrar/course_schedule/${semester}/results/?fos_fl=${encodeURIComponent(department)}&level=${level}&search_type_main=FIELD`;
 
-  const document = new JSDOM(await response.text(), { url }).window.document;
-  const rows = Array.from(document.querySelectorAll("table tbody tr"));
-  const courses = new CourseCatalogScraper(document, url)
-    .scrape(rows)
-    .flatMap(({ course }) => (course ? [course] : []));
+  while (!fetchedPages.has(url)) {
+    if (fetchedPages.size >= MAX_RESULT_PAGES) {
+      throw new Error(`More than ${MAX_RESULT_PAGES} result pages`);
+    }
+    fetchedPages.add(url);
+
+    const response = await fetchImpl(url);
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}`);
+    }
+
+    const document = new JSDOM(await response.text(), { url }).window.document;
+    const rows = Array.from(document.querySelectorAll("table tbody tr"));
+    courses.push(
+      ...new CourseCatalogScraper(document, url)
+        .scrape(rows)
+        .flatMap(({ course }) => (course ? [course] : [])),
+    );
+
+    const nextUrl = parseNextResultsUrl(document, url);
+    if (!nextUrl) break;
+    url = nextUrl;
+  }
 
   for (const course of courses) {
     if (course.status === "CANCELLED") continue;

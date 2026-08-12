@@ -30,7 +30,85 @@ async function catalogFetch(failingDepartment?: string): Promise<typeof fetch> {
   }) as typeof fetch;
 }
 
+/**
+ * Serves the real multi-page capture first, then the small single-page fixture
+ * as the final page, so the walk has a real "Next page" link to follow.
+ */
+async function paginatedCatalogFetch(): Promise<{
+  fetchImpl: typeof fetch;
+  resultPageUrls: string[];
+}> {
+  const firstPage = await fixture("catalog-results-real.html");
+  const finalPage = await fixture("catalog-results.html");
+  const details = await fixture("catalog-course-details.html");
+  const resultPageUrls: string[] = [];
+
+  const fetchImpl = (async (input) => {
+    const url = String(input);
+    if (!url.includes("/results/")) return new Response(details);
+    resultPageUrls.push(url);
+    return new Response(url.includes("next_unique=") ? finalPage : firstPage);
+  }) as typeof fetch;
+
+  return { fetchImpl, resultPageUrls };
+}
+
 describe("catalog refresh", () => {
+  test("follows next-page links until the department is exhausted", async () => {
+    const { fetchImpl, resultPageUrls } = await paginatedCatalogFetch();
+
+    const courses = await fetchAndScrapeCourses(
+      "20259",
+      "C S",
+      "U",
+      fetchImpl,
+      0,
+    );
+    const uniqueIds = courses.map((course) => course.uniqueId);
+
+    expect(resultPageUrls).toHaveLength(2);
+    expect(resultPageUrls[1]).toContain("next_unique=55105");
+    expect(uniqueIds).toContain(54910);
+    expect(uniqueIds).toContain(50100);
+    expect(courses).toHaveLength(44);
+  });
+
+  test("stops when a next-page link repeats a page already fetched", async () => {
+    const results = await fixture("catalog-results-real.html");
+    const details = await fixture("catalog-course-details.html");
+    let resultPages = 0;
+
+    const fetchImpl = (async (input) => {
+      if (!String(input).includes("/results/")) return new Response(details);
+      resultPages++;
+      return new Response(results);
+    }) as typeof fetch;
+
+    await fetchAndScrapeCourses("20259", "C S", "U", fetchImpl, 0);
+
+    expect(resultPages).toBe(2);
+  });
+
+  test("fails loudly instead of walking an endless next-page chain", async () => {
+    const results = await fixture("catalog-results.html");
+    let resultPages = 0;
+
+    const fetchImpl = (async (input) => {
+      if (!String(input).includes("/results/")) {
+        return new Response(await fixture("catalog-course-details.html"));
+      }
+      resultPages++;
+      return new Response(
+        `${results}<a id="next_nav_link" href="?next_unique=${resultPages}">Next page</a>`,
+      );
+    }) as typeof fetch;
+
+    await expect(
+      fetchAndScrapeCourses("20259", "C S", "U", fetchImpl, 0),
+    ).rejects.toThrow("result pages");
+    expect(resultPages).toBe(100);
+  });
+
   test("fetches results and detail descriptions", async () => {
     const courses = await fetchAndScrapeCourses(
       "20259",
