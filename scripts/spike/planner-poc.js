@@ -15,8 +15,8 @@
  *   await poc.discoverModify()
  *   await poc.testExecutionContext()
  *   await poc.testAuthSignal()
- *   await poc.dumpAuditForm()   // find the Planned Courses checkbox name
- *   await poc.timePreview(course, 5, { plannedCheckboxName: "..." })
+ *   await poc.dumpAuditForm()   // inspect UT's audit forms
+ *   await poc.timePreview(course, 5)
  *   poc.report()
  *   await poc.cleanup()
  *
@@ -52,6 +52,35 @@
     return value;
   };
 
+  /**
+   * Parse HTML where we can. MV3 service workers have no DOMParser (confirmed
+   * 2026-08-16: `ReferenceError: DOMParser is not defined`), so there we fall
+   * back to a regex-backed stub that answers only the selectors this harness
+   * uses for auth/row detection. Enough for testExecutionContext() and
+   * testAuthSignal(); the mutation helpers still need a real page.
+   */
+  function parseHtml(text) {
+    if (typeof DOMParser !== "undefined") {
+      return new DOMParser().parseFromString(text, "text/html");
+    }
+    const has = (re) => re.test(text);
+    const stub = {
+      title: (text.match(/<title[^>]*>([^<]*)/i) || [null, ""])[1].trim(),
+      querySelector(sel) {
+        if (/password/.test(sel)) {
+          return has(/type=["']?password/i) ? {} : null;
+        }
+        if (/action_code=D/.test(sel)) return has(/action_code=D/) ? {} : null;
+        return null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+      __stub: true,
+    };
+    return stub;
+  }
+
   /** Credentialed GET returning a parsed document plus the raw response. */
   async function get(url) {
     const startedAt = now();
@@ -61,7 +90,7 @@
       url,
       response,
       elapsedMs: now() - startedAt,
-      doc: new DOMParser().parseFromString(text, "text/html"),
+      doc: parseHtml(text),
       text,
     };
   }
@@ -615,19 +644,103 @@
   }
 
   /**
-   * Submit an audit with the Planned Courses checkbox set, by driving UT's own
-   * form. Returns when the submit response comes back — generation continues
-   * server-side, so the caller polls history for the new raw ID.
+   * The default-degree "Run Audit" form — what UT's `.run_button` submits and
+   * what the extension's background controller clicks (DAP-105).
    *
-   * Form shape confirmed 2026-08-05: POST, `action=""` (posts to itself),
-   * Django CSRF token in `csrfmiddlewaretoken`, include-options as checkboxes
-   * named `current` / `future` / `planned` (all value `X`), submit named
-   * `audit`. A GET with these params does nothing.
+   * Found 2026-08-16 via dumpAuditForm(): form index 1 of 3, POST to
+   * `/apps/degree/audits/requests/test_profile_button/`, all-hidden fields:
+   * csrfmiddlewaretoken, student_eid, degree_plan, catalog, minor,
+   * effective_ccyys, incl_current_crswk ("Y"), incl_future_crswk ("Y"),
+   * incl_planned_crswk (" " = off). The visible `current/future/planned`
+   * checkboxes belong to the *custom* audit form and only drive UI; posting
+   * that form with its empty catalog/college/degree_plan selects makes UT
+   * re-render it (200, no redirect) and queue nothing — which is why the first
+   * timing runs never saw a new audit ID.
+   */
+  function findDefaultAuditForm(doc) {
+    return [...doc.querySelectorAll("form")].find(
+      (form) =>
+        /test_profile_button/.test(form.getAttribute("action") ?? "") ||
+        form.querySelector('[name="incl_planned_crswk"]'),
+    );
+  }
+
+  /**
+   * Submit a planned-inclusive audit for the student's default degree plan by
+   * posting the same form UT's Run Audit button posts, with
+   * `incl_planned_crswk=Y`. Returns when the submit response comes back —
+   * generation continues server-side, so the caller polls history for the new
+   * raw ID. On success UT redirects to `history/?submit_success=Y`; that's
+   * recorded so a silent rejection (200, still on the submit page) is visible.
    */
   async function submitPlannedAudit({ plannedCheckboxName = "planned" } = {}) {
     const page = await get(NEW_AUDIT);
     if (looksLoggedOut(page)) throw new Error("Not logged in — log in first.");
 
+    const defaultForm = findDefaultAuditForm(page.doc);
+    if (defaultForm) {
+      const params = new URLSearchParams();
+      for (const el of defaultForm.elements) {
+        if (!el.name || el.disabled) continue;
+        params.append(el.name, el.value ?? "");
+      }
+      params.set("incl_planned_crswk", "Y");
+      record("submit.form", "test_profile_button (default degree)");
+      record("submit.plannedField", "incl_planned_crswk=Y");
+
+      const action = new URL(
+        defaultForm.getAttribute("action") || "",
+        NEW_AUDIT,
+      );
+      const csrf = params.get("csrfmiddlewaretoken");
+      const startedAt = now();
+      const response = await fetch(action.toString(), {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          ...(csrf ? { "X-CSRFToken": csrf } : {}),
+        },
+        body: params,
+      });
+      const text = await response.text();
+      const elapsedMs = now() - startedAt;
+
+      if (response.status === 403 || /CSRF/i.test(text.slice(0, 2000))) {
+        record("submit.csrfRejected", true);
+        throw new Error(
+          `Audit submit rejected (${response.status}) — likely CSRF. Run this ` +
+            "from a console on the UT audit page itself so the Referer matches.",
+        );
+      }
+      // Observed 2026-08-16: a successful post redirects to
+      // `/apps/degree/audits/requests/history/` (no `submit_success=Y` on this
+      // path). A silent rejection stays on the submit page instead.
+      const accepted =
+        response.redirected && /\/history\/?(\?|$)/.test(response.url);
+      record("submit.acceptedRedirect", accepted);
+      record("submit.landedOn", response.url);
+      if (!accepted) {
+        warn(
+          "Submit did not redirect to a history page — UT probably rejected " +
+            "it silently. Response landed on:",
+          response.url,
+        );
+      }
+      return {
+        elapsedMs,
+        status: response.status,
+        method: "POST",
+        submittedUrl: response.url,
+        accepted,
+      };
+    }
+
+    // Fallback (pre-2026-08-16 path): drive the custom audit form's checkbox.
+    // Kept only so the harness still reports *something* if UT removes the
+    // default-degree button; expect it to be rejected unless the catalog/
+    // college/degree_plan selects are filled in.
+    warn("default-degree form not found — falling back to custom audit form");
     const form = findAuditForm(page.doc);
     const method = (form.getAttribute("method") || "GET").toUpperCase();
 

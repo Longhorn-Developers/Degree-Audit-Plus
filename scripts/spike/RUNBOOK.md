@@ -472,6 +472,16 @@ recurs, UT changed the page — run `await poc.dumpAuditForm()` and pass
 that isn't on a UT page. Django checks `Referer` on POST. Open a
 `utdirect.utexas.edu` audit page and paste the harness there.
 
+**"No new audit ID within 90000ms" on every run** — fixed 2026-08-16. The
+harness was posting the _custom_ audit form (index 2 — the one that owns the
+visible `planned` checkbox) with its `catalog`/`college`/`degree_plan` selects
+empty, so UT re-rendered it (200, no redirect) and queued nothing. It now posts
+the default-degree Run Audit form (`requests/test_profile_button/`, the same one
+the extension's `.run_button` click submits) with `incl_planned_crswk=Y`, and
+records `submit.acceptedRedirect` — `true` means UT redirected to a history
+page (observed: `requests/history/`). If it's `false`, run `poc.dumpAuditForm()` and see
+whether that form's hidden fields changed.
+
 **Rows piling up after failed timing runs** — fixed. Cleanup now runs in a
 `finally`, so a failure mid-round-trip still deletes that run's row. Rows
 written before the fix must be removed manually (step 1 of the checklist).
