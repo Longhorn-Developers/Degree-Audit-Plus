@@ -546,3 +546,77 @@ link.
 
 Either way the eager-verify decision is unaffected — re-measuring can only move
 the total down.
+
+## Verify the timings (n=1 is not a measurement)
+
+The ~3 s generation figure came from **one run**. Before it goes into 5.4/5.6
+planning it needs repeating, and one correctness gap needs closing: the probe's
+`fetch` had no cache directives, so a cached history page could have inflated
+`linkReadyMs`.
+
+`timing-verify.js` closes both. Paste it alongside `planner-poc.js`.
+
+**A. Is the page being served stale?** (read-only, do first)
+
+```js
+await verify.cacheCheck();
+```
+
+Compares a plain fetch against a cache-defeated one and prints the server's own
+cache headers. **`age` > 0 means a cache is serving stale content** and every
+prior timing is suspect. All measurement below uses the cache-defeated path
+regardless (`cache: "no-store"` + `Cache-Control: no-cache` + a unique query
+param).
+
+**B. Repeat the measurement:**
+
+```js
+await verify.verifyTiming(() => poc.submitPlannedAudit(), 3);
+```
+
+Three runs, cache defeated. Also captures the server's `Date` header at
+row-appearance and at link-ready — a **server-side clock**, independent of our
+poll loop, cross-checking the client numbers at 1 s granularity. If
+`serverDeltaS` disagrees with `genMs`, trust the server.
+
+Creates 3 real audits. Report `min`, `median`, `spread`.
+
+## Should we delay the first poll to ~1.5 s?
+
+**Only if the fastest observed generation stays above it** — and n=1 can't tell
+us that. Modelled against the single 2913 ms sample:
+
+| if the true minimum is…  | runs finishing before 1.5 s | added lag                |
+| ------------------------ | --------------------------- | ------------------------ |
+| ~2800 ms (low variance)  | 0                           | none — delay is safe     |
+| ~1400 ms (high variance) | 1 in 3                      | +100 ms on the fast ones |
+| ~1200 ms (as recalled)   | 1 in 3                      | +300 ms on the fast ones |
+
+Tune a fixed delay to the **minimum**, never the median, or fast runs get
+detected late. `verifyTiming()` prints a `suggestedFirstPollMs` at 60% of the
+fastest observed run.
+
+**But be clear what it buys.** At a 287 ms cycle (137 ms fetch + 150 ms sleep),
+a 1.5 s delay saves ~6 requests / ~240 KB per preview. It does **not** make the
+user wait less: detection granularity is unchanged, and total latency is still
+bounded below by UT's generation time.
+
+So a delayed first poll is a **politeness/bandwidth optimization**, not a
+speedup — worth doing (UT logs this traffic), but it won't move the UX.
+
+## Can the preview actually be made faster?
+
+UT's ~3 s generation is the floor; it's ~65% of the round trip and outside our
+control. Real options, best first:
+
+1. **Show progress instead of a spinner.** UT publishes `In progress` within
+   ~130 ms. Surfacing submitted → in progress → ready makes ~3 s feel far
+   shorter than an opaque wait. Biggest perceived win, no protocol risk.
+2. **Overlap resolve with the previous step.** `resolveAddLink` is read-only
+   (~119 ms) and can run while the UI is still settling.
+3. **Skip the history poll entirely** _if_ the results URL is derivable from
+   the submit response. The row text carries `Submitted (96449)` — if that
+   maps to the audit ID, the poll could be replaced by a direct fetch. Worth
+   one experiment; would remove the whole detection window.
+4. Not worth it: polling faster than ~150 ms (no gain, more load), or
+   parallelizing planner writes (proven unsafe — writes get dropped).
