@@ -157,8 +157,10 @@
    * depend on the submit, it can overlap with earlier UI work instead of
    * sitting on the critical path.
    */
+  // Default term must be a FUTURE one — a past ccyys has no page=4 links and
+  // resolve fails. ccyys = YYYY + semester digit (2=spring, 6=summer, 9=fall).
   async function stepIndependence(
-    course = { dept: "C S", num: "331", ccyys: "20262" },
+    course = { dept: "C S", num: "331", ccyys: "20272" },
   ) {
     if (typeof poc === "undefined")
       throw new Error("Load planner-poc.js first.");
