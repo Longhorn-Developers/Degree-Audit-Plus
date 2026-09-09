@@ -620,3 +620,67 @@ control. Real options, best first:
    one experiment; would remove the whole detection window.
 4. Not worth it: polling faster than ~150 ms (no gain, more load), or
    parallelizing planner writes (proven unsafe — writes get dropped).
+
+## Is OUR code adding latency? (overhead audit)
+
+"We're bound by UT" is only an excuse if it's true. `overhead-audit.js`
+separates UT's floor from latency we chose. **All read-only** except where
+noted — no audits created, no planner writes.
+
+```js
+await overhead.detectionOverhead(150); // how late do we notice completion?
+await overhead.pollTargetCost(); // are we polling the cheapest thing?
+await overhead.stepIndependence(); // are our steps needlessly serialized?
+```
+
+**`detectionOverhead`** — a poll loop only notices completion at cycle
+boundaries, so on average we lose **half a cycle**. At 137 ms fetch + 150 ms
+sleep that's ~143 ms average, ~287 ms worst case. That number is ours, not
+UT's. If it reports that the fetch dominates the sleep, shortening the sleep
+further buys nothing — the fetch is the floor.
+
+**`pollTargetCost`** — we currently poll a ~40 KB page listing every audit to
+learn one bit: is the newest one ready. If a cheaper endpoint exposes the same
+state, polling costs less and can run more often for the same load.
+
+**`stepIndependence`** — `resolveAddLink` and the pre-submit history snapshot
+are both read-only and independent. Running them together removes the smaller
+one from the critical path (~100–150 ms).
+
+### The big one: can the poll be deleted entirely?
+
+If the submit response already names the audit, we can fetch the result
+directly and remove the whole detection window. Capture the submit HTML:
+
+```js
+const before = await verify.getFresh(
+  "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/",
+);
+const page = await verify.getFresh(
+  "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/",
+);
+// then submit and keep the response text:
+const res = await poc.submitPlannedAudit();
+// once you know the audit ID from the history page afterwards:
+overhead.inspectSubmitResponse(
+  document.documentElement.outerHTML,
+  "PASTE_AUDIT_ID",
+);
+```
+
+Simpler: after a normal `verify.verifyTiming(...)` run, note the `auditId` it
+printed, then re-submit once and pass the resulting page HTML plus that ID.
+
+- **Result links found / `containsKnownId: true`** → the poll can likely be
+  replaced by a direct fetch. Biggest available win: removes the entire
+  detection window.
+- **Only `Submitted (NNNNN)`** → that token is a _request_ number, not the
+  audit ID. Polling stays; it can only be shortened, not removed.
+
+### What we already know is NOT worth doing
+
+- **Polling faster than ~150 ms** — the fetch (~137 ms) dominates, so a shorter
+  sleep barely moves detection while multiplying load UT logs.
+- **Parallelizing planner writes** — proven unsafe; writes get silently
+  dropped.
+- **A delayed first poll** — saves bandwidth, not user time (see above).
