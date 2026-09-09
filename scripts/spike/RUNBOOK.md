@@ -4,8 +4,10 @@ Throwaway spike for [DAP-115](https://linear.app/longhorn-devs/issue/DAP-115/51-
 and its sub-issues DAP-122 / DAP-123 / DAP-124.
 
 Everything here needs a **real authenticated UT session (SSO + Duo)**, so it
-runs on your device, not in CI and not from an agent. `planner-poc.js` is the
-harness; this file is the script you follow.
+runs on your device, not in CI and not from an agent. **`all.js` is the one
+file to paste** — it bundles every script here (`poc`, `probe`, `verify`,
+`overhead`, `trim`). Edit the source files and re-run `sh bundle.sh` to
+regenerate it. This file is the script you follow.
 
 Delete `scripts/spike/` once the findings are folded into
 `docs/hypothetical-courses-design.md`.
@@ -21,7 +23,7 @@ on**; 3–5 are follow-ups.
 
 In a fresh browser you have none. Log in at
 <https://utdirect.utexas.edu/apps/degree/audits/> (SSO + Duo), then paste
-`planner-poc.js` into a DevTools console **on that UT page**. Django checks
+`all.js` into a DevTools console **on that UT page**. Django checks
 `Referer` on the audit POST, so a random tab won't do.
 
 If `readPlanner()` throws "Not logged in", the session didn't take — re-auth
@@ -194,7 +196,8 @@ before/after planner screenshots, and delete `scripts/spike/`.
 ## Load the harness
 
 Open DevTools on any `utdirect.utexas.edu` audits page, paste the whole of
-`planner-poc.js` into the console, hit enter. It exposes `poc`.
+`all.js` into the console, hit enter. It exposes `poc`, `probe`, `verify`,
+`overhead` and `trim` in one go — no need to paste the individual files.
 
 ```js
 await poc.readPlanner(); // sanity check: prints existing rows + their keys
@@ -496,7 +499,7 @@ also renders a **"Processing"** status on those rows. The old number therefore
 bundles: real generation + time-to-link + up to ~600 ms quantization + ~100 ms
 per fetch. Observed generation is ~1–2 s.
 
-Paste `generate-timing-probe.js` alongside `planner-poc.js`.
+`probe` is already loaded by `all.js`.
 
 **A. How fast can we poll?** (read-only, do this first)
 
@@ -554,7 +557,7 @@ planning it needs repeating, and one correctness gap needs closing: the probe's
 `fetch` had no cache directives, so a cached history page could have inflated
 `linkReadyMs`.
 
-`timing-verify.js` closes both. Paste it alongside `planner-poc.js`.
+`timing-verify.js` closes both (loaded by `all.js` as `verify`).
 
 **A. Is the page being served stale?** (read-only, do first)
 
@@ -679,8 +682,134 @@ printed, then re-submit once and pass the resulting page HTML plus that ID.
 
 ### What we already know is NOT worth doing
 
+(But see "Trim our 25%" below — the *submit* figure was not decomposed, and
+the ~505 ms turns out to include a page we download and discard.)
+
 - **Polling faster than ~150 ms** — the fetch (~137 ms) dominates, so a shorter
   sleep barely moves detection while multiplying load UT logs.
 - **Parallelizing planner writes** — proven unsafe; writes get silently
   dropped.
 - **A delayed first poll** — saves bandwidth, not user time (see above).
+
+## Trim our 25% — is our ~1.5 s real work, or bytes we throw away?
+
+The overhead audit said UT is the floor and left our stages as fixed costs.
+They aren't — every one of them was measured as a single opaque number, and
+most of them bundle **a redirect landing page we download and discard**, or a
+fetch that repeats every preview but only needs to happen once per session.
+
+`trim-audit.js` (in `all.js`) splits each request with the browser's Resource
+Timing API into redirect / TTFB / download / parse, so "UT server time" and
+"our transfer" stop being one number.
+
+### Hypotheses, ranked by expected saving
+
+| # | stage | today | hypothesis | prediction if true |
+| - | ----- | ----- | ---------- | ------------------ |
+| 1 | submit | ~505 ms | We follow the POST's redirect to `requests/history/` (353 ms on its own) and discard the HTML. | POST with `redirect: "manual"` returns in ~150 ms as `opaqueredirect`, and the audit still queues (row appears in history). |
+| 2 | add | ~345 ms | It's three things: the `page=4` request, the redirect landing page, and a second planner read to verify. The landing page (`planner/ut_course/`) may already list the rows. | Resource Timing shows `page4Ms` ≈ 100 ms; `landingMatchesPlanner: true` means the verify read is free. |
+| 3 | hidden fetches | ~350 ms, **not in the table** | The audit form GET, the history snapshot and the planner snapshot run every preview. The form's hidden fields don't change within a session. | `formReuse` reports `fieldsStable: true` → the form GET is once per session. History snapshot overlaps resolve (already proven). |
+| 4 | resolve | ~128 ms | The `page=3` listing is stable, so it can be fetched **when the user picks the course**, not when they hit preview. Still parsed, never constructed — the design rule holds. | `stableAcrossFetches: true`, `looksNonced: false`. |
+| 5 | scrape | ~395 ms | The number includes DOMParser. Split it: if TTFB dominates, UT is rendering the audit and it's immovable; if download or parse dominates, it's ours. | `scrapeCost` names the dominant part; `scrapeAlternatives` lists any lighter representation UT itself links to. |
+
+If 1–4 all hold, the pipeline's own cost drops from ~1.5 s to roughly
+**~0.6 s** and the preview lands at **~2.7 s** instead of ~3.6 s. Submit alone
+is the biggest single cut and needs one audit to prove.
+
+### Run (≈ 5 min, 1 audit + 1 planner add/delete)
+
+Read-only first — no side effects at all:
+
+```js
+await trim.scrapeCost(); // 3 fetches of the newest audit's results page
+await trim.scrapeAlternatives(); // only follows links the results page advertises
+await trim.formReuse(); // 2 fetches of the audit form, diffed
+await trim.resolveStability(); // 2 fetches of the page=3 listing, diffed
+```
+
+Then the two that write:
+
+```js
+await trim.addCost(); // adds C S 324E (20272), measures, deletes it
+await trim.submitCost(); // ONE real audit, POST with redirect:"manual"
+trim.summary(); // achievable-savings table from whatever ran
+```
+
+**Record** every `console.table` into `FINDINGS.md` under a new "Trim" section,
+plus the `trim.summary()` table.
+
+### Read it
+
+- **`submitCost`** — `postType` should be `opaqueredirect` and `accepted: true`.
+  `postMs` is the real submit cost; `savedVsFollowMs` is what we were wasting.
+  If `accepted` is false the manual-redirect POST wasn't processed (unexpected;
+  fall back to following the redirect). Note `opaqueredirect` can't distinguish
+  "redirected to history" from "redirected to SSO" — the auth gate runs before
+  the write in production, so that's fine.
+- **`addCost`** — `page4Ms` is the write itself. `landingMatchesPlanner: true`
+  means the redirect target already lists the rows, so 5.2 verifies from the
+  add response and skips the extra `view_planner/` read. If false, use
+  `redirect: "manual"` on the add and pay one verify read.
+- **`formReuse`** — `fieldsStable: true` → fetch the form once per session and
+  reuse `student_eid` / `degree_plan` / `catalog` / CSRF. `csrfTokenRotatesPerRender`
+  is informational: Django masks tokens per render but any of them validates
+  against the session cookie, so caching one is safe.
+- **`resolveStability`** — `stableAcrossFetches: true` and `looksNonced: false`
+  → prefetch `page=3` on course pick. The design rule ("never construct
+  `page=4`") is untouched; we still parse the link, just earlier.
+- **`scrapeCost`** — read the "dominated by" line. TTFB is UT's render; only
+  download and parse are ours. `gzip: (none)` on a 100 KB+ page means UT isn't
+  compressing and download is a real cost — but there's nothing to do about
+  that unless `scrapeAlternatives` found a lighter page.
+- **`summary`** — `savedMs` per stage and a total. That's the number to carry
+  into the design doc's optimization-ceiling section, replacing "submit can't
+  move".
+
+### Results (2026-09-09) — see FINDINGS.md § Trim audit
+
+Submit 505 → 149 ms, add+verify 331 → 213, resolve/form/history off the
+path, scrape immovable (TTFB). ~840 ms cuttable, ~3.0 s preview estimated.
+
+### Prove it end to end (≈ 3 min, 3 audits + 3 add/deletes)
+
+The estimate is stage-by-stage arithmetic. This runs the pipeline with every
+trim applied at once and reports p50 per stage against the 3639 ms reference:
+
+```js
+trim.state.results.scrapeAlternatives; // still in memory — print it if the
+//                                       earlier table scrolled away
+await trim.timeTrimmedPreview(undefined, 3);
+```
+
+Read `totalMs` p50. Around **3.0 s** confirms the estimate; the per-stage
+columns show which trim didn't hold if it's higher. `readsMs` is the three
+parallel reads (resolve, history, planner) — in production those happen at
+course-pick time, so subtract it for the user-visible figure.
+
+**Record** both tables into FINDINGS.md.
+
+**2026-09-09 result:** our stages held; UT generation varied 2.7–10.6 s
+(previously a steady 2.0–2.1 s). To tell UT load from a trim side-effect,
+interleave the old and trimmed paths so time-of-day can't confound it:
+
+```js
+await verify.verifyTiming(() => poc.submitPlannedAudit(), 1);
+await trim.timeTrimmedPreview(undefined, 1);
+await verify.verifyTiming(() => poc.submitPlannedAudit(), 1);
+await trim.timeTrimmedPreview(undefined, 1);
+```
+
+Compare `genMs` across the four. Old path also slow → UT load, trims stand.
+Only trimmed slow → the trimmed submit differs somehow; investigate before
+adopting it.
+
+**Result:** old path 3060 / 2466 ms generation, trimmed 2160 / 2275 in the
+same minutes — UT load, not us. **Trims stand**; ~3.0–3.1 s preview proven
+end to end. See FINDINGS.md § Trim audit.
+
+### What this does NOT reopen
+
+- **Submit overlapping the add** — still no. The audit must be queued after
+  the row exists. Trimming the submit's redirect is a different thing.
+- **Parallel planner writes** — still unsafe.
+- **Polling faster** — still fetch-bound.

@@ -232,11 +232,92 @@ not in `host_permissions` — indistinguishable from a network outage.
   `C S 331`, `C S 429H` (20272). No planner rows remain.
 - Before/after screenshots: empty planner both times (attach to DAP-115).
 
+## Trim audit — what of our ~1.5 s can go? ✅ (2026-09-09)
+
+`trim.*` from `all.js`. Read-only probes plus one add/delete and one audit
+(`100018492532`). Resource Timing splits each request into redirect / TTFB /
+download / parse.
+
+**`trim.submitCost()`** — POST with `redirect: "manual"`:
+
+| historySnapshotMs | formGetMs | postMs | postType | accepted | rowVisibleMs | linkMs | genMs | polls | savedVsFollowMs |
+|---|---|---|---|---|---|---|---|---|---|
+| 123 | 110 | **149** | `opaqueredirect` | true | 140 | 2144 | 2004 | 7 | **356** |
+
+The ~505 ms submit was ~150 ms of POST plus ~350 ms downloading the
+`requests/history/` page UT redirects to. Not following the redirect loses
+nothing: the audit queued and its row was visible 140 ms after the POST.
+
+**`trim.summary()`** (folds in the other probes):
+
+| stage | nowMs | achievableMs | how | savedMs |
+|---|---|---|---|---|
+| submit POST | 505 | 149 | `redirect:"manual"` | 356 |
+| history snapshot | 123 | 0 | overlap with resolve (proven) | 123 |
+| audit form GET | 111 | 0 | fetch once per session (`fieldsStable: true`) | 111 |
+| add + verify | 331 | 213 | `redirect:"manual"` + one verify read (landing page does not list rows) | 118 |
+| resolve (page=3) | 128 | 0 | prefetch at course pick (link stable, no nonce) | 128 |
+| scrape | 382 | 379 | parse 8 ms is ours; TTFB 376 ms is UT | 3 |
+
+**Total cuttable: ~839 ms.** Critical path ≈ 3.0 s (was 3.6 s).
+
+Not captured in the paste: the per-probe tables for `scrapeCost`,
+`scrapeAlternatives`, `formReuse`, `resolveStability` and `addCost` (only the
+summary row for each). `scrapeAlternatives` result unknown — if it listed a
+lighter results page, that is the one remaining scrape lever.
+
+Cleanup: `addCost` deleted its row (seq 995, `delete.works: true`). The 4
+rows that remain (seqs 999, 996, 998, 997) predate the run and were confirmed
+real via `poc.readPlanner()`.
+
+**`trim.timeTrimmedPreview(undefined, 3)`** — all trims applied at once
+(form fetched once: 322 ms; resolve + history + planner snapshots in parallel;
+`redirect: "manual"` on page=4 and on the POST; one verify read; 150 ms poll):
+
+| run | readsMs | addMs | addType | verifyMs | submitMs | submitType | detectMs | genMs | scrapeMs | totalMs | auditId |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 239 | 107 | opaqueredirect | 324 | 149 | opaqueredirect | 154 | **10600** | 486 | 12060 | 100018492562 |
+| 2 | 136 | 93 | opaqueredirect | 112 | 151 | opaqueredirect | 155 | **6154** | 494 | 7295 | 100018492564 |
+| 3 | 145 | 104 | opaqueredirect | 128 | 158 | opaqueredirect | 154 | 2685 | 445 | 3819 | 100018492565 |
+
+Our stages all landed on prediction (add ~100, submit ~150, detect ~155,
+verify ~120; manual redirect works on page=4 too). Ours excluding UT ≈ 680 ms
+per run, down from ~1560. **UT generation did not:** 10.6 / 6.2 / 2.7 s
+against 2.0–2.1 s in every earlier run today. Run 3 normalised to a 2.1 s
+generation and with the pick-time reads removed is ~3.1 s, matching the
+estimate.
+
+**Interleaved A/B (old submit path vs trimmed, alternating, 4 audits):**
+
+| pair | path | submitMs | detectMs | genMs | submit→link | auditId |
+|---|---|---|---|---|---|---|
+| 1 | old (`verifyTiming`) | 464 | 148 | 3060 | 3672 | 100018492579 |
+| 1 | trimmed | 148 | 158 | 2160 | 2466 | 100018492580 |
+| 2 | old (`verifyTiming`) | 443 | 160 | 2466 | 3069 | 100018492581 |
+| 2 | trimmed | 167 | 138 | 2275 | 2621 | 100018492582 |
+
+Trimmed totals: 3343 ms and 3507 ms including `readsMs` 234 / 210 (pick-time
+in production). Ex-reads and normalised to a 2075 ms generation: **~3.0–3.1 s**.
+
+**Verdict: ✅ the trims stand.** The trimmed path was never slower on
+generation — both paths saw UT vary in the same minutes. Submit is ~300 ms
+cheaper on both pairs (464→148, 443→167), detection is identical, and every
+`redirect: "manual"` write was accepted. The 10.6 / 6.2 s runs were UT load,
+not a trim side-effect.
+
+**Side finding — UT generation is not a fixed floor.** All 11 generation
+samples today (ms, sorted): 2004, 2024, 2090, 2110, 2160, 2275, 2466, 2685,
+3060, 6154, 10600. Median 2.3 s; the two outliers were back-to-back at
+~12:00. Worst observed end-to-end preview: **12.1 s** — still under the 15 s
+eager-verify threshold, but the margin is ~3 s, not ~11 s. The multiples-of-
+~2 s pattern (5×, 3×, 1×) is consistent with a shared FIFO audit queue;
+unproven and not needed for a decision.
+
 ## Summary for DAP-115
 
 | Question                           | Answer                                                                                                                                                      |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Preview round-trip (DAP-124)       | **p50 6.6 s / p95 7.6 s** (n=5). Generation ≈ 5.2 s; all other stages < 0.5 s. ✅ Eager-verify holds; no DAP-114 flag.                                      |
+| Preview round-trip (DAP-124)       | ~3.6 s (n=3) → **~3.0–3.1 s with trims, proven end to end** (A/B, n=4). UT generation median 2.3 s but 2.0–10.6 s observed (n=11); worst full preview 12.1 s. ✅ Eager-verify holds; no DAP-114 flag, margin ~3 s. |
 | How to submit a planned audit      | POST `requests/test_profile_button/` (default-degree Run Audit form) with `incl_planned_crswk=Y`; success = redirect to `requests/history/`.                |
 | Parallel planner adds              | 🚩 **Race confirmed** — 2 of 3 parallel runs lost a write silently (serial baseline 3/3). Serialize writes + verify-after-write in 5.2.                     |
 | Modify submit shape (DAP-129)      | GET `planner/modify_planned_course/?action=M&course_type=1&course=…&fos=…&seq=…&key_ccyys=…&fos=…&course=…&semester=…&year=…&pass_fail=…`.                  |
