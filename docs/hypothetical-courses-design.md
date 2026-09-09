@@ -454,34 +454,89 @@ Every ticket carries TLDR / Recommendations / Testing (device proof in the
 PR) / Connections sections; Connections states exactly which other issues to
 refer to and what to pull from them. Each has sub-issues splitting the work.
 
-## Branching
+## Branching — how to work on this feature
 
-The feature is not yet proven end to end, so it integrates on its own branch
-rather than landing piecemeal on `main`:
+This feature is not yet proven end to end, so it integrates on **its own
+branch** rather than landing piecemeal on `main`. `main` never carries a
+half-finished feature, and if the approach fails the branch is discarded
+instead of reverted.
 
 ```text
 main
- └── feature/dap-91-hypothetical-courses   <- acts as "main" for this feature
+ └── feature/dap-91-hypothetical-courses   <- the "main" for this feature
       ├── feature/dap-117-planner-client   <- one branch per ticket, PR'd in
+      ├── feature/dap-116-run-correctness
       ├── feature/dap-118-preview-pipeline
       └── …
 ```
 
-- **Per-ticket branches PR into the feature branch**, not into `main`. Review
-  still happens per ticket; `main` stays clean until the feature works.
-- **Merge `main` in periodically.** `main` is quiet (bug fixes only), but
-  `session.ts`, `audit-history-sync.ts`, `messages.ts`, and
-  `background-controller.ts` — every file this feature touches — have all seen
-  recent commits. Pulling `main` in regularly keeps those conflicts small.
-- **Checkpoint at 5.4.** The preview pipeline is where the eager-verify
-  approach either works end to end or doesn't. If it works, merge the feature
-  branch to `main` then rather than waiting for 5.6 — a smaller, earlier merge
-  beats one large one. If it doesn't, the branch is discarded without having to
-  revert anything from `main`.
+### Starting a ticket
 
-The 5.1 spike harness lives on `feature/dap-115-51-poc-planner-mechanics-preview-timing`
-and is deliberately **not** merged — it is throwaway console tooling. Its
-findings are in this document, which is the durable output.
+Branch from the **integration branch**, not from `main`:
+
+```bash
+git switch feature/dap-91-hypothetical-courses
+git pull
+git switch -c feature/dap-117-planner-client   # feature/dap-<ticket>-<slug>
+```
+
+Linear generates a branch name on each issue — use it, or follow the
+`feature/dap-<number>-<short-description>` pattern already used in this repo.
+
+### Opening the PR
+
+Verify first (CI checks all of these):
+
+```bash
+bun run format:check && bun run compile && bun run lint && bun test
+```
+
+Then push and open the PR:
+
+```bash
+git push -u origin feature/dap-117-planner-client
+```
+
+> ⚠️ **Target `feature/dap-91-hypothetical-courses`, NOT `main`.**
+> GitHub defaults the base branch to `main` — change it in the PR form.
+> A PR merged to `main` by mistake puts half a feature into production.
+
+Follow the repo's normal PR conventions from
+[README § Contributing](../README.md#contributing): Conventional Commits, a
+summary of problem and solution, tests run, screenshots for UI changes, and
+device proof where the ticket asks for it (most of these need a real UT
+session).
+
+### Keeping the branch current
+
+Whoever owns the integration branch merges `main` in periodically:
+
+```bash
+git switch feature/dap-91-hypothetical-courses
+git merge origin/main
+```
+
+`main` is quiet (bug fixes only), but every file this feature touches —
+`session.ts`, `audit-history-sync.ts`, `messages.ts`,
+`background-controller.ts`, `audit-runner.ts` — has seen recent commits.
+Merging regularly keeps those conflicts to one file instead of five tickets.
+
+### Checkpoint: 5.4
+
+**5.4 (DAP-118, preview pipeline) is where the eager-verify approach either
+works end to end or doesn't.**
+
+- Works → merge the feature branch into `main` **then**, rather than waiting
+  for 5.6. A smaller, earlier merge beats one large one.
+- Doesn't → discard the branch. Nothing to revert from `main`.
+
+### The 5.1 spike harness
+
+The console tooling from 5.1 lives on
+`feature/dap-115-51-poc-planner-mechanics-preview-timing` and is deliberately
+**not merged** — it is throwaway scripts for a live UT session, not shipping
+code. Its findings are in this document, which is the durable output. Pull that
+branch if you need to re-measure anything.
 
 ## Acceptance criteria
 
