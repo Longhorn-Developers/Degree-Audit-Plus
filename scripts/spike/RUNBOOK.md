@@ -485,3 +485,64 @@ whether that form's hidden fields changed.
 **Rows piling up after failed timing runs** — fixed. Cleanup now runs in a
 `finally`, so a failure mid-round-trip still deletes that run's row. Rows
 written before the fix must be removed manually (step 1 of the checklist).
+
+## Re-measure generation time (DAP-124 follow-up)
+
+**Why:** the `generateMs` ~5.2 s figure is an **upper bound, not UT's
+generation time.** The old harness polled every 500 ms and only counted an
+audit done once its history ID became a **link** — it skipped rows without one
+entirely, so it was structurally blind to a queued-but-not-ready audit. UT now
+also renders a **"Processing"** status on those rows. The old number therefore
+bundles: real generation + time-to-link + up to ~600 ms quantization + ~100 ms
+per fetch. Observed generation is ~1–2 s.
+
+Paste `generate-timing-probe.js` alongside `planner-poc.js`.
+
+**A. How fast can we poll?** (read-only, do this first)
+
+```js
+await probe.pollRateTest(10);
+```
+
+Fires 10 back-to-back history fetches. If all return 200 and latency stays
+flat, a ~250–300 ms interval is safe (the probe defaults to 150 ms). If you see
+non-200s or climbing latency, that's throttling — keep 500 ms.
+
+**B. Split the generation number:**
+
+```js
+const before = await probe.historyRows(); // BEFORE submitting
+await poc.submitPlannedAudit(); // or click Run Audit
+await probe.watch(before);
+```
+
+| field                 | meaning                                     |
+| --------------------- | ------------------------------------------- |
+| `rowVisibleMs`        | request row appeared — UT accepted the job  |
+| `processingSeenMs`    | row showed a "Processing" status            |
+| `linkReadyMs`         | ID became clickable — result actually ready |
+| `queuedButNotReadyMs` | the gap the old harness could not see       |
+| `resultsFetchMs`      | how long the results page itself takes      |
+
+**C. See the intermediate state verbatim** — run mid-generation, in a second
+console tab, to capture UT's exact wording:
+
+```js
+await probe.inspectNow();
+```
+
+If UT's status text isn't matched by
+`/process|pending|progress|running|queue|wait/i`, widen that regex in the probe
+— and note it, because **5.4 should poll for that status too**, not just the
+link.
+
+**Interpreting:**
+
+- `linkReadyMs` ≈ 1–2 s → the 5.2 s was mostly measurement overhead. Correct
+  the Timing table; design 5.6's spinner for ~2 s.
+- `linkReadyMs` ≈ 5 s → UT really is that slow; the original number stands.
+- Large `queuedButNotReadyMs` → 5.4 must poll for the **link** (or a completed
+  status), never the row alone, or it will scrape a not-yet-ready audit.
+
+Either way the eager-verify decision is unaffected — re-measuring can only move
+the total down.
