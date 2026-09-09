@@ -48,13 +48,13 @@ the session-cookie watcher in `session.ts` picks things back up after re-login.
 
 ## Key files
 
-| File | Role |
-|---|---|
-| `features/audit-scraping/content-controller.ts` | Routes page loads; serves `FETCH_AUDIT` / `RUN_AUDIT_VIA_FETCH` / `FETCH_AUDIT_OPTIONS` |
-| `features/audit-scraping/audit-history-sync.ts` | History sync, run detection, polling, results fetch |
-| `features/audit-scraping/audit-runner.ts` | Submits default/custom audit runs; lists form options |
-| `features/audit-scraping/audit-history-parser.ts` | History table → `AuditHistoryEntry[]` |
-| `features/audit-scraping/audit-page-parser.ts` | Results DOM → `CachedAuditData` |
-| `features/audit-scraping/background-controller.ts` | Batch orchestration, login gate, run-audit button |
-| `features/session/session.ts` | Login state, probes, login tab |
-| `lib/browser/messages.ts` | Typed message protocol |
+| File                                               | Role                                                                                    |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `features/audit-scraping/content-controller.ts`    | Routes page loads; serves `FETCH_AUDIT` / `RUN_AUDIT_VIA_FETCH` / `FETCH_AUDIT_OPTIONS` |
+| `features/audit-scraping/audit-history-sync.ts`    | History sync, run detection, polling, results fetch                                     |
+| `features/audit-scraping/audit-runner.ts`          | Submits default/custom audit runs; lists form options                                   |
+| `features/audit-scraping/audit-history-parser.ts`  | History table → `AuditHistoryEntry[]`                                                   |
+| `features/audit-scraping/audit-page-parser.ts`     | Results DOM → `CachedAuditData`                                                         |
+| `features/audit-scraping/background-controller.ts` | Batch orchestration, login gate, run-audit button                                       |
+| `features/session/session.ts`                      | Login state, probes, login tab                                                          |
+| `lib/browser/messages.ts`                          | Typed message protocol                                                                  |
