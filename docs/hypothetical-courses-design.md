@@ -222,10 +222,15 @@ Preview lifecycle for a selected course:
 ### Planner client — `features/audit-scraping/planner-client.ts`
 
 Credentialed fetch + `DOMParser`, same shape as the existing scraping code in
-`features/audit-scraping/audit-history-sync.ts` (fetch + `DOMParser` +
-`response.redirected` auth check) and `background-controller.ts` (tab-scoped
-submit). There is no `audit-runner.ts` — earlier drafts of this doc and the
-DAP-115 ticket both cite that filename; it never existed.
+`features/audit-scraping/audit-history-sync.ts` and `background-controller.ts`.
+
+**Reuse `features/audit-scraping/audit-runner.ts`** (added by DAP-105, #201) —
+its `runAudit()` already submits the default/custom audit forms, which is
+exactly the submit step 5.4 needs. Do not write a second submit path.
+
+> An earlier revision of this section claimed `audit-runner.ts` did not exist.
+> That was wrong: it landed on `main` in #201 while the 5.1 spike branch was
+> open, so the spike never saw it.
 
 - `fetchPlannedCourses()` — parse View Courses; capture
   `(key_course_id, key_course_ccyys, key_course_seq)` per row.
