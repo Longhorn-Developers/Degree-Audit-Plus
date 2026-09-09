@@ -225,8 +225,28 @@ Credentialed fetch + `DOMParser`, same shape as the existing scraping code in
 `features/audit-scraping/audit-history-sync.ts` and `background-controller.ts`.
 
 **Reuse `features/audit-scraping/audit-runner.ts`** (added by DAP-105, #201) —
-its `runAudit()` already submits the default/custom audit forms, which is
-exactly the submit step 5.4 needs. Do not write a second submit path.
+its `runAudit()` already submits the audit forms. Do not write a second submit
+path. But note the gap it has today:
+
+| path                   | planned courses?                     | reliability                                                                         |
+| ---------------------- | ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `submitDefaultAudit()` | ❌ **no planned flag at all**        | ✅ works — this is what the spike measured at ~2.1 s                                |
+| `submitCustomAudit()`  | ✅ `setCheckbox(form, "planned", …)` | ⚠️ needs `catalog` + `college` + `degreePlan`; incomplete selects queue **nothing** |
+
+So neither path is drop-in ready for previews:
+
+- The **default** path is the reliable one, but has no planned option. Adding
+  `incl_planned_crswk=Y` to its form submission is the smallest change — that
+  is the exact field the spike verified against the live planner.
+- The **custom** path already has the checkbox, but requires the full
+  degree-plan triple. The spike confirmed that posting it with empty selects
+  makes UT re-render the page and queue no audit (200, no redirect, ~130 ms,
+  no error) — the failure mode that cost two timing runs.
+
+**Recommendation for 5.4:** extend `submitDefaultAudit()` with a planned flag
+rather than routing previews through the custom form. Previews always run
+against the student's own default degree plan, so the custom form's extra
+inputs are cost without benefit.
 
 > An earlier revision of this section claimed `audit-runner.ts` did not exist.
 > That was wrong: it landed on `main` in #201 while the 5.1 spike branch was
