@@ -82,6 +82,23 @@ export async function renameAudit(
   return updatedHistory;
 }
 
+export async function togglePinAudit(
+  auditId: string,
+): Promise<AuditHistoryData | null> {
+  const history = await getAuditHistory();
+  if (!history) return null;
+
+  const updatedHistory = {
+    ...history,
+    audits: history.audits.map((audit) =>
+      audit.auditId === auditId ? { ...audit, pinned: !audit.pinned } : audit,
+    ),
+    timestamp: Date.now(),
+  };
+  await getAuditHistoryItem().setValue(updatedHistory);
+  return updatedHistory;
+}
+
 export function saveAuditData(
   auditId: string,
   data: CachedAuditData,
