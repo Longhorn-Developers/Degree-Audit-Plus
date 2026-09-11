@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
+import { createCookieProbeGate } from "./cookie-probe-gate";
 
 // Single owner of UT Direct login state: a cached value for instant UI, a
 // live probe for truth, and event-driven writers that keep the cache fresh.
@@ -75,29 +76,6 @@ export function isLoginPage(document: Document): boolean {
     document.querySelector('form[action*="login"]') ||
     document.querySelector('input[type="password"]'),
   );
-}
-
-// Probe only when the session id actually changed, and never more often than this
-const COOKIE_PROBE_MIN_INTERVAL_MS = 60_000;
-
-// Decides whether a session-cookie set event warrants a network probe.
-export function createCookieProbeGate(
-  minIntervalMs = COOKIE_PROBE_MIN_INTERVAL_MS,
-) {
-  let lastValue: string | undefined;
-  let lastProbeAt = -Infinity;
-  return {
-    shouldProbe(value: string, now: number): boolean {
-      if (value === lastValue) return false;
-      lastValue = value;
-      if (now - lastProbeAt < minIntervalMs) return false;
-      lastProbeAt = now;
-      return true;
-    },
-    reset(): void {
-      lastValue = undefined;
-    },
-  };
 }
 
 // Event-driven cache updates from the background service worker: react the

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createCookieProbeGate } from "../../features/session/session";
+import { createCookieProbeGate } from "../../features/session/cookie-probe-gate";
 
 // UT re-sets the session cookie on every response, including the login probe's
 // own; the gate keeps the cookie watcher from probing in a loop.

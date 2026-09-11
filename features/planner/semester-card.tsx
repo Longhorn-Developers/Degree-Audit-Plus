@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { forwardRef } from "react";
 import PlannerCourseCard from "./planner-course-card";
-import { compareCourseCodes } from "@/domain/course"
+import { compareCourseCodes } from "@/domain/course";
 
 interface SemesterCardProps {
   semester: StringSemester;
@@ -48,7 +48,7 @@ const SemesterCardVisual = forwardRef<
                   className="w-full"
                 />
               ))
-          ) : ( 
+          ) : (
             <VStack
               centered
               className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-background"
