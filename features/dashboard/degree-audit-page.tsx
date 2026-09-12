@@ -13,6 +13,7 @@ import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,
 } from "./requirement-breakdown";
+import PlannerTestPanel from "./planner-test-panel";
 
 const SidePanel = () => {
   const { sections, currentAuditName } = useAuditContext();
@@ -65,6 +66,7 @@ const MainContent = () => {
   return (
     <VStack className="min-w-0 flex-1">
       <Title text="Degree Progress Overview" />
+      {import.meta.env.DEV && <PlannerTestPanel />}
       {pre.map((section, idx) => (
         <RequirementBreakdown
           key={section.title}

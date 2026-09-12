@@ -11,6 +11,7 @@ import {
   openLoginTab,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
+import { registerPlannerBridgeHandlers } from "./planner-bridge";
 
 export interface AuditBatchResult {
   succeeded: string[];
@@ -319,4 +320,5 @@ export function registerAuditBackgroundController(): void {
   registerAuditNavigationHandlers();
   registerAuditScrapingHandlers();
   registerSessionCookieWatcher();
+  if (import.meta.env.DEV) registerPlannerBridgeHandlers();
 }

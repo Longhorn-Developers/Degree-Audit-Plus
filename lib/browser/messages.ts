@@ -16,7 +16,11 @@ export type ExtensionMessage =
   // UI/background -> UT tab: reads or mutates the UT course planner.
   | { type: "PLANNER_READ" }
   | { type: "PLANNER_ADD"; course: PlannerCourseRef }
-  | { type: "PLANNER_DELETE"; row: PlannerRowPayload };
+  | { type: "PLANNER_DELETE"; row: PlannerRowPayload }
+  // UI -> background: same three operations, routed to a UT tab for the UI.
+  | { type: "PLANNER_READ_VIA_BG" }
+  | { type: "PLANNER_ADD_VIA_BG"; course: PlannerCourseRef }
+  | { type: "PLANNER_DELETE_VIA_BG"; row: PlannerRowPayload };
 
 export interface PlannerCourseRef {
   dept: string;
@@ -65,6 +69,17 @@ interface MessageResponses {
     targetGone: boolean;
     elapsedMs: number;
   }>;
+  PLANNER_READ_VIA_BG: PlannerResult<PlannerRowPayload[]>;
+  PLANNER_ADD_VIA_BG: PlannerResult<{
+    row: PlannerRowPayload;
+    candidateCount: number;
+    elapsedMs: number;
+  }>;
+  PLANNER_DELETE_VIA_BG: PlannerResult<{
+    removed: number;
+    targetGone: boolean;
+    elapsedMs: number;
+  }>;
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -82,7 +97,10 @@ type ResponseRequest = Extract<
       | "RUN_AUDIT_VIA_FETCH"
       | "PLANNER_READ"
       | "PLANNER_ADD"
-      | "PLANNER_DELETE";
+      | "PLANNER_DELETE"
+      | "PLANNER_READ_VIA_BG"
+      | "PLANNER_ADD_VIA_BG"
+      | "PLANNER_DELETE_VIA_BG";
   }
 >;
 
