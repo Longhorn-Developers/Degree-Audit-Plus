@@ -10,6 +10,7 @@ import {
   type PlannerModifyChanges,
   type PlannerResolution,
   type PlannerRowKey,
+  type PlannerSyncTarget,
 } from "@/domain/planner";
 import { isLoginPage } from "@/features/session/session";
 import {
@@ -73,52 +74,125 @@ export async function resolveCourse(
 }
 
 export function addCourse(link: PlannerAddLink): Promise<PlannedCourseRow> {
-  return runOneAtATime(async () => {
-    const courseId = courseCodeToPlannerCourseId(link.department, link.number);
-
-    const before = await fetchPlannedCourses();
-    // ut happily adds the same course twice so we have to check ourselves
-    if (findRow(before, courseId, link.ccyys)) {
-      throw new PlannerError("DUPLICATE_ROW");
-    }
-
-    await sendPlannerWrite(link.href);
-
-    const after = await fetchPlannedCourses();
-    const newRows = rowsAddedBetween(before, after);
-    if (newRows.length !== 1) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    const newRow = newRows[0];
-    if (newRow.key.courseId !== courseId || newRow.key.ccyys !== link.ccyys) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    return newRow;
-  });
+  return runOneAtATime(() => performAdd(link));
 }
 
 export function deleteCourse(key: PlannerRowKey): Promise<void> {
+  return runOneAtATime(() => performDelete(key));
+}
+
+// make the planner match the target list, one row at a time
+// used to clean up after a failed preview delete, never uses delete all
+export function syncPlannerTo(
+  targets: PlannerSyncTarget[],
+): Promise<PlannedCourseRow[]> {
   return runOneAtATime(async () => {
-    const before = await fetchPlannedCourses();
-    if (!hasRow(before, key)) {
-      throw new PlannerError("ROW_NOT_FOUND");
+    const wanted = new Map<string, PlannerSyncTarget>();
+    for (const target of targets) {
+      wanted.set(targetId(target), target);
     }
 
-    const params = new URLSearchParams();
-    params.set("key_course_id", key.courseId);
-    params.set("key_course_ccyys", key.ccyys);
-    params.set("key_course_seq", key.seq);
-    params.set("action_code", "D");
-    await sendPlannerWrite(PLANNER_VIEW_URL + "?" + params.toString());
+    const rows = await fetchPlannedCourses();
+    let changedAnything = false;
+
+    // delete rows we dont want, and second copies of rows we do
+    const kept = new Set<string>();
+    for (const row of rows) {
+      const id = row.key.courseId + "|" + row.key.ccyys;
+      if (wanted.has(id) && !kept.has(id)) {
+        kept.add(id);
+        continue;
+      }
+      await performDelete(row.key);
+      changedAnything = true;
+    }
+
+    // add whats missing
+    for (const [id, target] of wanted) {
+      if (kept.has(id)) continue;
+      const link = await resolveForSync(target);
+      await performAdd(link);
+      changedAnything = true;
+    }
+
+    if (!changedAnything) return rows;
 
     const after = await fetchPlannedCourses();
-    const stillThere = hasRow(after, key);
-    const removedCount = before.length - after.length;
-    const somethingWasAdded = rowsAddedBetween(before, after).length > 0;
-    if (stillThere || removedCount !== 1 || somethingWasAdded) {
+    for (const id of wanted.keys()) {
+      const [courseId, ccyys] = id.split("|");
+      if (countRows(after, courseId, ccyys) !== 1) {
+        throw new PlannerError("WRITE_NOT_VERIFIED");
+      }
+    }
+    if (after.length !== wanted.size) {
       throw new PlannerError("WRITE_NOT_VERIFIED");
     }
+    return after;
   });
+}
+
+function targetId(target: PlannerSyncTarget): string {
+  const courseId = courseCodeToPlannerCourseId(
+    target.department,
+    target.number,
+  );
+  return courseId + "|" + target.ccyys;
+}
+
+async function resolveForSync(
+  target: PlannerSyncTarget,
+): Promise<PlannerAddLink> {
+  const resolution = await resolveCourse(target);
+  if (resolution.kind === "resolved") return resolution.link;
+  for (const option of resolution.options) {
+    if (option.topicId === target.topicId) return option;
+  }
+  throw new PlannerError("TOPIC_REQUIRED");
+}
+
+async function performAdd(link: PlannerAddLink): Promise<PlannedCourseRow> {
+  const courseId = courseCodeToPlannerCourseId(link.department, link.number);
+
+  const before = await fetchPlannedCourses();
+  // ut happily adds the same course twice so we have to check ourselves
+  if (findRow(before, courseId, link.ccyys)) {
+    throw new PlannerError("DUPLICATE_ROW");
+  }
+
+  await sendPlannerWrite(link.href);
+
+  const after = await fetchPlannedCourses();
+  const newRows = rowsAddedBetween(before, after);
+  if (newRows.length !== 1) {
+    throw new PlannerError("WRITE_NOT_VERIFIED");
+  }
+  const newRow = newRows[0];
+  if (newRow.key.courseId !== courseId || newRow.key.ccyys !== link.ccyys) {
+    throw new PlannerError("WRITE_NOT_VERIFIED");
+  }
+  return newRow;
+}
+
+async function performDelete(key: PlannerRowKey): Promise<void> {
+  const before = await fetchPlannedCourses();
+  if (!hasRow(before, key)) {
+    throw new PlannerError("ROW_NOT_FOUND");
+  }
+
+  const params = new URLSearchParams();
+  params.set("key_course_id", key.courseId);
+  params.set("key_course_ccyys", key.ccyys);
+  params.set("key_course_seq", key.seq);
+  params.set("action_code", "D");
+  await sendPlannerWrite(PLANNER_VIEW_URL + "?" + params.toString());
+
+  const after = await fetchPlannedCourses();
+  const stillThere = hasRow(after, key);
+  const removedCount = before.length - after.length;
+  const somethingWasAdded = rowsAddedBetween(before, after).length > 0;
+  if (stillThere || removedCount !== 1 || somethingWasAdded) {
+    throw new PlannerError("WRITE_NOT_VERIFIED");
+  }
 }
 
 export function modifyCourse(
@@ -214,6 +288,18 @@ function findRow(
     if (row.key.courseId === courseId && row.key.ccyys === ccyys) return row;
   }
   return undefined;
+}
+
+function countRows(
+  rows: PlannedCourseRow[],
+  courseId: string,
+  ccyys: string,
+): number {
+  let count = 0;
+  for (const row of rows) {
+    if (row.key.courseId === courseId && row.key.ccyys === ccyys) count++;
+  }
+  return count;
 }
 
 function rowsAddedBetween(

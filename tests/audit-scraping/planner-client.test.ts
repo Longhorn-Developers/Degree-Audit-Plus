@@ -7,6 +7,7 @@ import {
   fetchPlannedCourses,
   modifyCourse,
   resolveCourse,
+  syncPlannerTo,
 } from "../../features/audit-scraping/planner-client";
 
 const PLANNER_BASE = "https://utdirect.utexas.edu/apps/degree/audits/planner/";
@@ -16,6 +17,7 @@ interface RowSpec {
   courseId: string;
   ccyys: string;
   seq: string;
+  expired?: boolean;
 }
 
 const ARA: RowSpec = { courseId: "ARA601C", ccyys: "20272", seq: "999" };
@@ -25,9 +27,9 @@ const ARA_FALL: RowSpec = { courseId: "ARA601C", ccyys: "20279", seq: "999" };
 function plannerHtml(rows: RowSpec[]): string {
   const body = rows
     .map(
-      ({ courseId, ccyys, seq }) => `
+      ({ courseId, ccyys, seq, expired }) => `
       <tr>
-        <td></td><td>${courseId}</td><td>TITLE</td><td>Planned residence</td>
+        <td></td><td>${expired ? `(${courseId})` : courseId}</td><td>TITLE</td><td>Planned residence</td>
         <td>
           <a href="/apps/degree/audits/planner/view_planner/?key_course_id=${courseId}&amp;key_course_ccyys=${ccyys}&amp;key_course_seq=${seq}&amp;action_code=D">Delete</a>
           <a href="/apps/degree/audits/planner/modify_planned_course/?key_course_id=${courseId}&amp;key_course_ccyys=${ccyys}&amp;key_course_seq=${seq}&amp;key_course_type=1&amp;action_code=M">Modify</a>
@@ -456,6 +458,171 @@ describe("modifyCourse", () => {
       modifyCourse(row, { semester: "Fall 2027" }),
       "ROW_NOT_FOUND",
     );
+  });
+});
+
+describe("syncPlannerTo", () => {
+  const ARA_TARGET = { department: "ARA", number: "601C", ccyys: "20272" };
+  const ARA_DUP: RowSpec = { ...ARA, seq: "997" };
+  const ARA_EXPIRED: RowSpec = { ...ARA, expired: true };
+
+  test("does nothing when the planner already matches", async () => {
+    scriptFetch([() => html(plannerHtml([ARA]))]);
+
+    const rows = await syncPlannerTo([ARA_TARGET]);
+
+    expect(rows.map((r) => r.key)).toEqual([ARA]);
+    expect(requests).toHaveLength(1);
+  });
+
+  test("deletes rows that are not in the target", async () => {
+    scriptFetch([
+      () => html(plannerHtml([ARA, M110])),
+      () => html(plannerHtml([ARA, M110])),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+    ]);
+
+    const rows = await syncPlannerTo([ARA_TARGET]);
+
+    expect(rows.map((r) => r.key)).toEqual([ARA]);
+    expect(requests[2].url).toContain("key_course_id=M++110C");
+    expect(requests[2].url).toContain("action_code=D");
+  });
+
+  test("keeps one copy of a duplicated course and deletes the rest", async () => {
+    scriptFetch([
+      () => html(plannerHtml([ARA, ARA_DUP])),
+      () => html(plannerHtml([ARA, ARA_DUP])),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+    ]);
+
+    const rows = await syncPlannerTo([ARA_TARGET]);
+
+    expect(rows.map((r) => r.key)).toEqual([ARA]);
+    expect(requests[2].url).toContain("key_course_seq=997");
+  });
+
+  test("resolves and adds courses that are missing", async () => {
+    scriptFetch([
+      () => html(plannerHtml([])),
+      () => html(listingHtml([{ dpt: "ARA", num: "601C" }])),
+      () => html(plannerHtml([])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+    ]);
+
+    const rows = await syncPlannerTo([ARA_TARGET]);
+
+    expect(rows.map((r) => r.key)).toEqual([ARA]);
+    expect(requests[3].url).toBe(ARA_LINK.href);
+  });
+
+  test("picks the add link whose topic matches the target", async () => {
+    const CS378: RowSpec = { courseId: "C S378", ccyys: "20272", seq: "999" };
+    scriptFetch([
+      () => html(plannerHtml([])),
+      () =>
+        html(
+          listingHtml([
+            { dpt: "C S", num: "378", topic: "1" },
+            { dpt: "C S", num: "378", topic: "2" },
+          ]),
+        ),
+      () => html(plannerHtml([])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([CS378])),
+      () => html(plannerHtml([CS378])),
+    ]);
+
+    await syncPlannerTo([
+      { department: "C S", number: "378", ccyys: "20272", topicId: "2" },
+    ]);
+
+    expect(requests[3].url).toContain("course_topic_id=2");
+  });
+
+  test("reports TOPIC_REQUIRED instead of guessing a topic", async () => {
+    scriptFetch([
+      () => html(plannerHtml([])),
+      () =>
+        html(
+          listingHtml([
+            { dpt: "C S", num: "378", topic: "1" },
+            { dpt: "C S", num: "378", topic: "2" },
+          ]),
+        ),
+    ]);
+
+    await expectPlannerError(
+      syncPlannerTo([{ department: "C S", number: "378", ccyys: "20272" }]),
+      "TOPIC_REQUIRED",
+    );
+    expect(requests).toHaveLength(2);
+  });
+
+  test("leaves an expired row alone when it is in the target", async () => {
+    scriptFetch([() => html(plannerHtml([ARA_EXPIRED]))]);
+
+    const rows = await syncPlannerTo([ARA_TARGET]);
+
+    expect(rows[0].expired).toBe(true);
+    expect(requests).toHaveLength(1);
+  });
+
+  test("stops and reports AUTH_REQUIRED when the session dies mid-run", async () => {
+    scriptFetch([() => html(plannerHtml([ARA, M110])), () => opaqueRedirect()]);
+
+    await expectPlannerError(syncPlannerTo([ARA_TARGET]), "AUTH_REQUIRED");
+  });
+
+  test("reports WRITE_NOT_VERIFIED when the final planner does not match", async () => {
+    scriptFetch([
+      () => html(plannerHtml([])),
+      () => html(listingHtml([{ dpt: "ARA", num: "601C" }])),
+      () => html(plannerHtml([])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA, M110])),
+    ]);
+
+    await expectPlannerError(syncPlannerTo([ARA_TARGET]), "WRITE_NOT_VERIFIED");
+  });
+
+  test("holds the write queue for the whole run", async () => {
+    const firstRead = deferred<Response>();
+    scriptFetch([
+      () => firstRead.promise,
+      () => html(plannerHtml([ARA])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([ARA, M110])),
+    ]);
+    const m110Link: PlannerAddLink = {
+      ...ARA_LINK,
+      department: "M",
+      number: "110C",
+      href: `${PLANNER_BASE}ut_course/?page=4&dpt=M&course_num=110C`,
+    };
+
+    const sync = syncPlannerTo([ARA_TARGET]);
+    const add = addCourse(m110Link);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(requests).toHaveLength(1);
+
+    firstRead.resolve(html(plannerHtml([ARA])));
+    await sync;
+    await add;
+
+    expect(requests.map((r) => r.url)).toEqual([
+      VIEW_URL,
+      VIEW_URL,
+      m110Link.href,
+      VIEW_URL,
+    ]);
   });
 });
 

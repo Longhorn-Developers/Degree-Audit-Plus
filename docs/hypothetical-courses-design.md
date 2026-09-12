@@ -288,7 +288,11 @@ inputs are cost without benefit.
 - `addCourse(link)` / `deleteCourse(key)` / `modifyCourse(key, …)` —
   sequential, fetch-before-write and verify-after-write.
 - `syncPlannerTo(courses)` — reconcile planner to the accepted set (used by
-  dirty-planner recovery). Per-row deletes only.
+  dirty-planner recovery). Per-row deletes only; duplicates collapse to one
+  row; missing courses are resolved and added (topic courses need a
+  `topicId`, otherwise `TOPIC_REQUIRED`). Expired rows that are in the target
+  are left in place and returned with `expired: true` — UT will not re-add a
+  closed term, and deleting them would silently drop a course the user chose.
 
 ### Preview pipeline (background, serial queue)
 

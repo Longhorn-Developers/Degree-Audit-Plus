@@ -84,6 +84,12 @@ export type PlannerResolution =
   | { kind: "resolved"; link: PlannerAddLink }
   | { kind: "topics"; options: PlannerAddLink[] };
 
+// what the planner should contain after a sync, topicId is only needed for
+// topic courses because ut lists one add link per topic
+export interface PlannerSyncTarget extends PlannerCourseRequest {
+  topicId?: string | null;
+}
+
 // anything left out keeps the row's current value
 export interface PlannerModifyChanges {
   semester?: StringSemester;
@@ -97,6 +103,7 @@ export type PlannerErrorCode =
   | "COURSE_NOT_FOUND"
   | "ROW_NOT_FOUND"
   | "DUPLICATE_ROW"
+  | "TOPIC_REQUIRED"
   | "WRITE_NOT_VERIFIED";
 
 export class PlannerError extends Error {
