@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/button";
 import { HStack, VStack } from "@/components/ui/stack";
-import type { PlannedCourseRow } from "@/domain/planner";
+import type { PlannedCourseRow } from "@/domain/course";
 import { sendRuntimeMessage, type PlannerResult } from "@/lib/browser/messages";
 
 function unwrap<T>(result: PlannerResult<T> | undefined): T {

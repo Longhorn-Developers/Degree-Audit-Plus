@@ -1,6 +1,6 @@
 // the planner client only works from a ut tab, this is how everything else
 // reaches it: ui -> background -> ut tab -> planner-client
-import { PlannerError } from "@/domain/planner";
+import { PlannerError } from "@/domain/course";
 import {
   sendMessageResponse,
   type ExtensionMessage,

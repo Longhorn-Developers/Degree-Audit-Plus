@@ -1,6 +1,6 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`planner View Courses parser parses a real UT planner capture 1`] = `
+exports[`planner flow parses the real View Courses and listing captures 1`] = `
 [
   {
     "code": "ARA 601C",
@@ -33,7 +33,7 @@ exports[`planner View Courses parser parses a real UT planner capture 1`] = `
 ]
 `;
 
-exports[`planner course listing parser parses a real UT listing capture 1`] = `
+exports[`planner flow parses the real View Courses and listing captures 2`] = `
 [
   {
     "ccyys": "20272",

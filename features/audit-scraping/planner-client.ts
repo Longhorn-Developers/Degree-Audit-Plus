@@ -1,8 +1,8 @@
 // runs in a content script on a ut page same as audit-runner so cookies
 // come along for free and DOMParser exists
-import type { CourseCode } from "@/domain/course";
 import {
   ccyysToSemester,
+  type CourseCode,
   courseCodeToPlannerCourseId,
   PlannerError,
   plannerCourseIdToCode,
@@ -13,8 +13,8 @@ import {
   type PlannerResolution,
   type PlannerRowKey,
   type PlannerSyncTarget,
-} from "@/domain/planner";
-import { isLoginPage } from "@/features/session/login-page";
+} from "@/domain/course";
+import { isLoginPage } from "@/features/session/session";
 
 const PLANNER_VIEW_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/planner/view_planner/";
@@ -38,6 +38,11 @@ export async function fetchPlannedCourses(): Promise<PlannedCourseRow[]> {
   return parsePlannerPage(document);
 }
 
+// finds the exact add link ut renders for a course on its page=3 listing
+// nothing is written, the link is what addCourse follows later
+// the listing is also uts answer to "can this be planned this term", a course
+// thats missing from it comes back as COURSE_NOT_FOUND
+// a topic course has one link per topic so those come back as a list to pick from
 export function resolveCourse(
   request: PlannerCourseRequest,
 ): Promise<PlannerResolution> {

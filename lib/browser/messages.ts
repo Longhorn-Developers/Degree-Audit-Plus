@@ -7,7 +7,7 @@ import type {
   PlannerResolution,
   PlannerRowKey,
   PlannerSyncTarget,
-} from "@/domain/planner";
+} from "@/domain/course";
 import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
