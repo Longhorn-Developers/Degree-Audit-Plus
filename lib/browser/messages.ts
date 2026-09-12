@@ -1,4 +1,13 @@
 import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import type {
+  PlannedCourseRow,
+  PlannerAddLink,
+  PlannerCourseRequest,
+  PlannerErrorCode,
+  PlannerResolution,
+  PlannerRowKey,
+  PlannerSyncTarget,
+} from "@/domain/course";
 import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
@@ -12,7 +21,30 @@ export type ExtensionMessage =
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
   // Background -> UT tab: submits the authenticated form.
-  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest };
+  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest }
+  | { type: "PLANNER_READ" }
+  | { type: "PLANNER_RESOLVE"; course: PlannerCourseRequest }
+  | { type: "PLANNER_ADD"; link: PlannerAddLink }
+  | { type: "PLANNER_DELETE"; key: PlannerRowKey }
+  | { type: "PLANNER_SYNC"; targets: PlannerSyncTarget[] };
+
+export type PlannerMessage = Extract<
+  ExtensionMessage,
+  { type: `PLANNER_${string}` }
+>;
+
+export interface PlannerData {
+  PLANNER_READ: PlannedCourseRow[];
+  PLANNER_RESOLVE: PlannerResolution;
+  PLANNER_ADD: PlannedCourseRow;
+  PLANNER_DELETE: null;
+  PLANNER_SYNC: PlannedCourseRow[];
+}
+
+// PlannerError doesnt survive messaging so only its code crosses the wire
+export type PlannerResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; code: PlannerErrorCode };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -30,6 +62,11 @@ interface MessageResponses {
   };
   FETCH_AUDIT: FetchAuditResult;
   RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
+  PLANNER_READ: PlannerResult<PlannerData["PLANNER_READ"]>;
+  PLANNER_RESOLVE: PlannerResult<PlannerData["PLANNER_RESOLVE"]>;
+  PLANNER_ADD: PlannerResult<PlannerData["PLANNER_ADD"]>;
+  PLANNER_DELETE: PlannerResult<PlannerData["PLANNER_DELETE"]>;
+  PLANNER_SYNC: PlannerResult<PlannerData["PLANNER_SYNC"]>;
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -44,7 +81,12 @@ type ResponseRequest = Extract<
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
-      | "RUN_AUDIT_VIA_FETCH";
+      | "RUN_AUDIT_VIA_FETCH"
+      | "PLANNER_READ"
+      | "PLANNER_RESOLVE"
+      | "PLANNER_ADD"
+      | "PLANNER_DELETE"
+      | "PLANNER_SYNC";
   }
 >;
 

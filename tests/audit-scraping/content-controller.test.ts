@@ -42,6 +42,11 @@ mock.module("../../features/session/session", () => ({
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
   },
+  isLoginPage: (document: Document) =>
+    Boolean(
+      document.querySelector('form[action*="login"]') ||
+      document.querySelector('input[type="password"]'),
+    ),
   getCachedLoginState: async () => true,
   openLoginTab: async () => {},
   registerSessionCookieWatcher: () => {},

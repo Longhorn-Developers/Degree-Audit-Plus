@@ -29,7 +29,7 @@ promotes that just-run audit to the app's main audit.
 | Delete = per-row GET: `view_planner/?key_course_id=C%20S331E&key_course_ccyys=20266&key_course_seq=999&action_code=D` | Row key = `(key_course_id, key_course_ccyys, key_course_seq)`; parse keys from View Courses. Also state-changing — never prefetch |
 | `key_course_seq` counts **down** from 999 per added row (999, 998, 997 …)                                             | Never hardcode 999 — parse it. Confirmed 2026-08-05                                                                               |
 | Adding the same course twice creates a **duplicate row**, not a no-op                                                 | Check membership before adding; dedupe in `syncPlannerTo()`. Confirmed 2026-08-05                                                 |
-| `key_course_id` = dept + number, separator dropped (`C S` + `324E` → `C S324E`)                                       | Build this exact string for delete/modify URLs                                                                                    |
+| `key_course_id` = dept padded to 3 chars + number (`C S324E`, `ARA601C`, `M  110C`)                                   | Build this exact string for delete/modify URLs                                                                                    |
 | Delete All = `view_planner/?&action_code=A`                                                                           | **Never automated** — policy. Per-row deletes only                                                                                |
 | Modify edits term/pass-fail only                                                                                      | Shape confirmed 2026-08-16 (state-changing GET); course swaps are still delete + add                                              |
 | **Planned courses are excluded by default**                                                                           | Manual user runs won't accidentally include hypotheticals; our runs must always set `incl_planned_crswk=Y`                        |
@@ -61,9 +61,11 @@ this doc is now the source of truth, so `scripts/spike/` can be deleted.
 **Delete** — per-row `action_code=D` works, ~259 ms, `200`, **no redirect**.
 Removes exactly the target row.
 
-**Row keys** — `key_course_id` is dept+number concatenated with the dept's
-internal space kept and the separator dropped: `C S` + `324E` → `C S324E`;
-`AFR` + `305` → `AFR305`. The planner client must build this exact form.
+**Row keys** — `key_course_id` is the department padded to three characters
+followed by the number: `C S` + `324E` → `C S324E`; `AFR` + `305` → `AFR305`;
+`M` + `110C` → `M  110C` (two spaces). An earlier reading called this
+"separator dropped", which only holds for three-letter departments. The
+planner client must build this exact form.
 
 **`key_course_seq` is NOT always 999.** Observed 999, 998, 997, 996 … 991 —
 UT assigns **descending** sequence numbers as rows are added. The earlier note
@@ -97,6 +99,26 @@ GET planner/modify_planned_course/
   &fos=C+S&course=324E&semester=2&year=2027&pass_fail=Y
 ```
 
+Confirmed live 2026-09-11 (ADV 305, Spring → Fall 2027): **the submit is only
+honoured when the `Referer` is the modify entry page.** Sent from anywhere else
+UT returns the planner unchanged with no error. Add and delete do not check
+this. On success UT 302s to `view_planner/` with "The Semester and Pass/Fail
+Status for ADV 305 have been updated successfully." `key_course_seq` is
+unchanged by a modify, even when the term changes. **`pass_fail` must always be
+sent** (`Y` or `N`): omitting it makes UT silently ignore the whole submit.
+View Courses shows the current value in the Notes cell ("taken pass/fail").
+The form's `semester` select uses the ccyys season digits (`2` Spring, `6`
+Summer, `9` Fall); Spring → Fall 2027 was confirmed live. Setting the `Referer`
+header on the fetch is enough — the entry page does not need to be loaded
+first. **Modify must follow its redirect:** `modify_planned_course/` only validates,
+then 302s to `view_planner/?action_code=M&…` and _that_ request performs the
+write. With `redirect: "manual"` nothing changes. Add and delete are unaffected
+(add writes before redirecting; delete never redirects).
+
+**`key_course_seq` is a stable per-row id, not a position** (confirmed
+2026-09-11): deleting the seq-999 row left the other row at 998. It restarts
+at 999 only once the planner is completely empty.
+
 Gotchas for DAP-129:
 
 - Param names change between entry and submit: the row key becomes `fos`
@@ -109,6 +131,14 @@ Gotchas for DAP-129:
 
 **Nonexistent course** — a bad course number simply has no `page=4` link on
 `page=3`; there's no distinct error page. Resolve failure is the error signal.
+
+**Listing level and pagination** (confirmed 2026-09-11 against ADV, Spring
+2027). `s_lvl` on `page=3` is a division filter, not undergrad/grad: `L` lower
+division, `U` upper division, `G` graduate, `A` all; omitting it returns a 500.
+The 5.1 spike used `U`, which is why lower-division courses were never
+resolvable. Use `A`. A listing page holds at most 40 courses; the rest hang off
+a "Next courses" link (`page=3&…&course_num=<first course of next page>&s_lvl=A`).
+`resolveCourse` follows that link until it finds the course or runs out of pages.
 
 **Audit submit — use the default-degree form** (corrected 2026-08-16).
 
@@ -143,7 +173,8 @@ computing the same next seq and one overwriting the other.
 Binding constraints for 5.2:
 
 - **Serialize every planner write.** One at a time, no fan-out in
-  `syncPlannerTo()`.
+  `syncPlannerTo()`. The 5.2 client's queue covers one content script; two UT
+  tabs can still race until 5.3's background-controller queue (#228) lands.
 - **Verify after write** by diffing `readPlanner()`. The add response alone is
   not evidence the row landed.
 
@@ -258,10 +289,24 @@ inputs are cost without benefit.
   link (reuse one `page=3` response per dept+term+type). Missing course →
   surface failure. Topic courses require explicit topic selection — never
   pick one silently.
-- `addCourse(link)` / `deleteCourse(key)` / `modifyCourse(key, …)` —
-  sequential, fetch-before-write and verify-after-write.
+- `addCourse(link)` / `deleteCourse(key)` — sequential, fetch-before-write
+  and verify-after-write. Modify is **not** implemented: nothing before 5.7
+  calls it and course swaps are delete + add. The verified mechanics above
+  are enough to build it if 5.7 wants a term change.
 - `syncPlannerTo(courses)` — reconcile planner to the accepted set (used by
-  dirty-planner recovery). Per-row deletes only.
+  dirty-planner recovery). Per-row deletes only; duplicates collapse to one
+  row; missing courses are resolved and added (topic courses need a
+  `topicId`, otherwise `TOPIC_REQUIRED`). Expired rows that are in the target
+  are left in place and returned with `expired: true` — UT will not re-add a
+  closed term, and deleting them would silently drop a course the user chose.
+
+### Planner bridge — `features/audit-scraping/planner-bridge.ts`
+
+The client only works from a UT tab. Everything else reaches it through one
+`PLANNER_*` message per client call (`lib/browser/messages.ts`): UI →
+background → UT tab. The background finds or opens an audits tab, forwards
+the message, and closes a tab it had to open. Failures cross the wire as the
+`PlannerError` code, never as a thrown error.
 
 ### Preview pipeline (background, serial queue)
 
@@ -425,9 +470,10 @@ POST, that cost 500 ms. Overlapping submit with the add is still off the table
 
 Consequences for 5.2/5.4:
 
-- Every planner write and the audit POST use `redirect: "manual"` and treat
+- Add, delete, and the audit POST use `redirect: "manual"` and treat
   `type === "opaqueredirect"` as "UT accepted"; a `basic` 200 means UT
-  re-rendered the form (silent rejection). The auth gate runs first so an SSO
+  re-rendered the form (silent rejection). **Modify is the exception** — its
+  write happens on the redirect target, so it must follow (see above). The auth gate runs first so an SSO
   bounce can't be mistaken for acceptance.
 - Verify-after-write stays as one `view_planner/` read per write.
 - Cache the audit form's field set for the session; refresh on a 403.

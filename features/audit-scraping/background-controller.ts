@@ -11,6 +11,7 @@ import {
   openLoginTab,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
+import { registerPlannerBridge } from "./planner-bridge";
 
 export interface AuditBatchResult {
   succeeded: string[];
@@ -287,7 +288,10 @@ async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
 }
 
 // Any open audits page can host the run; otherwise open one in the background.
-async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
+export async function getAuditPageTab(): Promise<{
+  tabId: number;
+  created: boolean;
+}> {
   const tabs = await browser.tabs.query({
     url: "*://utdirect.utexas.edu/apps/degree/audits/*",
   });
@@ -299,15 +303,22 @@ async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
   return { tabId: tab.id, created: true };
 }
 
+function sendRunRequest(tabId: number, custom?: CustomAuditRunRequest) {
+  return sendTabMessageWhenReady(tabId, {
+    type: "RUN_AUDIT_VIA_FETCH",
+    custom,
+  });
+}
+
 // A created tab's content script needs a moment to register; retry until it
 // answers instead of waiting out the page's full load event.
-async function sendRunRequest(tabId: number, custom?: CustomAuditRunRequest) {
+export async function sendTabMessageWhenReady<M extends ExtensionMessage>(
+  tabId: number,
+  message: M,
+): ReturnType<typeof sendTabMessage<M>> {
   for (let attempt = 0; attempt < 40; attempt++) {
     try {
-      return await sendTabMessage(tabId, {
-        type: "RUN_AUDIT_VIA_FETCH",
-        custom,
-      });
+      return await sendTabMessage(tabId, message);
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
@@ -319,4 +330,9 @@ export function registerAuditBackgroundController(): void {
   registerAuditNavigationHandlers();
   registerAuditScrapingHandlers();
   registerSessionCookieWatcher();
+  registerPlannerBridge({
+    getAuditPageTab,
+    sendToTab: sendTabMessageWhenReady,
+    closeTab: (tabId) => browser.tabs.remove(tabId),
+  });
 }
