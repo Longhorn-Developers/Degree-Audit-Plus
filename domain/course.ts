@@ -71,6 +71,45 @@ export type CoreArea =
   | "Natural Science and Technology, Part II"
   | "Visual and Performing Arts";
 
+/** Compares courses by department first, then course number, then letter if same number (408C vs 408D) */
+export function compareCourseCodes(
+  a: CourseCode | string,
+  b: CourseCode | string,
+): number {
+  const left = parseCourseCode(a);
+  const right = parseCourseCode(b);
+
+  if (left.department !== right.department) {
+    return left.department.localeCompare(right.department);
+  }
+
+  const leftNumber = Number.parseInt(left.number, 10);
+  const rightNumber = Number.parseInt(right.number, 10);
+  const leftIsNumeric = !Number.isNaN(leftNumber);
+  const rightIsNumeric = !Number.isNaN(rightNumber);
+
+  if (leftIsNumeric && rightIsNumeric && leftNumber !== rightNumber) {
+    return leftNumber - rightNumber;
+  }
+  if (leftIsNumeric !== rightIsNumeric) return leftIsNumeric ? -1 : 1;
+
+  return left.number.localeCompare(right.number);
+}
+
+/** Extracts department and course number separately from full course name to use for comparison */
+export function parseCourseCode(code: CourseCode | string): {
+  department: string;
+  number: string;
+} {
+  const trimmed = code.trim();
+  const lastSpace = trimmed.lastIndexOf(" ");
+  if (lastSpace === -1) return { department: trimmed, number: "" };
+  return {
+    department: trimmed.slice(0, lastSpace),
+    number: trimmed.slice(lastSpace + 1),
+  };
+}
+
 // ------------------------------------------------------------ ut planner
 
 // ut term code, 4 digit year then a season digit
