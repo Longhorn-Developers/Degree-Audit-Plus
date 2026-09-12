@@ -3,7 +3,9 @@
 import {
   courseCodeToPlannerCourseId,
   PlannerError,
+  REGULAR_COURSE_TYPE,
   semesterToCcyys,
+  splitPlannerCourseId,
   type PlannerAddLink,
   type PlannerCourseRequest,
   type PlannedCourseRow,
@@ -17,20 +19,22 @@ import {
   parseNextListingUrl,
   parsePlannerListing,
 } from "./planner-listing-parser";
-import { parsePlannerPage } from "./planner-page-parser";
+import { parsePlannerPage, PLANNER_VIEW_URL } from "./planner-page-parser";
 
-const PLANNER_BASE_URL =
-  "https://utdirect.utexas.edu/apps/degree/audits/planner/";
-const PLANNER_VIEW_URL = PLANNER_BASE_URL + "view_planner/";
-const PLANNER_LISTING_URL = PLANNER_BASE_URL + "ut_course/";
-const PLANNER_MODIFY_URL = PLANNER_BASE_URL + "modify_planned_course/";
+const PLANNER_LISTING_URL =
+  "https://utdirect.utexas.edu/apps/degree/audits/planner/ut_course/";
+const PLANNER_MODIFY_URL =
+  "https://utdirect.utexas.edu/apps/degree/audits/planner/modify_planned_course/";
 
 // a department listing is 40 courses per page, this just stops a broken
 // next link from looping forever
 const MAX_LISTING_PAGES = 10;
 
+type ListingCache = Map<string, Document>;
+type PlannerFetchOptions = { referrer?: string; redirect?: RequestRedirect };
+
 // parallel planner writes silently drop rows so every write waits its turn
-// this only covers one content script, cross tab ordering is 5.3's job
+// this queue lives in one content script, two ut tabs can still race
 let lastWrite: Promise<unknown> = Promise.resolve();
 
 export async function fetchPlannedCourses(): Promise<PlannedCourseRow[]> {
@@ -44,57 +48,6 @@ export function resolveCourse(
   return resolveCourseUsing(request, new Map());
 }
 
-// one listing fetch per dept + term + type, a sync that adds several courses
-// from the same dept reuses the pages it already pulled
-type ListingCache = Map<string, Document>;
-
-async function fetchListingDocument(
-  url: string,
-  cache: ListingCache,
-): Promise<Document> {
-  const cached = cache.get(url);
-  if (cached) return cached;
-  const document = await fetchPlannerDocument(url);
-  cache.set(url, document);
-  return document;
-}
-
-async function resolveCourseUsing(
-  request: PlannerCourseRequest,
-  cache: ListingCache,
-): Promise<PlannerResolution> {
-  const params = new URLSearchParams();
-  params.set("page", "3");
-  params.set("course_ccyys", request.ccyys);
-  params.set("course_pass_fail", "");
-  params.set("s_pf", "");
-  params.set("course_type", request.courseType ?? "1");
-  params.set("dpt", request.department);
-  params.set("s_lvl", request.level ?? "A");
-  let listingUrl: string | null = PLANNER_LISTING_URL + "?" + params.toString();
-
-  const wantedNumber = request.number.trim().toUpperCase();
-  const matches: PlannerAddLink[] = [];
-  for (let page = 0; page < MAX_LISTING_PAGES && listingUrl; page++) {
-    const document = await fetchListingDocument(listingUrl, cache);
-    for (const link of parsePlannerListing(document, listingUrl)) {
-      if (link.number.trim().toUpperCase() === wantedNumber) {
-        matches.push(link);
-      }
-    }
-    if (matches.length > 0) break;
-    listingUrl = parseNextListingUrl(document, listingUrl);
-  }
-
-  if (matches.length === 0) {
-    throw new PlannerError("COURSE_NOT_FOUND");
-  }
-  if (matches.length === 1) {
-    return { kind: "resolved", link: matches[0] };
-  }
-  return { kind: "topics", options: matches };
-}
-
 export function addCourse(link: PlannerAddLink): Promise<PlannedCourseRow> {
   return runOneAtATime(() => performAdd(link));
 }
@@ -103,24 +56,108 @@ export function deleteCourse(key: PlannerRowKey): Promise<void> {
   return runOneAtATime(() => performDelete(key));
 }
 
-// make the planner match the target list, one row at a time
-// used to clean up after a failed preview delete, never uses delete all
+export function modifyCourse(
+  row: PlannedCourseRow,
+  changes: PlannerModifyChanges,
+): Promise<PlannedCourseRow> {
+  return runOneAtATime(async () => {
+    const before = await fetchPlannedCourses();
+    const current = findRow(
+      before,
+      row.key.courseId,
+      row.key.ccyys,
+      row.key.seq,
+    );
+    if (!current) {
+      throw new PlannerError("ROW_NOT_FOUND");
+    }
+
+    // ut only accepts the modify submit if the referer is its own modify page
+    // add and delete dont care, this one does
+    const entryParams = new URLSearchParams();
+    entryParams.set("key_course_id", current.key.courseId);
+    entryParams.set("key_course_ccyys", current.key.ccyys);
+    entryParams.set("key_course_seq", current.key.seq);
+    entryParams.set(
+      "key_course_type",
+      current.courseType ?? REGULAR_COURSE_TYPE,
+    );
+    entryParams.set("action_code", "M");
+    const entryUrl = PLANNER_MODIFY_URL + "?" + entryParams.toString();
+
+    let targetCcyys = current.key.ccyys;
+    if (changes.semester) {
+      targetCcyys = semesterToCcyys(changes.semester);
+    }
+    const passFail = changes.passFail ?? current.passFail;
+    const { department, number } = splitPlannerCourseId(current.key.courseId);
+    const year = targetCcyys.slice(0, 4);
+    const seasonDigit = targetCcyys.slice(4);
+
+    // param names here dont match the modify links, and fos + course show up
+    // twice because thats what the real form sends
+    const params = new URLSearchParams();
+    params.append("action", "M");
+    params.append("course_type", current.courseType ?? REGULAR_COURSE_TYPE);
+    params.append("course", number);
+    params.append("fos", department);
+    params.append("seq", current.key.seq);
+    params.append("key_ccyys", current.key.ccyys);
+    params.append("fos", department);
+    params.append("course", number);
+    params.append("semester", seasonDigit);
+    params.append("year", year);
+    // ut ignores the whole submit if pass_fail is missing, always send it
+    params.append("pass_fail", passFail ? "Y" : "N");
+    // modify_planned_course only validates, then redirects to view_planner
+    // with action_code=M and thats the request that actually writes, so this
+    // one has to follow the redirect
+    await sendPlannerWrite(PLANNER_MODIFY_URL + "?" + params.toString(), {
+      referrer: entryUrl,
+      redirect: "follow",
+    });
+
+    // seq survives a modify, so our row is the one with the same seq in the
+    // target term, and its notes have to show the pass/fail we asked for
+    // otherwise a same term change that ut ignored would look like a success
+    const after = await fetchPlannedCourses();
+    const updatedRow = findRow(
+      after,
+      current.key.courseId,
+      targetCcyys,
+      current.key.seq,
+    );
+    if (!updatedRow || updatedRow.passFail !== passFail) {
+      throw new PlannerError("WRITE_NOT_VERIFIED");
+    }
+    const termChanged = targetCcyys !== current.key.ccyys;
+    if (termChanged && hasRow(after, current.key)) {
+      throw new PlannerError("WRITE_NOT_VERIFIED");
+    }
+    return updatedRow;
+  });
+}
+
+// make the planner match the target list one row at a time, never delete all
 export function syncPlannerTo(
   targets: PlannerSyncTarget[],
 ): Promise<PlannedCourseRow[]> {
   return runOneAtATime(async () => {
     const wanted = new Map<string, PlannerSyncTarget>();
     for (const target of targets) {
-      wanted.set(targetId(target), target);
+      const id = targetId(target);
+      if (wanted.has(id)) {
+        throw new PlannerError("DUPLICATE_ROW");
+      }
+      wanted.set(id, target);
     }
 
     const rows = await fetchPlannedCourses();
     let changedAnything = false;
 
-    // delete rows we dont want, and second copies of rows we do
     const kept = new Set<string>();
     for (const row of rows) {
-      const id = row.key.courseId + "|" + row.key.ccyys;
+      const id = rowId(row);
       if (wanted.has(id) && !kept.has(id)) {
         kept.add(id);
         continue;
@@ -129,7 +166,6 @@ export function syncPlannerTo(
       changedAnything = true;
     }
 
-    // add whats missing
     const listings: ListingCache = new Map();
     for (const [id, target] of wanted) {
       if (kept.has(id)) continue;
@@ -141,9 +177,12 @@ export function syncPlannerTo(
     if (!changedAnything) return rows;
 
     const after = await fetchPlannedCourses();
-    for (const id of wanted.keys()) {
-      const [courseId, ccyys] = id.split("|");
-      if (countRows(after, courseId, ccyys) !== 1) {
+    for (const target of wanted.values()) {
+      const courseId = courseCodeToPlannerCourseId(
+        target.department,
+        target.number,
+      );
+      if (countRows(after, courseId, target.ccyys) !== 1) {
         throw new PlannerError("WRITE_NOT_VERIFIED");
       }
     }
@@ -154,12 +193,55 @@ export function syncPlannerTo(
   });
 }
 
-function targetId(target: PlannerSyncTarget): string {
-  const courseId = courseCodeToPlannerCourseId(
-    target.department,
-    target.number,
-  );
-  return courseId + "|" + target.ccyys;
+async function resolveCourseUsing(
+  request: PlannerCourseRequest,
+  cache: ListingCache,
+): Promise<PlannerResolution> {
+  const params = new URLSearchParams();
+  params.set("page", "3");
+  params.set("course_ccyys", request.ccyys);
+  params.set("course_pass_fail", "");
+  params.set("s_pf", "");
+  params.set("course_type", request.courseType ?? REGULAR_COURSE_TYPE);
+  params.set("dpt", request.department);
+  params.set("s_lvl", request.level ?? "A");
+
+  const wantedNumber = normalizeNumber(request.number);
+  const matches: PlannerAddLink[] = [];
+  let nextUrl: string | null = PLANNER_LISTING_URL + "?" + params.toString();
+  let pagesLeft = MAX_LISTING_PAGES;
+  while (nextUrl) {
+    if (pagesLeft === 0) {
+      throw new PlannerError("PLANNER_PAGE_CHANGED");
+    }
+    pagesLeft--;
+
+    const document = await fetchListingDocument(nextUrl, cache);
+    const links = parsePlannerListing(document, nextUrl);
+    for (const link of links) {
+      if (normalizeNumber(link.number) === wantedNumber) {
+        matches.push(link);
+      }
+    }
+
+    // a topic course lists one link per topic and those can run past the
+    // 40 row page break, so keep going while the page ends on our course
+    const lastLink = links[links.length - 1];
+    const courseContinues =
+      lastLink !== undefined &&
+      normalizeNumber(lastLink.number) === wantedNumber;
+    if (matches.length > 0 && !courseContinues) break;
+
+    nextUrl = parseNextListingUrl(document, nextUrl);
+  }
+
+  if (matches.length === 0) {
+    throw new PlannerError("COURSE_NOT_FOUND");
+  }
+  if (matches.length === 1) {
+    return { kind: "resolved", link: matches[0] };
+  }
+  return { kind: "topics", options: matches };
 }
 
 async function resolveForSync(
@@ -219,85 +301,26 @@ async function performDelete(key: PlannerRowKey): Promise<void> {
   }
 }
 
-export function modifyCourse(
-  row: PlannedCourseRow,
-  changes: PlannerModifyChanges,
-): Promise<PlannedCourseRow> {
-  return runOneAtATime(async () => {
-    const before = await fetchPlannedCourses();
-    if (!hasRow(before, row.key)) {
-      throw new PlannerError("ROW_NOT_FOUND");
-    }
-
-    // ut only accepts the modify submit if the referer is its own modify page
-    // add and delete dont care, this one does
-    const entryParams = new URLSearchParams();
-    entryParams.set("key_course_id", row.key.courseId);
-    entryParams.set("key_course_ccyys", row.key.ccyys);
-    entryParams.set("key_course_seq", row.key.seq);
-    entryParams.set("key_course_type", row.courseType ?? "1");
-    entryParams.set("action_code", "M");
-    const entryUrl = PLANNER_MODIFY_URL + "?" + entryParams.toString();
-
-    let targetCcyys = row.key.ccyys;
-    if (changes.semester) {
-      targetCcyys = semesterToCcyys(changes.semester);
-    }
-    const passFail = changes.passFail ?? row.passFail;
-    const department = row.key.courseId.slice(0, 3).trim();
-    const number = row.key.courseId.slice(3).trim();
-    const year = targetCcyys.slice(0, 4);
-    const seasonDigit = targetCcyys.slice(4);
-
-    // param names here dont match the modify links, and fos + course show up
-    // twice because thats what the real form sends
-    const params = new URLSearchParams();
-    params.append("action", "M");
-    params.append("course_type", row.courseType ?? "1");
-    params.append("course", number);
-    params.append("fos", department);
-    params.append("seq", row.key.seq);
-    params.append("key_ccyys", row.key.ccyys);
-    params.append("fos", department);
-    params.append("course", number);
-    params.append("semester", seasonDigit);
-    params.append("year", year);
-    // ut ignores the whole submit if pass_fail is missing, always send it
-    params.append("pass_fail", passFail ? "Y" : "N");
-    // modify_planned_course only validates, then redirects to view_planner
-    // with action_code=M and thats the request that actually writes, so this
-    // one has to follow the redirect
-    await sendPlannerWrite(PLANNER_MODIFY_URL + "?" + params.toString(), {
-      referrer: entryUrl,
-      redirect: "follow",
-    });
-
-    // seq survives a modify, so our row is the one with the same seq in the
-    // target term, and its notes have to show the pass/fail we asked for
-    // otherwise a same term change that ut ignored would look like a success
-    const after = await fetchPlannedCourses();
-    const updatedRow = findRow(
-      after,
-      row.key.courseId,
-      targetCcyys,
-      row.key.seq,
-    );
-    if (!updatedRow || updatedRow.passFail !== passFail) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    const termChanged = targetCcyys !== row.key.ccyys;
-    if (termChanged && hasRow(after, row.key)) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    return updatedRow;
-  });
-}
-
 function runOneAtATime<T>(work: () => Promise<T>): Promise<T> {
-  // wait for the previous write even if it failed, then run ours
   const ourTurn = lastWrite.catch(() => undefined).then(work);
   lastWrite = ourTurn;
   return ourTurn;
+}
+
+function normalizeNumber(number: string): string {
+  return number.trim().toUpperCase();
+}
+
+function targetId(target: PlannerSyncTarget): string {
+  const courseId = courseCodeToPlannerCourseId(
+    target.department,
+    target.number,
+  );
+  return courseId + "|" + target.ccyys;
+}
+
+function rowId(row: PlannedCourseRow): string {
+  return row.key.courseId + "|" + row.key.ccyys;
 }
 
 function isSameKey(a: PlannerRowKey, b: PlannerRowKey): boolean {
@@ -348,11 +371,21 @@ function rowsAddedBetween(
   return added;
 }
 
-// we dont follow redirects, if youre logged out sso bounces you and that
-// shows up as an opaqueredirect
-// dont use response.redirected for this, planner writes redirect on success
-type PlannerFetchOptions = { referrer?: string; redirect?: RequestRedirect };
+async function fetchListingDocument(
+  url: string,
+  cache: ListingCache,
+): Promise<Document> {
+  const cached = cache.get(url);
+  if (cached) return cached;
+  const document = await fetchPlannerDocument(url);
+  cache.set(url, document);
+  return document;
+}
 
+// redirects are off by default, if youre logged out sso bounces you and that
+// shows up as an opaqueredirect, modify turns them back on because its write
+// happens on the redirect target
+// dont use response.redirected for auth, planner writes redirect on success
 async function plannerFetch(
   url: string,
   options: PlannerFetchOptions = {},

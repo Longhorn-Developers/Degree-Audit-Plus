@@ -15,9 +15,9 @@ const SEASON_DIGITS: Record<SemesterSeason, string> = {
   Fall: "9",
 };
 
-export function ccyysToSemester(ccyys: Ccyys): StringSemester {
+export function ccyysToSemester(ccyys: Ccyys): StringSemester | null {
   const match = ccyys.match(/^(\d{4})([269])$/);
-  if (!match) throw new PlannerError("PLANNER_PAGE_CHANGED");
+  if (!match) return null;
   return `${CCYYS_SEASONS[match[2]]} ${Number(match[1])}`;
 }
 
@@ -34,9 +34,19 @@ export interface PlannerRowKey {
   seq: string;
 }
 
+// ut's planner id is the dept padded to 3 chars then the number, "M  110C"
+export function splitPlannerCourseId(courseId: string): {
+  department: string;
+  number: string;
+} {
+  return {
+    department: courseId.slice(0, 3).trim(),
+    number: courseId.slice(3).trim(),
+  };
+}
+
 export function plannerCourseIdToCode(courseId: string): CourseCode {
-  const department = courseId.slice(0, 3).trim();
-  const number = courseId.slice(3).trim();
+  const { department, number } = splitPlannerCourseId(courseId);
   return `${department} ${number}` as CourseCode;
 }
 
@@ -58,11 +68,13 @@ export interface PlannedCourseRow {
   expired: boolean;
 }
 
+// ut's course_type for a regular ut austin course
+export const REGULAR_COURSE_TYPE = "1";
+
 export interface PlannerCourseRequest {
   department: string;
   number: string;
   ccyys: Ccyys;
-  // "1" is a regular ut course
   courseType?: string;
   // "A" all (default), "L" lower division, "U" upper division, "G" grad
   level?: string;
@@ -84,8 +96,9 @@ export type PlannerResolution =
   | { kind: "resolved"; link: PlannerAddLink }
   | { kind: "topics"; options: PlannerAddLink[] };
 
-// what the planner should contain after a sync, topicId is only needed for
-// topic courses because ut lists one add link per topic
+// what the planner should contain after a sync
+// one target per course and term, planner rows dont record the topic so two
+// topics of the same course in one term cant be told apart
 export interface PlannerSyncTarget extends PlannerCourseRequest {
   topicId?: string | null;
 }

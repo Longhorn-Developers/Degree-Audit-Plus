@@ -107,7 +107,10 @@ Status for ADV 305 have been updated successfully." `key_course_seq` is
 unchanged by a modify, even when the term changes. **`pass_fail` must always be
 sent** (`Y` or `N`): omitting it makes UT silently ignore the whole submit.
 View Courses shows the current value in the Notes cell ("taken pass/fail").
-**Modify must follow its redirect:** `modify_planned_course/` only validates,
+The form's `semester` select uses the ccyys season digits (`2` Spring, `6`
+Summer, `9` Fall); Spring → Fall 2027 was confirmed live. Setting the `Referer`
+header on the fetch is enough — the entry page does not need to be loaded
+first. **Modify must follow its redirect:** `modify_planned_course/` only validates,
 then 302s to `view_planner/?action_code=M&…` and _that_ request performs the
 write. With `redirect: "manual"` nothing changes. Add and delete are unaffected
 (add writes before redirecting; delete never redirects).

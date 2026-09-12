@@ -226,7 +226,7 @@ describe("planner domain helpers", () => {
     expect(ccyysToSemester("20272")).toBe("Spring 2027");
     expect(ccyysToSemester("20266")).toBe("Summer 2026");
     expect(ccyysToSemester("20259")).toBe("Fall 2025");
-    expect(() => ccyysToSemester("20271")).toThrow("PLANNER_PAGE_CHANGED");
+    expect(ccyysToSemester("20271")).toBeNull();
   });
 
   test("converts semesters back to UT term codes", () => {

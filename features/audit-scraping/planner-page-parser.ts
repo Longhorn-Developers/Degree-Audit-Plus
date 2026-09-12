@@ -6,7 +6,7 @@ import {
   type PlannerRowKey,
 } from "@/domain/planner";
 
-const PLANNER_VIEW_URL =
+export const PLANNER_VIEW_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/planner/view_planner/";
 
 // semester cell is blank after the first row of a group so we grab the term
@@ -17,7 +17,7 @@ const NOTES_CELL = 3;
 const ACTIONS_CELL = 4;
 
 // ut double encodes ampersands in course titles so one &amp; survives parsing
-function collapseWhitespace(text: string | null | undefined): string {
+export function collapseWhitespace(text: string | null | undefined): string {
   return (text ?? "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 }
 
@@ -59,6 +59,8 @@ function parseRow(row: Element): PlannedCourseRow | null {
   );
 
   const notes = collapseWhitespace(cells[NOTES_CELL].textContent);
+  const semester = ccyysToSemester(key.ccyys);
+  if (!semester) throw new PlannerError("PLANNER_PAGE_CHANGED");
 
   return {
     key,
@@ -68,7 +70,7 @@ function parseRow(row: Element): PlannedCourseRow | null {
     notes,
     // the notes cell says "taken pass/fail" when the row is pass/fail
     passFail: /pass\/fail/i.test(notes),
-    semester: ccyysToSemester(key.ccyys),
+    semester,
     expired,
   };
 }
@@ -76,10 +78,10 @@ function parseRow(row: Element): PlannedCourseRow | null {
 // throws if the page doesnt look like the planner anymore so a broken
 // selector never gets mistaken for an empty planner
 export function assertPlannerPage(document: Document): void {
-  const heading = [...document.querySelectorAll("h2")].find(
-    (element) => collapseWhitespace(element.textContent) === "Student Planner",
-  );
-  if (!heading) throw new PlannerError("PLANNER_PAGE_CHANGED");
+  for (const heading of document.querySelectorAll("h2")) {
+    if (collapseWhitespace(heading.textContent) === "Student Planner") return;
+  }
+  throw new PlannerError("PLANNER_PAGE_CHANGED");
 }
 
 export function parsePlannerPage(document: Document): PlannedCourseRow[] {

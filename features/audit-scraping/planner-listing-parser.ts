@@ -1,16 +1,6 @@
-import {
-  courseCodeToPlannerCourseId,
-  PlannerError,
-  plannerCourseIdToCode,
-  type PlannerAddLink,
-} from "@/domain/planner";
+import { PlannerError, type PlannerAddLink } from "@/domain/planner";
 import type { CourseCode } from "@/domain/course";
-import { assertPlannerPage } from "./planner-page-parser";
-
-// ut double encodes ampersands in course titles so one &amp; survives parsing
-function collapseWhitespace(text: string | null | undefined): string {
-  return (text ?? "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
-}
+import { assertPlannerPage, collapseWhitespace } from "./planner-page-parser";
 
 // every page=4 link on a page=3 listing, hrefs are relative so they get
 // resolved against the listing url and kept verbatim otherwise
@@ -31,9 +21,7 @@ export function parsePlannerListing(
     }
 
     // the first cell has the code as ut prints it, fall back to building it
-    let code: CourseCode = plannerCourseIdToCode(
-      courseCodeToPlannerCourseId(department, number),
-    );
+    let code = `${department} ${number}` as CourseCode;
     const firstCell = anchor.closest("tr")?.querySelector("td");
     if (firstCell) {
       code = collapseWhitespace(firstCell.textContent) as CourseCode;
