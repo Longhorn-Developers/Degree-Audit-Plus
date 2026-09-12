@@ -2,7 +2,7 @@
 // content script on a UT page — the only context whose origin passes UT's
 // CSRF checks (extension-origin POSTs get 403).
 import type { CustomAuditRunRequest } from "@/domain/audit";
-import { isLoginPage } from "@/features/session/session";
+import { isLoginPage } from "@/features/session/login-page";
 import {
   markAuditRunPending,
   RUN_AUDIT_BUTTON_SELECTOR,

@@ -14,7 +14,7 @@ import {
   type PlannerRowKey,
   type PlannerSyncTarget,
 } from "@/domain/planner";
-import { isLoginPage } from "@/features/session/session";
+import { isLoginPage } from "@/features/session/login-page";
 import {
   parseNextListingUrl,
   parsePlannerListing,

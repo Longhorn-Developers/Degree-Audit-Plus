@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
+import { isLoginPage } from "./login-page";
 
 // Single owner of UT Direct login state: a cached value for instant UI, a
 // live probe for truth, and event-driven writers that keep the cache fresh.
@@ -68,13 +69,6 @@ export async function refreshLoginState(): Promise<boolean> {
 // a login form in the DOM means the session is gone.
 export function recordLoginStateFromPage(document: Document): void {
   void saveLoginState(!isLoginPage(document));
-}
-
-export function isLoginPage(document: Document): boolean {
-  return Boolean(
-    document.querySelector('form[action*="login"]') ||
-    document.querySelector('input[type="password"]'),
-  );
 }
 
 // Probe only when the session id actually changed, and never more often than this

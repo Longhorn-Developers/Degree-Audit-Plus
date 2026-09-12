@@ -4,7 +4,7 @@ import {
   getUncachedAuditIds,
   saveAuditHistory,
 } from "@/features/audit/audit-storage";
-import { isLoginPage } from "@/features/session/session";
+import { isLoginPage } from "@/features/session/login-page";
 import {
   sendRuntimeMessage,
   type FetchAuditResult,
