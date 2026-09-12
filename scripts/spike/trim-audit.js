@@ -116,8 +116,11 @@
       const p = new URL(link.getAttribute("href"), base).searchParams;
       if (!p.get("key_course_id")) continue;
       rows.push(
-        [p.get("key_course_id"), p.get("key_course_ccyys"), p.get("key_course_seq")]
-          .join("|"),
+        [
+          p.get("key_course_id"),
+          p.get("key_course_ccyys"),
+          p.get("key_course_seq"),
+        ].join("|"),
       );
     }
     return rows;
@@ -158,7 +161,10 @@
     console.table(runs);
 
     const med = (k) => {
-      const v = runs.map((x) => x[k]).filter((x) => x != null).sort((a, b) => a - b);
+      const v = runs
+        .map((x) => x[k])
+        .filter((x) => x != null)
+        .sort((a, b) => a - b);
       return v.length ? v[Math.floor(v.length / 2)] : null;
     };
     const out = keep("scrape", {
@@ -175,9 +181,13 @@
       ["download (bytes)", out.downloadMs],
       ["parse (ours)", out.parseMs],
     ].sort((a, b) => b[1] - a[1]);
-    log(`scrape median ${out.totalMs}ms — dominated by ${parts[0][0]} (${parts[0][1]}ms)`);
+    log(
+      `scrape median ${out.totalMs}ms — dominated by ${parts[0][0]} (${parts[0][1]}ms)`,
+    );
     if (out.gzip === "(none)" && out.decodedKb > 50) {
-      warn(`results page is ${out.decodedKb}KB uncompressed — download is a real cost`);
+      warn(
+        `results page is ${out.decodedKb}KB uncompressed — download is a real cost`,
+      );
     }
     return out;
   }
@@ -198,30 +208,63 @@
       const href = new URL(a.getAttribute("href"), url);
       if (href.origin !== new URL(BASE).origin) continue;
       const label = `${a.textContent} ${href.pathname}${href.search}`;
-      if (!/print|pdf|text|plain|export|download|csv|summary|compact/i.test(label))
+      if (
+        !/print|pdf|text|plain|export|download|csv|summary|compact/i.test(label)
+      )
         continue;
       if (seen.has(href.href)) continue;
       seen.add(href.href);
-      candidates.push({ text: a.textContent.trim().slice(0, 40), url: href.href });
+      candidates.push({
+        text: a.textContent.trim().slice(0, 40),
+        url: href.href,
+      });
     }
     // <link rel=alternate> is the polite way to advertise one, if UT does.
     for (const l of page.doc.querySelectorAll('link[rel~="alternate"][href]')) {
-      candidates.push({ text: `alternate ${l.getAttribute("type") ?? ""}`, url: new URL(l.getAttribute("href"), url).href });
+      candidates.push({
+        text: `alternate ${l.getAttribute("type") ?? ""}`,
+        url: new URL(l.getAttribute("href"), url).href,
+      });
     }
 
-    const rows = [{ text: "(current results page)", ms: page.ms.total, kb: page.kb.decoded, status: page.r.status }];
+    const rows = [
+      {
+        text: "(current results page)",
+        ms: page.ms.total,
+        kb: page.kb.decoded,
+        status: page.r.status,
+      },
+    ];
     for (const c of candidates.slice(0, 5)) {
       try {
         const alt = await timed(bust(c.url));
-        rows.push({ text: c.text, ms: alt.ms.total, kb: alt.kb.decoded, status: alt.r.status, url: c.url });
+        rows.push({
+          text: c.text,
+          ms: alt.ms.total,
+          kb: alt.kb.decoded,
+          status: alt.r.status,
+          url: c.url,
+        });
       } catch (e) {
-        rows.push({ text: c.text, ms: null, kb: null, status: "ERR", url: c.url });
+        rows.push({
+          text: c.text,
+          ms: null,
+          kb: null,
+          status: "ERR",
+          url: c.url,
+        });
       }
     }
     console.table(rows);
     keep("scrapeAlternatives", rows);
-    if (rows.length === 1) log("results page advertises no lighter representation — scrape stays as is.");
-    else log("Any row cheaper than the current page AND still containing requirement rows is a candidate.");
+    if (rows.length === 1)
+      log(
+        "results page advertises no lighter representation — scrape stays as is.",
+      );
+    else
+      log(
+        "Any row cheaper than the current page AND still containing requirement rows is a candidate.",
+      );
     return rows;
   }
 
@@ -243,16 +286,20 @@
       );
       if (!form) throw new Error("default audit form not found");
       const fields = {};
-      for (const el of form.elements) if (el.name && !el.disabled) fields[el.name] = el.value ?? "";
+      for (const el of form.elements)
+        if (el.name && !el.disabled) fields[el.name] = el.value ?? "";
       return { ms: page.ms.total, fields };
     };
     const a = await grab();
     await sleep(500);
     const b = await grab();
 
-    const changed = Object.keys(a.fields).filter((k) => a.fields[k] !== b.fields[k]);
+    const changed = Object.keys(a.fields).filter(
+      (k) => a.fields[k] !== b.fields[k],
+    );
     const nonCsrfChanged = changed.filter((k) => k !== "csrfmiddlewaretoken");
-    const cookieToken = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? null;
+    const cookieToken =
+      document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? null;
 
     const out = keep("form", {
       formGetMs: r0((a.ms + b.ms) / 2),
@@ -263,13 +310,18 @@
       // Django masks per-render tokens; the cookie is the unmasked secret. Any
       // masked token from this session validates, so caching one is fine —
       // this just says whether we could skip even that.
-      csrfTokenRotatesPerRender: a.fields.csrfmiddlewaretoken !== b.fields.csrfmiddlewaretoken,
+      csrfTokenRotatesPerRender:
+        a.fields.csrfmiddlewaretoken !== b.fields.csrfmiddlewaretoken,
     });
     console.table([out]);
     if (out.fieldsStable) {
-      log(`form GET (~${out.formGetMs}ms) can run once per session and be reused — fields are stable.`);
+      log(
+        `form GET (~${out.formGetMs}ms) can run once per session and be reused — fields are stable.`,
+      );
     } else {
-      warn(`fields change between fetches (${out.changedFields}) — form must be fetched per preview.`);
+      warn(
+        `fields change between fetches (${out.changedFields}) — form must be fetched per preview.`,
+      );
     }
     return out;
   }
@@ -281,20 +333,29 @@
    * fetching page=3 early (when the user picks a course) and keeping the
    * parsed link. That only works if the link is the same on every fetch.
    */
-  async function resolveStability(course = { dept: "C S", num: "331", ccyys: "20272" }) {
+  async function resolveStability(
+    course = { dept: "C S", num: "331", ccyys: "20272" },
+  ) {
     const listUrl =
       `${PLANNER_LIST}?page=3&course_ccyys=${encodeURIComponent(course.ccyys)}` +
       `&course_pass_fail=&s_pf=&course_type=1&dpt=${encodeURIComponent(course.dept)}&s_lvl=U`;
     const hrefsFor = (doc) =>
       [...doc.querySelectorAll('a[href*="page=4"]')]
         .map((a) => a.getAttribute("href"))
-        .filter((h) => new URL(h, PLANNER_LIST).searchParams.get("course_num")?.trim() === course.num);
+        .filter(
+          (h) =>
+            new URL(h, PLANNER_LIST).searchParams.get("course_num")?.trim() ===
+            course.num,
+        );
 
     const a = await timed(bust(listUrl), {}, { parse: true });
     await sleep(500);
     const b = await timed(bust(listUrl), {}, { parse: true });
-    const ha = hrefsFor(a.doc), hb = hrefsFor(b.doc);
-    const params = ha[0] ? [...new URL(ha[0], PLANNER_LIST).searchParams.keys()] : [];
+    const ha = hrefsFor(a.doc),
+      hb = hrefsFor(b.doc);
+    const params = ha[0]
+      ? [...new URL(ha[0], PLANNER_LIST).searchParams.keys()]
+      : [];
 
     const out = keep("resolve", {
       listMs: r0((a.ms.total + b.ms.total) / 2),
@@ -303,13 +364,19 @@
       stableAcrossFetches: ha.length > 0 && ha.join() === hb.join(),
       linkParams: params.join(","),
       // Long opaque values suggest a nonce; if none, the link is a pure key.
-      looksNonced: ha[0] ? /[0-9a-f]{16,}|[A-Za-z0-9+/=]{24,}/.test(ha[0]) : null,
+      looksNonced: ha[0]
+        ? /[0-9a-f]{16,}|[A-Za-z0-9+/=]{24,}/.test(ha[0])
+        : null,
     });
     console.table([out]);
     if (out.stableAcrossFetches && !out.looksNonced) {
-      log(`page=4 link is a stable key — prefetch page=3 when the course is picked; resolve leaves the critical path (~${REF.resolveMs}ms).`);
+      log(
+        `page=4 link is a stable key — prefetch page=3 when the course is picked; resolve leaves the critical path (~${REF.resolveMs}ms).`,
+      );
     } else if (out.linkFound) {
-      warn("page=4 link differs between fetches — resolve must stay in the pipeline.");
+      warn(
+        "page=4 link differs between fetches — resolve must stay in the pipeline.",
+      );
     }
     return out;
   }
@@ -324,8 +391,11 @@
    *
    * Mutates: adds one row, deletes it via poc.testDelete.
    */
-  async function addCost(course = { dept: "C S", num: "324E", ccyys: "20272" }) {
-    if (typeof poc === "undefined") throw new Error("Load planner-poc.js first.");
+  async function addCost(
+    course = { dept: "C S", num: "324E", ccyys: "20272" },
+  ) {
+    if (typeof poc === "undefined")
+      throw new Error("Load planner-poc.js first.");
 
     const before = await timed(bust(PLANNER_VIEW), {}, { parse: true });
     const beforeKeys = new Set(plannerRowsIn(before.doc));
@@ -360,19 +430,29 @@
     console.table([out]);
 
     if (out.landingMatchesPlanner) {
-      log(`landing page IS the planner — skip the verify re-read (~${out.verifyReadMs}ms). Add can be ~${out.page4Ms + out.landingTtfbMs + out.landingDownloadMs}ms.`);
+      log(
+        `landing page IS the planner — skip the verify re-read (~${out.verifyReadMs}ms). Add can be ~${out.page4Ms + out.landingTtfbMs + out.landingDownloadMs}ms.`,
+      );
     } else {
-      log(`landing page doesn't carry the rows — with redirect:"manual" add is ~${out.page4Ms}ms + verify read ~${out.verifyReadMs}ms.`);
+      log(
+        `landing page doesn't carry the rows — with redirect:"manual" add is ~${out.page4Ms}ms + verify read ~${out.verifyReadMs}ms.`,
+      );
     }
 
     // Cleanup — hand the row to poc so cleanup() knows about it too.
     if (created.length === 1) {
       const [id, ccyys, seq] = created[0].split("|");
-      const row = { key_course_id: id, key_course_ccyys: ccyys, key_course_seq: seq };
+      const row = {
+        key_course_id: id,
+        key_course_ccyys: ccyys,
+        key_course_seq: seq,
+      };
       poc.state.added.push(row);
       await poc.testDelete(row);
     } else {
-      warn(`expected 1 new row, got ${created.length} — run poc.readPlanner() and clean up manually`);
+      warn(
+        `expected 1 new row, got ${created.length} — run poc.readPlanner() and clean up manually`,
+      );
     }
     return out;
   }
@@ -400,9 +480,13 @@
     );
     if (!form) throw new Error("default audit form not found");
     const params = new URLSearchParams();
-    for (const el of form.elements) if (el.name && !el.disabled) params.append(el.name, el.value ?? "");
+    for (const el of form.elements)
+      if (el.name && !el.disabled) params.append(el.name, el.value ?? "");
     params.set("incl_planned_crswk", "Y");
-    const action = new URL(form.getAttribute("action") || "", NEW_AUDIT).toString();
+    const action = new URL(
+      form.getAttribute("action") || "",
+      NEW_AUDIT,
+    ).toString();
     const csrf = params.get("csrfmiddlewaretoken");
 
     const post = await timed(action, {
@@ -421,14 +505,21 @@
     // silently rejected.
     const postType = post.r.type;
 
-    let rowMs = null, linkMs = null, auditId = null, polls = 0;
+    let rowMs = null,
+      linkMs = null,
+      auditId = null,
+      polls = 0;
     const deadline = now() + 90_000;
     while (now() < deadline) {
       polls++;
       const page = await timed(bust(HISTORY), {}, { parse: true });
       const fresh = parseHistory(page.doc).find((r) => !beforeKeys.has(r.key));
       if (fresh && rowMs === null) rowMs = r0(now() - tPosted);
-      if (fresh?.linked) { linkMs = r0(now() - tPosted); auditId = fresh.auditId; break; }
+      if (fresh?.linked) {
+        linkMs = r0(now() - tPosted);
+        auditId = fresh.auditId;
+        break;
+      }
       await sleep(intervalMs);
     }
 
@@ -448,12 +539,18 @@
     });
     console.table([out]);
     if (postType !== "opaqueredirect") {
-      warn(`POST returned type=${postType} status=${post.r.status} — expected opaqueredirect. Check accepted.`);
+      warn(
+        `POST returned type=${postType} status=${post.r.status} — expected opaqueredirect. Check accepted.`,
+      );
     }
     if (out.accepted) {
-      log(`POST without following the redirect: ${out.postMs}ms (was ~${REF.submitMs}ms). Audit ${auditId} queued fine.`);
+      log(
+        `POST without following the redirect: ${out.postMs}ms (was ~${REF.submitMs}ms). Audit ${auditId} queued fine.`,
+      );
     } else {
-      warn("no new history row within 90 s — the manual-redirect POST may not have been accepted.");
+      warn(
+        "no new history row within 90 s — the manual-redirect POST may not have been accepted.",
+      );
     }
     return out;
   }
@@ -476,7 +573,8 @@
     runs = 3,
     { intervalMs = 150 } = {},
   ) {
-    if (typeof poc === "undefined") throw new Error("Load planner-poc.js first.");
+    if (typeof poc === "undefined")
+      throw new Error("Load planner-poc.js first.");
 
     // --- once per session -------------------------------------------------
     const tForm = now();
@@ -488,10 +586,16 @@
     );
     if (!form) throw new Error("default audit form not found");
     const baseParams = [];
-    for (const el of form.elements) if (el.name && !el.disabled) baseParams.push([el.name, el.value ?? ""]);
-    const action = new URL(form.getAttribute("action") || "", NEW_AUDIT).toString();
+    for (const el of form.elements)
+      if (el.name && !el.disabled) baseParams.push([el.name, el.value ?? ""]);
+    const action = new URL(
+      form.getAttribute("action") || "",
+      NEW_AUDIT,
+    ).toString();
     const sessionPrepMs = r0(now() - tForm);
-    log(`session prep (form fields, once): ${sessionPrepMs}ms — not on any run's path`);
+    log(
+      `session prep (form fields, once): ${sessionPrepMs}ms — not on any run's path`,
+    );
 
     const results = [];
     let failures = 0;
@@ -514,7 +618,10 @@
 
         // --- add, unfollowed -----------------------------------------------
         const tAdd = now();
-        const add = await timed(new URL(resolved.href, PLANNER_LIST).toString(), { redirect: "manual" });
+        const add = await timed(
+          new URL(resolved.href, PLANNER_LIST).toString(),
+          { redirect: "manual" },
+        );
         t.addMs = r0(now() - tAdd);
         t.addType = add.r.type;
 
@@ -524,7 +631,11 @@
         created = plannerRowsIn(after.doc).filter((k) => !beforePlanner.has(k));
         if (created.length === 1) {
           const [id, ccyys, seq] = created[0].split("|");
-          poc.state.added.push({ key_course_id: id, key_course_ccyys: ccyys, key_course_seq: seq });
+          poc.state.added.push({
+            key_course_id: id,
+            key_course_ccyys: ccyys,
+            key_course_seq: seq,
+          });
         } else {
           throw new Error(`expected 1 new planner row, got ${created.length}`);
         }
@@ -546,16 +657,25 @@
         const tPosted = now();
         t.submitMs = r0(tPosted - tPost);
         t.submitType = post.r.type;
-        if (post.r.type !== "opaqueredirect") throw new Error(`submit not accepted (type=${post.r.type}, status=${post.r.status})`);
+        if (post.r.type !== "opaqueredirect")
+          throw new Error(
+            `submit not accepted (type=${post.r.type}, status=${post.r.status})`,
+          );
 
         // --- poll ------------------------------------------------------------
-        let rowMs = null, auditId = null;
+        let rowMs = null,
+          auditId = null;
         const deadline = now() + 90_000;
         while (now() < deadline) {
           const page = await timed(bust(HISTORY), {}, { parse: true });
-          const fresh = parseHistory(page.doc).find((r) => !beforeHist.has(r.key));
+          const fresh = parseHistory(page.doc).find(
+            (r) => !beforeHist.has(r.key),
+          );
           if (fresh && rowMs === null) rowMs = r0(now() - tPosted);
-          if (fresh?.linked) { auditId = fresh.auditId; break; }
+          if (fresh?.linked) {
+            auditId = fresh.auditId;
+            break;
+          }
           await sleep(intervalMs);
         }
         if (!auditId) throw new Error("no linked audit within 90 s");
@@ -564,7 +684,11 @@
 
         // --- scrape ----------------------------------------------------------
         const tScrape = now();
-        const res = await timed(`${BASE}/results/${auditId}/`, {}, { parse: true });
+        const res = await timed(
+          `${BASE}/results/${auditId}/`,
+          {},
+          { parse: true },
+        );
         t.scrapeMs = r0(now() - tScrape);
         t.requirementRows = res.doc.querySelectorAll("tr").length;
         t.auditId = auditId;
@@ -574,7 +698,10 @@
         failures = 0;
       } catch (e) {
         warn(`run ${i + 1} failed:`, e);
-        if (++failures >= 2) { warn("stopping after 2 consecutive failures"); break; }
+        if (++failures >= 2) {
+          warn("stopping after 2 consecutive failures");
+          break;
+        }
       } finally {
         if (created.length === 1) {
           const [id, ccyys, seq] = created[0].split("|");
@@ -587,7 +714,10 @@
           const check = await timed(bust(PLANNER_VIEW), {}, { parse: true });
           const gone = !plannerRowsIn(check.doc).includes(created[0]);
           t.deleteMs = r0(now() - tDel);
-          if (gone) poc.state.added = poc.state.added.filter((r) => r.key_course_seq !== seq);
+          if (gone)
+            poc.state.added = poc.state.added.filter(
+              (r) => r.key_course_seq !== seq,
+            );
           else warn("row survived delete — run poc.cleanup()", created[0]);
         }
       }
@@ -596,17 +726,31 @@
     if (results.length) {
       console.table(results);
       const p50 = (k) => {
-        const v = results.map((r) => r[k]).filter((x) => x != null).sort((a, b) => a - b);
+        const v = results
+          .map((r) => r[k])
+          .filter((x) => x != null)
+          .sort((a, b) => a - b);
         return v.length ? v[Math.floor(v.length / 2)] : null;
       };
-      const stages = ["readsMs", "addMs", "verifyMs", "submitMs", "detectMs", "genMs", "scrapeMs", "totalMs"];
+      const stages = [
+        "readsMs",
+        "addMs",
+        "verifyMs",
+        "submitMs",
+        "detectMs",
+        "genMs",
+        "scrapeMs",
+        "totalMs",
+      ];
       const row = Object.fromEntries(stages.map((k) => [k, p50(k)]));
       row.sessionPrepMs = sessionPrepMs;
       row.referenceTotalMs = 3639;
       row.savedMs = 3639 - row.totalMs;
       console.table([row]);
       keep("trimmed", { results, p50: row });
-      log(`trimmed preview p50 ${row.totalMs}ms vs ${row.referenceTotalMs}ms reference — UT (gen+scrape) is ${Math.round(((row.genMs + row.scrapeMs) / row.totalMs) * 100)}% of it.`);
+      log(
+        `trimmed preview p50 ${row.totalMs}ms vs ${row.referenceTotalMs}ms reference — UT (gen+scrape) is ${Math.round(((row.genMs + row.scrapeMs) / row.totalMs) * 100)}% of it.`,
+      );
       return { results, p50: row };
     }
     warn("no runs completed");
@@ -618,25 +762,62 @@
     const R = state.results;
     const rows = [];
     if (R.submit) {
-      rows.push({ stage: "submit POST", nowMs: REF.submitMs, achievableMs: R.submit.postMs, how: 'redirect:"manual"' });
-      rows.push({ stage: "history snapshot", nowMs: R.submit.historySnapshotMs, achievableMs: 0, how: "overlap with resolve (proven)" });
+      rows.push({
+        stage: "submit POST",
+        nowMs: REF.submitMs,
+        achievableMs: R.submit.postMs,
+        how: 'redirect:"manual"',
+      });
+      rows.push({
+        stage: "history snapshot",
+        nowMs: R.submit.historySnapshotMs,
+        achievableMs: 0,
+        how: "overlap with resolve (proven)",
+      });
     }
     if (R.form) {
-      rows.push({ stage: "audit form GET", nowMs: R.form.formGetMs, achievableMs: R.form.fieldsStable ? 0 : R.form.formGetMs, how: R.form.fieldsStable ? "fetch once per session" : "must stay" });
+      rows.push({
+        stage: "audit form GET",
+        nowMs: R.form.formGetMs,
+        achievableMs: R.form.fieldsStable ? 0 : R.form.formGetMs,
+        how: R.form.fieldsStable ? "fetch once per session" : "must stay",
+      });
     }
     if (R.add) {
       const a = R.add;
       const ach = a.landingMatchesPlanner
         ? a.page4Ms + a.landingTtfbMs + a.landingDownloadMs
         : a.page4Ms + a.verifyReadMs;
-      rows.push({ stage: "add + verify", nowMs: a.addTotalMs + a.verifyReadMs, achievableMs: ach, how: a.landingMatchesPlanner ? "landing page is the verify read" : 'redirect:"manual" + one verify read' });
+      rows.push({
+        stage: "add + verify",
+        nowMs: a.addTotalMs + a.verifyReadMs,
+        achievableMs: ach,
+        how: a.landingMatchesPlanner
+          ? "landing page is the verify read"
+          : 'redirect:"manual" + one verify read',
+      });
     }
     if (R.resolve) {
-      rows.push({ stage: "resolve (page=3)", nowMs: REF.resolveMs, achievableMs: R.resolve.stableAcrossFetches && !R.resolve.looksNonced ? 0 : REF.resolveMs, how: R.resolve.stableAcrossFetches ? "prefetch at course pick" : "must stay" });
+      rows.push({
+        stage: "resolve (page=3)",
+        nowMs: REF.resolveMs,
+        achievableMs:
+          R.resolve.stableAcrossFetches && !R.resolve.looksNonced
+            ? 0
+            : REF.resolveMs,
+        how: R.resolve.stableAcrossFetches
+          ? "prefetch at course pick"
+          : "must stay",
+      });
     }
     if (R.scrape) {
       const s = R.scrape;
-      rows.push({ stage: "scrape", nowMs: s.totalMs, achievableMs: s.ttfbMs + s.downloadMs, how: `parse ${s.parseMs}ms is ours; ttfb ${s.ttfbMs}ms is UT` });
+      rows.push({
+        stage: "scrape",
+        nowMs: s.totalMs,
+        achievableMs: s.ttfbMs + s.downloadMs,
+        how: `parse ${s.parseMs}ms is ours; ttfb ${s.ttfbMs}ms is UT`,
+      });
     }
     for (const r of rows) r.savedMs = r.nowMs - r.achievableMs;
     console.table(rows);

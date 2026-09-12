@@ -240,9 +240,9 @@ download / parse.
 
 **`trim.submitCost()`** — POST with `redirect: "manual"`:
 
-| historySnapshotMs | formGetMs | postMs | postType | accepted | rowVisibleMs | linkMs | genMs | polls | savedVsFollowMs |
-|---|---|---|---|---|---|---|---|---|---|
-| 123 | 110 | **149** | `opaqueredirect` | true | 140 | 2144 | 2004 | 7 | **356** |
+| historySnapshotMs | formGetMs | postMs  | postType         | accepted | rowVisibleMs | linkMs | genMs | polls | savedVsFollowMs |
+| ----------------- | --------- | ------- | ---------------- | -------- | ------------ | ------ | ----- | ----- | --------------- |
+| 123               | 110       | **149** | `opaqueredirect` | true     | 140          | 2144   | 2004  | 7     | **356**         |
 
 The ~505 ms submit was ~150 ms of POST plus ~350 ms downloading the
 `requests/history/` page UT redirects to. Not following the redirect loses
@@ -250,14 +250,14 @@ nothing: the audit queued and its row was visible 140 ms after the POST.
 
 **`trim.summary()`** (folds in the other probes):
 
-| stage | nowMs | achievableMs | how | savedMs |
-|---|---|---|---|---|
-| submit POST | 505 | 149 | `redirect:"manual"` | 356 |
-| history snapshot | 123 | 0 | overlap with resolve (proven) | 123 |
-| audit form GET | 111 | 0 | fetch once per session (`fieldsStable: true`) | 111 |
-| add + verify | 331 | 213 | `redirect:"manual"` + one verify read (landing page does not list rows) | 118 |
-| resolve (page=3) | 128 | 0 | prefetch at course pick (link stable, no nonce) | 128 |
-| scrape | 382 | 379 | parse 8 ms is ours; TTFB 376 ms is UT | 3 |
+| stage            | nowMs | achievableMs | how                                                                     | savedMs |
+| ---------------- | ----- | ------------ | ----------------------------------------------------------------------- | ------- |
+| submit POST      | 505   | 149          | `redirect:"manual"`                                                     | 356     |
+| history snapshot | 123   | 0            | overlap with resolve (proven)                                           | 123     |
+| audit form GET   | 111   | 0            | fetch once per session (`fieldsStable: true`)                           | 111     |
+| add + verify     | 331   | 213          | `redirect:"manual"` + one verify read (landing page does not list rows) | 118     |
+| resolve (page=3) | 128   | 0            | prefetch at course pick (link stable, no nonce)                         | 128     |
+| scrape           | 382   | 379          | parse 8 ms is ours; TTFB 376 ms is UT                                   | 3       |
 
 **Total cuttable: ~839 ms.** Critical path ≈ 3.0 s (was 3.6 s).
 
@@ -274,11 +274,11 @@ real via `poc.readPlanner()`.
 (form fetched once: 322 ms; resolve + history + planner snapshots in parallel;
 `redirect: "manual"` on page=4 and on the POST; one verify read; 150 ms poll):
 
-| run | readsMs | addMs | addType | verifyMs | submitMs | submitType | detectMs | genMs | scrapeMs | totalMs | auditId |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 239 | 107 | opaqueredirect | 324 | 149 | opaqueredirect | 154 | **10600** | 486 | 12060 | 100018492562 |
-| 2 | 136 | 93 | opaqueredirect | 112 | 151 | opaqueredirect | 155 | **6154** | 494 | 7295 | 100018492564 |
-| 3 | 145 | 104 | opaqueredirect | 128 | 158 | opaqueredirect | 154 | 2685 | 445 | 3819 | 100018492565 |
+| run | readsMs | addMs | addType        | verifyMs | submitMs | submitType     | detectMs | genMs     | scrapeMs | totalMs | auditId      |
+| --- | ------- | ----- | -------------- | -------- | -------- | -------------- | -------- | --------- | -------- | ------- | ------------ |
+| 1   | 239     | 107   | opaqueredirect | 324      | 149      | opaqueredirect | 154      | **10600** | 486      | 12060   | 100018492562 |
+| 2   | 136     | 93    | opaqueredirect | 112      | 151      | opaqueredirect | 155      | **6154**  | 494      | 7295    | 100018492564 |
+| 3   | 145     | 104   | opaqueredirect | 128      | 158      | opaqueredirect | 154      | 2685      | 445      | 3819    | 100018492565 |
 
 Our stages all landed on prediction (add ~100, submit ~150, detect ~155,
 verify ~120; manual redirect works on page=4 too). Ours excluding UT ≈ 680 ms
@@ -289,12 +289,12 @@ estimate.
 
 **Interleaved A/B (old submit path vs trimmed, alternating, 4 audits):**
 
-| pair | path | submitMs | detectMs | genMs | submit→link | auditId |
-|---|---|---|---|---|---|---|
-| 1 | old (`verifyTiming`) | 464 | 148 | 3060 | 3672 | 100018492579 |
-| 1 | trimmed | 148 | 158 | 2160 | 2466 | 100018492580 |
-| 2 | old (`verifyTiming`) | 443 | 160 | 2466 | 3069 | 100018492581 |
-| 2 | trimmed | 167 | 138 | 2275 | 2621 | 100018492582 |
+| pair | path                 | submitMs | detectMs | genMs | submit→link | auditId      |
+| ---- | -------------------- | -------- | -------- | ----- | ----------- | ------------ |
+| 1    | old (`verifyTiming`) | 464      | 148      | 3060  | 3672        | 100018492579 |
+| 1    | trimmed              | 148      | 158      | 2160  | 2466        | 100018492580 |
+| 2    | old (`verifyTiming`) | 443      | 160      | 2466  | 3069        | 100018492581 |
+| 2    | trimmed              | 167      | 138      | 2275  | 2621        | 100018492582 |
 
 Trimmed totals: 3343 ms and 3507 ms including `readsMs` 234 / 210 (pick-time
 in production). Ex-reads and normalised to a 2075 ms generation: **~3.0–3.1 s**.
@@ -315,11 +315,11 @@ unproven and not needed for a decision.
 
 ## Summary for DAP-115
 
-| Question                           | Answer                                                                                                                                                      |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Question                           | Answer                                                                                                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Preview round-trip (DAP-124)       | ~3.6 s (n=3) → **~3.0–3.1 s with trims, proven end to end** (A/B, n=4). UT generation median 2.3 s but 2.0–10.6 s observed (n=11); worst full preview 12.1 s. ✅ Eager-verify holds; no DAP-114 flag, margin ~3 s. |
-| How to submit a planned audit      | POST `requests/test_profile_button/` (default-degree Run Audit form) with `incl_planned_crswk=Y`; success = redirect to `requests/history/`.                |
-| Parallel planner adds              | 🚩 **Race confirmed** — 2 of 3 parallel runs lost a write silently (serial baseline 3/3). Serialize writes + verify-after-write in 5.2.                     |
-| Modify submit shape (DAP-129)      | GET `planner/modify_planned_course/?action=M&course_type=1&course=…&fos=…&seq=…&key_ccyys=…&fos=…&course=…&semester=…&year=…&pass_fail=…`.                  |
-| Where can the client run (DAP-123) | Service worker fetches UT with cookies (`cookiesRodeAlong: true`); no `DOMParser`. Hybrid: fetch in worker, parse in offscreen doc/content script.          |
-| Auth gate (DAP-123)                | `fetch(url, { redirect: "manual" })`: logged out → `type: "opaqueredirect"`, status 0; logged in → `basic`/200. Don't use `response.redirected` for writes. |
+| How to submit a planned audit      | POST `requests/test_profile_button/` (default-degree Run Audit form) with `incl_planned_crswk=Y`; success = redirect to `requests/history/`.                                                                       |
+| Parallel planner adds              | 🚩 **Race confirmed** — 2 of 3 parallel runs lost a write silently (serial baseline 3/3). Serialize writes + verify-after-write in 5.2.                                                                            |
+| Modify submit shape (DAP-129)      | GET `planner/modify_planned_course/?action=M&course_type=1&course=…&fos=…&seq=…&key_ccyys=…&fos=…&course=…&semester=…&year=…&pass_fail=…`.                                                                         |
+| Where can the client run (DAP-123) | Service worker fetches UT with cookies (`cookiesRodeAlong: true`); no `DOMParser`. Hybrid: fetch in worker, parse in offscreen doc/content script.                                                                 |
+| Auth gate (DAP-123)                | `fetch(url, { redirect: "manual" })`: logged out → `type: "opaqueredirect"`, status 0; logged in → `basic`/200. Don't use `response.redirected` for writes.                                                        |

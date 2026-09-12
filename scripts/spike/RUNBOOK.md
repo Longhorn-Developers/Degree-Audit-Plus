@@ -682,7 +682,7 @@ printed, then re-submit once and pass the resulting page HTML plus that ID.
 
 ### What we already know is NOT worth doing
 
-(But see "Trim our 25%" below — the *submit* figure was not decomposed, and
+(But see "Trim our 25%" below — the _submit_ figure was not decomposed, and
 the ~505 ms turns out to include a page we download and discard.)
 
 - **Polling faster than ~150 ms** — the fetch (~137 ms) dominates, so a shorter
@@ -704,13 +704,13 @@ Timing API into redirect / TTFB / download / parse, so "UT server time" and
 
 ### Hypotheses, ranked by expected saving
 
-| # | stage | today | hypothesis | prediction if true |
-| - | ----- | ----- | ---------- | ------------------ |
-| 1 | submit | ~505 ms | We follow the POST's redirect to `requests/history/` (353 ms on its own) and discard the HTML. | POST with `redirect: "manual"` returns in ~150 ms as `opaqueredirect`, and the audit still queues (row appears in history). |
-| 2 | add | ~345 ms | It's three things: the `page=4` request, the redirect landing page, and a second planner read to verify. The landing page (`planner/ut_course/`) may already list the rows. | Resource Timing shows `page4Ms` ≈ 100 ms; `landingMatchesPlanner: true` means the verify read is free. |
-| 3 | hidden fetches | ~350 ms, **not in the table** | The audit form GET, the history snapshot and the planner snapshot run every preview. The form's hidden fields don't change within a session. | `formReuse` reports `fieldsStable: true` → the form GET is once per session. History snapshot overlaps resolve (already proven). |
-| 4 | resolve | ~128 ms | The `page=3` listing is stable, so it can be fetched **when the user picks the course**, not when they hit preview. Still parsed, never constructed — the design rule holds. | `stableAcrossFetches: true`, `looksNonced: false`. |
-| 5 | scrape | ~395 ms | The number includes DOMParser. Split it: if TTFB dominates, UT is rendering the audit and it's immovable; if download or parse dominates, it's ours. | `scrapeCost` names the dominant part; `scrapeAlternatives` lists any lighter representation UT itself links to. |
+| #   | stage          | today                         | hypothesis                                                                                                                                                                   | prediction if true                                                                                                               |
+| --- | -------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | submit         | ~505 ms                       | We follow the POST's redirect to `requests/history/` (353 ms on its own) and discard the HTML.                                                                               | POST with `redirect: "manual"` returns in ~150 ms as `opaqueredirect`, and the audit still queues (row appears in history).      |
+| 2   | add            | ~345 ms                       | It's three things: the `page=4` request, the redirect landing page, and a second planner read to verify. The landing page (`planner/ut_course/`) may already list the rows.  | Resource Timing shows `page4Ms` ≈ 100 ms; `landingMatchesPlanner: true` means the verify read is free.                           |
+| 3   | hidden fetches | ~350 ms, **not in the table** | The audit form GET, the history snapshot and the planner snapshot run every preview. The form's hidden fields don't change within a session.                                 | `formReuse` reports `fieldsStable: true` → the form GET is once per session. History snapshot overlaps resolve (already proven). |
+| 4   | resolve        | ~128 ms                       | The `page=3` listing is stable, so it can be fetched **when the user picks the course**, not when they hit preview. Still parsed, never constructed — the design rule holds. | `stableAcrossFetches: true`, `looksNonced: false`.                                                                               |
+| 5   | scrape         | ~395 ms                       | The number includes DOMParser. Split it: if TTFB dominates, UT is rendering the audit and it's immovable; if download or parse dominates, it's ours.                         | `scrapeCost` names the dominant part; `scrapeAlternatives` lists any lighter representation UT itself links to.                  |
 
 If 1–4 all hold, the pipeline's own cost drops from ~1.5 s to roughly
 **~0.6 s** and the preview lands at **~2.7 s** instead of ~3.6 s. Submit alone
@@ -813,3 +813,47 @@ end to end. See FINDINGS.md § Trim audit.
   the row exists. Trimming the submit's redirect is a different thing.
 - **Parallel planner writes** — still unsafe.
 - **Polling faster** — still fetch-bound.
+
+## Does the planned course actually change the audit? (the untested link)
+
+5.1 proved the row lands in the planner and that planned-inclusive audits run.
+It never compared two audit results, so **"UT applies the planned course to a
+requirement" is still an assumption** — the premise the whole feature rests on.
+
+`effect-check.js` closes it:
+
+```js
+await effect.run({ dept: "C S", num: "324E", ccyys: "20272" });
+```
+
+Baseline audit (planned **excluded**) → add the course → planned-inclusive
+audit → diff → delete the course. **Creates two real audits** and one planner
+add/delete.
+
+Pick a course you have **not** taken and is **not** already planned, or the
+diff is empty for an uninteresting reason — the probe warns when it spots the
+course already in the baseline.
+
+**Reading the result:**
+
+| Output                                            | Meaning                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `courseAppears: true` + `changedRequirements > 0` | ✅ Premise proven — UT applied it                                                    |
+| `courseAppears: true`, no requirement change      | Listed but unapplied — 5.4's `unappliedCourses` case is real                         |
+| `identical: true`                                 | 🚩 UT ignored it. Either the planned flag didn't take or the course fulfills nothing |
+| `courseWasAlreadyThere: true`                     | Bad test course — pick another                                                       |
+
+### Re-verifying the planner add itself
+
+Already proven (`add.works: true`, 2→3 rows, confirmed by delete removing
+exactly that row), but to reproduce:
+
+```js
+await poc.readPlanner(); // before
+const row = await poc.testAdd({ dept: "C S", num: "324E", ccyys: "20272" });
+await poc.testDelete(row); // clean up
+```
+
+The check is a **re-read of `view_planner`**, never the redirect response —
+`page=4` returns `redirected: true` on success, which an earlier version of
+this harness misread as a dead session.
