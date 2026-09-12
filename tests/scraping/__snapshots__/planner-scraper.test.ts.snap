@@ -1,0 +1,32 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`planner View Courses parser parses a real UT planner capture 1`] = `
+[
+  {
+    "code": "ARA 601C",
+    "courseType": "1",
+    "expired": false,
+    "key": {
+      "ccyys": "20272",
+      "courseId": "ARA601C",
+      "seq": "999",
+    },
+    "notes": "Planned residence",
+    "semester": "Spring 2027",
+    "title": "INTENSIVE ARABIC I",
+  },
+  {
+    "code": "M 110C",
+    "courseType": "1",
+    "expired": false,
+    "key": {
+      "ccyys": "20272",
+      "courseId": "M  110C",
+      "seq": "998",
+    },
+    "notes": "Planned residence",
+    "semester": "Spring 2027",
+    "title": "CONFERENCE COURSE",
+  },
+]
+`;
