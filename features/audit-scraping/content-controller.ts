@@ -10,6 +10,7 @@ import {
   watchForAuditRunClicks,
 } from "./audit-history-sync";
 import { runAudit } from "./audit-runner";
+import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
 const SYNC_PAGE_PATTERNS = [
@@ -39,6 +40,13 @@ export function startAuditContentController(document: Document): void {
     (message: ExtensionMessage, _sender, sendResponse) => {
       if (message.type === "FETCH_AUDIT") {
         void fetchAuditResults(message.auditId).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
+
+      if (isPlannerMessage(message)) {
+        void handlePlannerMessage(message).then((result) =>
           sendMessageResponse(message, sendResponse, result),
         );
         return true;

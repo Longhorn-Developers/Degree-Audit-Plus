@@ -10,8 +10,8 @@ import {
 import {
   parseNextListingUrl,
   parsePlannerListing,
-} from "../../features/audit-scraping/planner-listing-parser";
-import { parsePlannerPage } from "../../features/audit-scraping/planner-page-parser";
+  parsePlannerPage,
+} from "../../features/audit-scraping/planner-client";
 
 const LISTING_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/planner/ut_course/?page=3&course_ccyys=20272&course_pass_fail=&s_pf=&course_type=1&dpt=ADV&s_lvl=U";

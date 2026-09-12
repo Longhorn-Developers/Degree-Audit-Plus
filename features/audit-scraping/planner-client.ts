@@ -1,41 +1,37 @@
 // runs in a content script on a ut page same as audit-runner so cookies
 // come along for free and DOMParser exists
+import type { CourseCode } from "@/domain/course";
 import {
+  ccyysToSemester,
   courseCodeToPlannerCourseId,
   PlannerError,
+  plannerCourseIdToCode,
   REGULAR_COURSE_TYPE,
-  semesterToCcyys,
-  splitPlannerCourseId,
   type PlannerAddLink,
   type PlannerCourseRequest,
   type PlannedCourseRow,
-  type PlannerModifyChanges,
   type PlannerResolution,
   type PlannerRowKey,
   type PlannerSyncTarget,
 } from "@/domain/planner";
 import { isLoginPage } from "@/features/session/login-page";
-import {
-  parseNextListingUrl,
-  parsePlannerListing,
-} from "./planner-listing-parser";
-import { parsePlannerPage, PLANNER_VIEW_URL } from "./planner-page-parser";
 
+const PLANNER_VIEW_URL =
+  "https://utdirect.utexas.edu/apps/degree/audits/planner/view_planner/";
 const PLANNER_LISTING_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/planner/ut_course/";
-const PLANNER_MODIFY_URL =
-  "https://utdirect.utexas.edu/apps/degree/audits/planner/modify_planned_course/";
 
 // a department listing is 40 courses per page, this just stops a broken
 // next link from looping forever
 const MAX_LISTING_PAGES = 10;
 
 type ListingCache = Map<string, Document>;
-type PlannerFetchOptions = { referrer?: string; redirect?: RequestRedirect };
 
 // parallel planner writes silently drop rows so every write waits its turn
 // this queue lives in one content script, two ut tabs can still race
 let lastWrite: Promise<unknown> = Promise.resolve();
+
+// ---------------------------------------------------------------- public api
 
 export async function fetchPlannedCourses(): Promise<PlannedCourseRow[]> {
   const document = await fetchPlannerDocument(PLANNER_VIEW_URL);
@@ -54,88 +50,6 @@ export function addCourse(link: PlannerAddLink): Promise<PlannedCourseRow> {
 
 export function deleteCourse(key: PlannerRowKey): Promise<void> {
   return runOneAtATime(() => performDelete(key));
-}
-
-export function modifyCourse(
-  row: PlannedCourseRow,
-  changes: PlannerModifyChanges,
-): Promise<PlannedCourseRow> {
-  return runOneAtATime(async () => {
-    const before = await fetchPlannedCourses();
-    const current = findRow(
-      before,
-      row.key.courseId,
-      row.key.ccyys,
-      row.key.seq,
-    );
-    if (!current) {
-      throw new PlannerError("ROW_NOT_FOUND");
-    }
-
-    // ut only accepts the modify submit if the referer is its own modify page
-    // add and delete dont care, this one does
-    const entryParams = new URLSearchParams();
-    entryParams.set("key_course_id", current.key.courseId);
-    entryParams.set("key_course_ccyys", current.key.ccyys);
-    entryParams.set("key_course_seq", current.key.seq);
-    entryParams.set(
-      "key_course_type",
-      current.courseType ?? REGULAR_COURSE_TYPE,
-    );
-    entryParams.set("action_code", "M");
-    const entryUrl = PLANNER_MODIFY_URL + "?" + entryParams.toString();
-
-    let targetCcyys = current.key.ccyys;
-    if (changes.semester) {
-      targetCcyys = semesterToCcyys(changes.semester);
-    }
-    const passFail = changes.passFail ?? current.passFail;
-    const { department, number } = splitPlannerCourseId(current.key.courseId);
-    const year = targetCcyys.slice(0, 4);
-    const seasonDigit = targetCcyys.slice(4);
-
-    // param names here dont match the modify links, and fos + course show up
-    // twice because thats what the real form sends
-    const params = new URLSearchParams();
-    params.append("action", "M");
-    params.append("course_type", current.courseType ?? REGULAR_COURSE_TYPE);
-    params.append("course", number);
-    params.append("fos", department);
-    params.append("seq", current.key.seq);
-    params.append("key_ccyys", current.key.ccyys);
-    params.append("fos", department);
-    params.append("course", number);
-    params.append("semester", seasonDigit);
-    params.append("year", year);
-    // ut ignores the whole submit if pass_fail is missing, always send it
-    params.append("pass_fail", passFail ? "Y" : "N");
-    // modify_planned_course only validates, then redirects to view_planner
-    // with action_code=M and thats the request that actually writes, so this
-    // one has to follow the redirect
-    await sendPlannerWrite(PLANNER_MODIFY_URL + "?" + params.toString(), {
-      referrer: entryUrl,
-      redirect: "follow",
-    });
-
-    // seq survives a modify, so our row is the one with the same seq in the
-    // target term, and its notes have to show the pass/fail we asked for
-    // otherwise a same term change that ut ignored would look like a success
-    const after = await fetchPlannedCourses();
-    const updatedRow = findRow(
-      after,
-      current.key.courseId,
-      targetCcyys,
-      current.key.seq,
-    );
-    if (!updatedRow || updatedRow.passFail !== passFail) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    const termChanged = targetCcyys !== current.key.ccyys;
-    if (termChanged && hasRow(after, current.key)) {
-      throw new PlannerError("WRITE_NOT_VERIFIED");
-    }
-    return updatedRow;
-  });
 }
 
 // make the planner match the target list one row at a time, never delete all
@@ -192,6 +106,8 @@ export function syncPlannerTo(
     return after;
   });
 }
+
+// ------------------------------------------------------------------- writes
 
 async function resolveCourseUsing(
   request: PlannerCourseRequest,
@@ -307,6 +223,8 @@ function runOneAtATime<T>(work: () => Promise<T>): Promise<T> {
   return ourTurn;
 }
 
+// ---------------------------------------------------------------- row utils
+
 function normalizeNumber(number: string): string {
   return number.trim().toUpperCase();
 }
@@ -338,12 +256,9 @@ function findRow(
   rows: PlannedCourseRow[],
   courseId: string,
   ccyys: string,
-  seq?: string,
 ): PlannedCourseRow | undefined {
   for (const row of rows) {
-    if (row.key.courseId !== courseId || row.key.ccyys !== ccyys) continue;
-    if (seq !== undefined && row.key.seq !== seq) continue;
-    return row;
+    if (row.key.courseId === courseId && row.key.ccyys === ccyys) return row;
   }
   return undefined;
 }
@@ -371,31 +286,14 @@ function rowsAddedBetween(
   return added;
 }
 
-async function fetchListingDocument(
-  url: string,
-  cache: ListingCache,
-): Promise<Document> {
-  const cached = cache.get(url);
-  if (cached) return cached;
-  const document = await fetchPlannerDocument(url);
-  cache.set(url, document);
-  return document;
-}
+// ------------------------------------------------------------------ fetching
 
-// redirects are off by default, if youre logged out sso bounces you and that
-// shows up as an opaqueredirect, modify turns them back on because its write
-// happens on the redirect target
+// we dont follow redirects, if youre logged out sso bounces you and that
+// shows up as an opaqueredirect
 // dont use response.redirected for auth, planner writes redirect on success
-async function plannerFetch(
-  url: string,
-  options: PlannerFetchOptions = {},
-): Promise<Response> {
+async function plannerFetch(url: string): Promise<Response> {
   try {
-    return await fetch(url, {
-      credentials: "include",
-      redirect: "manual",
-      ...options,
-    });
+    return await fetch(url, { credentials: "include", redirect: "manual" });
   } catch {
     throw new PlannerError("PLANNER_FETCH_FAILED");
   }
@@ -420,15 +318,23 @@ async function fetchPlannerDocument(url: string): Promise<Document> {
   return document;
 }
 
+async function fetchListingDocument(
+  url: string,
+  cache: ListingCache,
+): Promise<Document> {
+  const cached = cache.get(url);
+  if (cached) return cached;
+  const document = await fetchPlannerDocument(url);
+  cache.set(url, document);
+  return document;
+}
+
 // the response never proves a write landed, add redirects on success and
 // delete doesnt, so the planner reread afterwards is what decides
 // the read before the write is the auth gate, so an opaqueredirect here is
 // ut accepting not sso bouncing
-async function sendPlannerWrite(
-  url: string,
-  options: PlannerFetchOptions = {},
-): Promise<void> {
-  const response = await plannerFetch(url, options);
+async function sendPlannerWrite(url: string): Promise<void> {
+  const response = await plannerFetch(url);
   if (response.type === "opaqueredirect") {
     return;
   }
@@ -439,4 +345,137 @@ async function sendPlannerWrite(
   if (isLoginPage(document)) {
     throw new PlannerError("AUTH_REQUIRED");
   }
+}
+
+// ------------------------------------------------------------------- parsing
+
+// semester cell is blank after the first row of a group so we grab the term
+// from the key instead
+const CODE_CELL = 1;
+const TITLE_CELL = 2;
+const NOTES_CELL = 3;
+const ACTIONS_CELL = 4;
+
+// ut double encodes ampersands in course titles so one &amp; survives parsing
+function collapseWhitespace(text: string | null | undefined): string {
+  return (text ?? "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+
+function linkParams(link: Element, baseUrl: string): URLSearchParams {
+  return new URL(link.getAttribute("href") ?? "", baseUrl).searchParams;
+}
+
+// throws if the page doesnt look like the planner anymore so a broken
+// selector never gets mistaken for an empty planner
+function assertPlannerPage(document: Document): void {
+  for (const heading of document.querySelectorAll("h2")) {
+    if (collapseWhitespace(heading.textContent) === "Student Planner") return;
+  }
+  throw new PlannerError("PLANNER_PAGE_CHANGED");
+}
+
+export function parsePlannerPage(document: Document): PlannedCourseRow[] {
+  assertPlannerPage(document);
+
+  const rows: PlannedCourseRow[] = [];
+  for (const row of document.querySelectorAll("table tbody tr")) {
+    const parsed = parsePlannerRow(row);
+    if (parsed) rows.push(parsed);
+  }
+  return rows;
+}
+
+function parsePlannerRow(row: Element): PlannedCourseRow | null {
+  const deleteLink = row.querySelector('a[href*="action_code=D"]');
+  if (!deleteLink) return null;
+
+  const cells = row.querySelectorAll("td");
+  if (cells.length <= ACTIONS_CELL) {
+    throw new PlannerError("PLANNER_PAGE_CHANGED");
+  }
+
+  const params = linkParams(deleteLink, PLANNER_VIEW_URL);
+  const courseId = params.get("key_course_id");
+  const ccyys = params.get("key_course_ccyys");
+  const seq = params.get("key_course_seq");
+  if (!courseId || !ccyys || !seq) {
+    throw new PlannerError("PLANNER_PAGE_CHANGED");
+  }
+  const semester = ccyysToSemester(ccyys);
+  if (!semester) throw new PlannerError("PLANNER_PAGE_CHANGED");
+
+  const modifyLink = row.querySelector('a[href*="action_code=M"]');
+  const courseType = modifyLink
+    ? linkParams(modifyLink, PLANNER_VIEW_URL).get("key_course_type")
+    : null;
+
+  // ut wraps the course code in parentheses when the term has passed
+  // only the code cell counts, plenty of real titles have parentheses
+  const expired = collapseWhitespace(cells[CODE_CELL].textContent).startsWith(
+    "(",
+  );
+  const notes = collapseWhitespace(cells[NOTES_CELL].textContent);
+
+  return {
+    key: { courseId, ccyys, seq },
+    courseType,
+    code: plannerCourseIdToCode(courseId),
+    title: collapseWhitespace(cells[TITLE_CELL].textContent),
+    notes,
+    // the notes cell says "taken pass/fail" when the row is pass/fail
+    passFail: /pass\/fail/i.test(notes),
+    semester,
+    expired,
+  };
+}
+
+// every page=4 link on a page=3 listing, hrefs are relative so they get
+// resolved against the listing url and kept verbatim otherwise
+export function parsePlannerListing(
+  document: Document,
+  listingUrl: string,
+): PlannerAddLink[] {
+  assertPlannerPage(document);
+
+  const links: PlannerAddLink[] = [];
+  for (const anchor of document.querySelectorAll('a[href*="page=4"]')) {
+    const url = new URL(anchor.getAttribute("href") ?? "", listingUrl);
+    const department = url.searchParams.get("dpt");
+    const number = url.searchParams.get("course_num");
+    const ccyys = url.searchParams.get("course_ccyys");
+    if (!department || !number || !ccyys) {
+      throw new PlannerError("PLANNER_PAGE_CHANGED");
+    }
+
+    // the first cell has the code as ut prints it, fall back to building it
+    let code = `${department} ${number}` as CourseCode;
+    const firstCell = anchor.closest("tr")?.querySelector("td");
+    if (firstCell) {
+      code = collapseWhitespace(firstCell.textContent) as CourseCode;
+    }
+
+    links.push({
+      href: url.toString(),
+      department,
+      number,
+      ccyys,
+      topicId: url.searchParams.get("course_topic_id") || null,
+      code,
+      title: collapseWhitespace(anchor.textContent),
+    });
+  }
+  return links;
+}
+
+// ut shows 40 courses per listing page and links the rest as "Next courses"
+export function parseNextListingUrl(
+  document: Document,
+  listingUrl: string,
+): string | null {
+  for (const anchor of document.querySelectorAll('a[href*="page=3"]')) {
+    if (collapseWhitespace(anchor.textContent) === "Next courses") {
+      return new URL(anchor.getAttribute("href") ?? "", listingUrl).toString();
+    }
+  }
+  return null;
 }

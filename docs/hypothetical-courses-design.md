@@ -289,14 +289,24 @@ inputs are cost without benefit.
   link (reuse one `page=3` response per dept+term+type). Missing course →
   surface failure. Topic courses require explicit topic selection — never
   pick one silently.
-- `addCourse(link)` / `deleteCourse(key)` / `modifyCourse(key, …)` —
-  sequential, fetch-before-write and verify-after-write.
+- `addCourse(link)` / `deleteCourse(key)` — sequential, fetch-before-write
+  and verify-after-write. Modify is **not** implemented: nothing before 5.7
+  calls it and course swaps are delete + add. The verified mechanics above
+  are enough to build it if 5.7 wants a term change.
 - `syncPlannerTo(courses)` — reconcile planner to the accepted set (used by
   dirty-planner recovery). Per-row deletes only; duplicates collapse to one
   row; missing courses are resolved and added (topic courses need a
   `topicId`, otherwise `TOPIC_REQUIRED`). Expired rows that are in the target
   are left in place and returned with `expired: true` — UT will not re-add a
   closed term, and deleting them would silently drop a course the user chose.
+
+### Planner bridge — `features/audit-scraping/planner-bridge.ts`
+
+The client only works from a UT tab. Everything else reaches it through one
+`PLANNER_*` message per client call (`lib/browser/messages.ts`): UI →
+background → UT tab. The background finds or opens an audits tab, forwards
+the message, and closes a tab it had to open. Failures cross the wire as the
+`PlannerError` code, never as a thrown error.
 
 ### Preview pipeline (background, serial queue)
 

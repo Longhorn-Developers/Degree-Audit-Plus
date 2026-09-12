@@ -5,7 +5,6 @@ import {
   addCourse,
   deleteCourse,
   fetchPlannedCourses,
-  modifyCourse,
   resolveCourse,
   syncPlannerTo,
 } from "../../features/audit-scraping/planner-client";
@@ -85,9 +84,7 @@ function opaqueRedirect(): Response {
 type Request = { url: string; init?: RequestInit };
 type Override = (url: string, init?: RequestInit) => Response | undefined;
 
-// an in memory ut planner that answers the same way the real one does, add
-// and delete mutate rows, modify only works with the referer + follow +
-// pass_fail combo the real one demands
+// an in memory ut planner that answers the same way the real one does
 class FakeUT {
   rows: Row[];
   courses: Course[];
@@ -136,10 +133,6 @@ class FakeUT {
       this.add(q);
       return opaqueRedirect();
     }
-    if (pathname.endsWith("/modify_planned_course/")) {
-      this.modify(q, init);
-      return html(plannerHtml(this.rows));
-    }
     throw new Error(`fake UT got an unexpected url: ${url}`);
   }
 
@@ -164,28 +157,6 @@ class FakeUT {
         r.ccyys !== q.get("key_course_ccyys") ||
         r.seq !== q.get("key_course_seq"),
     );
-  }
-
-  private modify(q: URLSearchParams, init?: RequestInit): void {
-    const fromModifyPage = String(init?.referrer).includes(
-      "modify_planned_course",
-    );
-    if (init?.redirect !== "follow" || !fromModifyPage) return;
-    if (!q.has("pass_fail")) return;
-    const courseId = `${q.get("fos")!.padEnd(3)}${q.get("course")}`;
-    const row = this.rows.find(
-      (r) =>
-        r.courseId === courseId &&
-        r.ccyys === q.get("key_ccyys") &&
-        r.seq === q.get("seq"),
-    );
-    if (!row) return;
-    const changed = {
-      ...row,
-      ccyys: `${q.get("year")}${q.get("semester")}`,
-      passFail: q.get("pass_fail") === "Y",
-    };
-    this.rows = this.rows.map((r) => (r === row ? changed : r));
   }
 
   private listing(q: URLSearchParams): string {
@@ -450,114 +421,6 @@ describe("deleteCourse", () => {
       return html(plannerHtml([]));
     };
     await expectPlannerError(deleteCourse(ARA), "WRITE_NOT_VERIFIED");
-  });
-});
-
-describe("modifyCourse", () => {
-  async function currentRow() {
-    const [row] = await fetchPlannedCourses();
-    ut.requests = [];
-    return row;
-  }
-
-  test("submits the modify form shape and returns the moved row", async () => {
-    useFakeUT([ARA]);
-    const row = await currentRow();
-
-    const moved = await modifyCourse(row, {
-      semester: "Fall 2027",
-      passFail: true,
-    });
-
-    expect(moved.key).toEqual(ARA_FALL);
-    expect(moved.passFail).toBe(true);
-    expect(ut.urls()[1]).toBe(
-      `${PLANNER_BASE}modify_planned_course/?action=M&course_type=1&course=601C&fos=ARA&seq=999&key_ccyys=20272&fos=ARA&course=601C&semester=9&year=2027&pass_fail=Y`,
-    );
-    expect(ut.requests[1].init).toEqual({
-      credentials: "include",
-      redirect: "follow",
-      referrer: `${PLANNER_BASE}modify_planned_course/?key_course_id=ARA601C&key_course_ccyys=20272&key_course_seq=999&key_course_type=1&action_code=M`,
-    });
-  });
-
-  test("keeps the current term and pass/fail unless asked, and always sends pass_fail", async () => {
-    useFakeUT([{ ...M110, passFail: true }]);
-    const row = await currentRow();
-
-    await modifyCourse(row, {});
-
-    let q = new URL(ut.urls()[1]).searchParams;
-    expect(q.getAll("fos")).toEqual(["M", "M"]);
-    expect(q.get("semester")).toBe("2");
-    expect(q.get("year")).toBe("2027");
-    expect(q.get("pass_fail")).toBe("Y");
-
-    ut.requests = [];
-    const updated = await modifyCourse(row, { passFail: false });
-
-    q = new URL(ut.urls()[1]).searchParams;
-    expect(q.get("pass_fail")).toBe("N");
-    expect(updated.passFail).toBe(false);
-  });
-
-  test("keeps the pass/fail UT currently shows, not the caller's stale copy", async () => {
-    useFakeUT([ARA]);
-    const staleRow = { ...(await currentRow()), passFail: true };
-
-    await modifyCourse(staleRow, { semester: "Fall 2027" });
-
-    expect(new URL(ut.urls()[1]).searchParams.get("pass_fail")).toBe("N");
-  });
-
-  test("reports WRITE_NOT_VERIFIED when a same-term pass/fail change did not stick", async () => {
-    useFakeUT([ARA]);
-    const row = await currentRow();
-    ut.override = (url) =>
-      url.includes("action=M") ? html(plannerHtml(ut.rows)) : undefined;
-
-    await expectPlannerError(
-      modifyCourse(row, { passFail: true }),
-      "WRITE_NOT_VERIFIED",
-    );
-  });
-
-  test("reports WRITE_NOT_VERIFIED when only a different row sits in the target term", async () => {
-    useFakeUT([ARA, { ...ARA_FALL, seq: "990" }]);
-    const row = await currentRow();
-    ut.override = (url) =>
-      url.includes("action=M") ? html(plannerHtml(ut.rows)) : undefined;
-
-    await expectPlannerError(
-      modifyCourse(row, { semester: "Fall 2027" }),
-      "WRITE_NOT_VERIFIED",
-    );
-  });
-
-  test("reports WRITE_NOT_VERIFIED when the old row lingers after a term change", async () => {
-    useFakeUT([ARA]);
-    const row = await currentRow();
-    ut.override = (url) => {
-      if (!url.includes("action=M")) return undefined;
-      ut.rows = [ARA, ARA_FALL];
-      return html(plannerHtml(ut.rows));
-    };
-
-    await expectPlannerError(
-      modifyCourse(row, { semester: "Fall 2027" }),
-      "WRITE_NOT_VERIFIED",
-    );
-  });
-
-  test("reports ROW_NOT_FOUND when the row is gone before the write", async () => {
-    useFakeUT([ARA]);
-    const row = await currentRow();
-    ut.rows = [];
-
-    await expectPlannerError(
-      modifyCourse(row, { semester: "Fall 2027" }),
-      "ROW_NOT_FOUND",
-    );
   });
 });
 

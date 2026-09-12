@@ -103,12 +103,6 @@ export interface PlannerSyncTarget extends PlannerCourseRequest {
   topicId?: string | null;
 }
 
-// anything left out keeps the row's current value
-export interface PlannerModifyChanges {
-  semester?: StringSemester;
-  passFail?: boolean;
-}
-
 export type PlannerErrorCode =
   | "AUTH_REQUIRED"
   | "PLANNER_FETCH_FAILED"
