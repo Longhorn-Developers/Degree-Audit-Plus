@@ -9,19 +9,11 @@ import { cn } from "@/lib/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { forwardRef } from "react";
 import PlannerCourseCard from "./planner-course-card";
+import { compareCourseCodes } from "@/domain/course";
 
 interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
-}
-
-function sortCoursesByDepartment(a: Course, b: Course) {
-  const [aDepartment, aNumber] = a.code.split(" ");
-  const [bDepartment, bNumber] = b.code.split(" ");
-  if (aDepartment !== bDepartment) {
-    return aDepartment.localeCompare(bDepartment);
-  }
-  return Number(aNumber) - Number(bNumber);
 }
 
 const SemesterCardVisual = forwardRef<
@@ -46,11 +38,11 @@ const SemesterCardVisual = forwardRef<
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
         <VStack fill className="w-full" gap={4}>
           {courses.length > 0 ? (
-            courses
-              .sort(sortCoursesByDepartment)
+            [...courses]
+              .sort((a, b) => compareCourseCodes(a.code, b.code))
               .map((course) => (
                 <PlannerCourseCard
-                  key={course.code}
+                  key={course.id}
                   draggable={course.status !== "Completed"}
                   courseId={course.id}
                   className="w-full"

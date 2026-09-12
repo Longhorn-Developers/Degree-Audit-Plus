@@ -1,6 +1,6 @@
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { CourseCode } from "@/domain/course";
+import { parseCourseCode, type CourseCode } from "@/domain/course";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
@@ -63,7 +63,7 @@ export const CATEGORY_COLORS = [
 }[];
 
 export function getColorByCourseCode(code: CourseCode) {
-  const [department, _] = code.split(" ");
+  const { department } = parseCourseCode(code);
   const departmentSum = department
     .split("")
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
