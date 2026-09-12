@@ -16,8 +16,9 @@ const TITLE_CELL = 2;
 const NOTES_CELL = 3;
 const ACTIONS_CELL = 4;
 
+// ut double encodes ampersands in course titles so one &amp; survives parsing
 function collapseWhitespace(text: string | null | undefined): string {
-  return (text ?? "").replace(/\s+/g, " ").trim();
+  return (text ?? "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 }
 
 function linkParams(link: Element): URLSearchParams {
@@ -51,28 +52,37 @@ function parseRow(row: Element): PlannedCourseRow | null {
     ? linkParams(modifyLink).get("key_course_type")
     : null;
 
-  const descriptive = [CODE_CELL, TITLE_CELL, NOTES_CELL]
-    .map((index) => collapseWhitespace(cells[index].textContent))
-    .join(" ");
+  let expired = false;
+  for (const index of [CODE_CELL, TITLE_CELL, NOTES_CELL]) {
+    if (cells[index].textContent?.includes("(")) expired = true;
+  }
+
+  const notes = collapseWhitespace(cells[NOTES_CELL].textContent);
 
   return {
     key,
     courseType,
     code: plannerCourseIdToCode(key.courseId),
     title: collapseWhitespace(cells[TITLE_CELL].textContent),
-    notes: collapseWhitespace(cells[NOTES_CELL].textContent),
+    notes,
+    // the notes cell says "taken pass/fail" when the row is pass/fail
+    passFail: /pass\/fail/i.test(notes),
     semester: ccyysToSemester(key.ccyys),
-    expired: /\(/.test(descriptive),
+    expired,
   };
 }
 
 // throws if the page doesnt look like the planner anymore so a broken
 // selector never gets mistaken for an empty planner
-export function parsePlannerPage(document: Document): PlannedCourseRow[] {
+export function assertPlannerPage(document: Document): void {
   const heading = [...document.querySelectorAll("h2")].find(
     (element) => collapseWhitespace(element.textContent) === "Student Planner",
   );
   if (!heading) throw new PlannerError("PLANNER_PAGE_CHANGED");
+}
+
+export function parsePlannerPage(document: Document): PlannedCourseRow[] {
+  assertPlannerPage(document);
 
   const rows: PlannedCourseRow[] = [];
   for (const row of document.querySelectorAll("table tbody tr")) {
