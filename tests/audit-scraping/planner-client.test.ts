@@ -18,6 +18,7 @@ interface RowSpec {
   ccyys: string;
   seq: string;
   expired?: boolean;
+  passFail?: boolean;
 }
 
 const ARA: RowSpec = { courseId: "ARA601C", ccyys: "20272", seq: "999" };
@@ -27,9 +28,10 @@ const ARA_FALL: RowSpec = { courseId: "ARA601C", ccyys: "20279", seq: "999" };
 function plannerHtml(rows: RowSpec[]): string {
   const body = rows
     .map(
-      ({ courseId, ccyys, seq, expired }) => `
+      ({ courseId, ccyys, seq, expired, passFail }) => `
       <tr>
-        <td></td><td>${expired ? `(${courseId})` : courseId}</td><td>TITLE</td><td>Planned residence</td>
+        <td></td><td>${expired ? `(${courseId})` : courseId}</td><td>TITLE</td>
+        <td>Planned residence${passFail ? " taken pass/fail" : ""}</td>
         <td>
           <a href="/apps/degree/audits/planner/view_planner/?key_course_id=${courseId}&amp;key_course_ccyys=${ccyys}&amp;key_course_seq=${seq}&amp;action_code=D">Delete</a>
           <a href="/apps/degree/audits/planner/modify_planned_course/?key_course_id=${courseId}&amp;key_course_ccyys=${ccyys}&amp;key_course_seq=${seq}&amp;key_course_type=1&amp;action_code=M">Modify</a>
@@ -384,12 +386,14 @@ describe("modifyCourse", () => {
     return row;
   }
 
+  const ARA_FALL_PF: RowSpec = { ...ARA_FALL, passFail: true };
+
   test("submits the modify form shape and returns the moved row", async () => {
     const row = await currentRow(ARA);
     scriptFetch([
       () => html(plannerHtml([ARA])),
-      () => html(plannerHtml([ARA_FALL])),
-      () => html(plannerHtml([ARA_FALL])),
+      () => html(plannerHtml([ARA_FALL_PF])),
+      () => html(plannerHtml([ARA_FALL_PF])),
     ]);
 
     const moved = await modifyCourse(row, {
@@ -398,6 +402,7 @@ describe("modifyCourse", () => {
     });
 
     expect(moved.key).toEqual(ARA_FALL);
+    expect(moved.passFail).toBe(true);
     expect(requests[1].url).toBe(
       `${PLANNER_BASE}modify_planned_course/?action=M&course_type=1&course=601C&fos=ARA&seq=999&key_ccyys=20272&fos=ARA&course=601C&semester=9&year=2027&pass_fail=Y`,
     );
@@ -436,6 +441,33 @@ describe("modifyCourse", () => {
     await modifyCourse(row, { passFail: false });
 
     expect(new URL(requests[1].url).searchParams.get("pass_fail")).toBe("N");
+  });
+
+  test("reports WRITE_NOT_VERIFIED when a same-term pass/fail change did not stick", async () => {
+    const row = await currentRow(ARA);
+    scriptFetch([
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+    ]);
+    await expectPlannerError(
+      modifyCourse(row, { passFail: true }),
+      "WRITE_NOT_VERIFIED",
+    );
+  });
+
+  test("reports WRITE_NOT_VERIFIED when only a different row sits in the target term", async () => {
+    const row = await currentRow(ARA);
+    const otherCopy: RowSpec = { ...ARA_FALL, seq: "990" };
+    scriptFetch([
+      () => html(plannerHtml([ARA, otherCopy])),
+      () => html(plannerHtml([ARA, otherCopy])),
+      () => html(plannerHtml([ARA, otherCopy])),
+    ]);
+    await expectPlannerError(
+      modifyCourse(row, { semester: "Fall 2027" }),
+      "WRITE_NOT_VERIFIED",
+    );
   });
 
   test("reports WRITE_NOT_VERIFIED when the old row lingers after a term change", async () => {
@@ -520,6 +552,36 @@ describe("syncPlannerTo", () => {
 
     expect(rows.map((r) => r.key)).toEqual([ARA]);
     expect(requests[3].url).toBe(ARA_LINK.href);
+  });
+
+  test("fetches a department listing once when adding several courses", async () => {
+    const ARA_D: RowSpec = { courseId: "ARA601D", ccyys: "20272", seq: "998" };
+    scriptFetch([
+      () => html(plannerHtml([])),
+      () =>
+        html(
+          listingHtml([
+            { dpt: "ARA", num: "601C" },
+            { dpt: "ARA", num: "601D" },
+          ]),
+        ),
+      () => html(plannerHtml([])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([ARA])),
+      () => html(plannerHtml([ARA])),
+      () => opaqueRedirect(),
+      () => html(plannerHtml([ARA, ARA_D])),
+      () => html(plannerHtml([ARA, ARA_D])),
+    ]);
+
+    const rows = await syncPlannerTo([
+      ARA_TARGET,
+      { department: "ARA", number: "601D", ccyys: "20272" },
+    ]);
+
+    expect(rows.map((r) => r.key.courseId)).toEqual(["ARA601C", "ARA601D"]);
+    const listingFetches = requests.filter((r) => r.url.includes("page=3"));
+    expect(listingFetches).toHaveLength(1);
   });
 
   test("picks the add link whose topic matches the target", async () => {

@@ -110,6 +110,22 @@ describe("planner View Courses parser", () => {
     ]);
   });
 
+  test("does not treat parentheses in a title as expired", () => {
+    const rows = parsePlannerPage(
+      plannerDocument(
+        rowHtml({
+          code: "E 314L",
+          title: "CONTEMP POETRY (1945-PRESENT)",
+          notes: "Planned residence (see advisor)",
+          courseId: "E  314L",
+          ccyys: "20272",
+          seq: "999",
+        }),
+      ),
+    );
+    expect(rows[0].expired).toBe(false);
+  });
+
   test("reads pass/fail from the notes cell", () => {
     const rows = parsePlannerPage(
       plannerDocument(

@@ -170,7 +170,8 @@ computing the same next seq and one overwriting the other.
 Binding constraints for 5.2:
 
 - **Serialize every planner write.** One at a time, no fan-out in
-  `syncPlannerTo()`.
+  `syncPlannerTo()`. The 5.2 client's queue covers one content script; two UT
+  tabs can still race until 5.3's background-controller queue (#228) lands.
 - **Verify after write** by diffing `readPlanner()`. The add response alone is
   not evidence the row landed.
 

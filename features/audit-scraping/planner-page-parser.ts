@@ -52,10 +52,11 @@ function parseRow(row: Element): PlannedCourseRow | null {
     ? linkParams(modifyLink).get("key_course_type")
     : null;
 
-  let expired = false;
-  for (const index of [CODE_CELL, TITLE_CELL, NOTES_CELL]) {
-    if (cells[index].textContent?.includes("(")) expired = true;
-  }
+  // ut wraps the course code in parentheses when the term has passed
+  // only the code cell counts, plenty of real titles have parentheses
+  const expired = collapseWhitespace(cells[CODE_CELL].textContent).startsWith(
+    "(",
+  );
 
   const notes = collapseWhitespace(cells[NOTES_CELL].textContent);
 

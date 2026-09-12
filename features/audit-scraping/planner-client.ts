@@ -38,8 +38,30 @@ export async function fetchPlannedCourses(): Promise<PlannedCourseRow[]> {
   return parsePlannerPage(document);
 }
 
-export async function resolveCourse(
+export function resolveCourse(
   request: PlannerCourseRequest,
+): Promise<PlannerResolution> {
+  return resolveCourseUsing(request, new Map());
+}
+
+// one listing fetch per dept + term + type, a sync that adds several courses
+// from the same dept reuses the pages it already pulled
+type ListingCache = Map<string, Document>;
+
+async function fetchListingDocument(
+  url: string,
+  cache: ListingCache,
+): Promise<Document> {
+  const cached = cache.get(url);
+  if (cached) return cached;
+  const document = await fetchPlannerDocument(url);
+  cache.set(url, document);
+  return document;
+}
+
+async function resolveCourseUsing(
+  request: PlannerCourseRequest,
+  cache: ListingCache,
 ): Promise<PlannerResolution> {
   const params = new URLSearchParams();
   params.set("page", "3");
@@ -54,7 +76,7 @@ export async function resolveCourse(
   const wantedNumber = request.number.trim().toUpperCase();
   const matches: PlannerAddLink[] = [];
   for (let page = 0; page < MAX_LISTING_PAGES && listingUrl; page++) {
-    const document = await fetchPlannerDocument(listingUrl);
+    const document = await fetchListingDocument(listingUrl, cache);
     for (const link of parsePlannerListing(document, listingUrl)) {
       if (link.number.trim().toUpperCase() === wantedNumber) {
         matches.push(link);
@@ -108,9 +130,10 @@ export function syncPlannerTo(
     }
 
     // add whats missing
+    const listings: ListingCache = new Map();
     for (const [id, target] of wanted) {
       if (kept.has(id)) continue;
-      const link = await resolveForSync(target);
+      const link = await resolveForSync(target, listings);
       await performAdd(link);
       changedAnything = true;
     }
@@ -141,8 +164,9 @@ function targetId(target: PlannerSyncTarget): string {
 
 async function resolveForSync(
   target: PlannerSyncTarget,
+  listings: ListingCache,
 ): Promise<PlannerAddLink> {
-  const resolution = await resolveCourse(target);
+  const resolution = await resolveCourseUsing(target, listings);
   if (resolution.kind === "resolved") return resolution.link;
   for (const option of resolution.options) {
     if (option.topicId === target.topicId) return option;
@@ -248,9 +272,17 @@ export function modifyCourse(
       redirect: "follow",
     });
 
+    // seq survives a modify, so our row is the one with the same seq in the
+    // target term, and its notes have to show the pass/fail we asked for
+    // otherwise a same term change that ut ignored would look like a success
     const after = await fetchPlannedCourses();
-    const updatedRow = findRow(after, row.key.courseId, targetCcyys);
-    if (!updatedRow) {
+    const updatedRow = findRow(
+      after,
+      row.key.courseId,
+      targetCcyys,
+      row.key.seq,
+    );
+    if (!updatedRow || updatedRow.passFail !== passFail) {
       throw new PlannerError("WRITE_NOT_VERIFIED");
     }
     const termChanged = targetCcyys !== row.key.ccyys;
@@ -283,9 +315,12 @@ function findRow(
   rows: PlannedCourseRow[],
   courseId: string,
   ccyys: string,
+  seq?: string,
 ): PlannedCourseRow | undefined {
   for (const row of rows) {
-    if (row.key.courseId === courseId && row.key.ccyys === ccyys) return row;
+    if (row.key.courseId !== courseId || row.key.ccyys !== ccyys) continue;
+    if (seq !== undefined && row.key.seq !== seq) continue;
+    return row;
   }
   return undefined;
 }
