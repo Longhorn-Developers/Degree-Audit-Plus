@@ -12,7 +12,31 @@ export type ExtensionMessage =
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
   // Background -> UT tab: submits the authenticated form.
-  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest };
+  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest }
+  // UI/background -> UT tab: reads or mutates the UT course planner.
+  | { type: "PLANNER_READ" }
+  | { type: "PLANNER_ADD"; course: PlannerCourseRef }
+  | { type: "PLANNER_DELETE"; row: PlannerRowPayload };
+
+export interface PlannerCourseRef {
+  dept: string;
+  num: string;
+  ccyys: string;
+}
+
+// Structural copy of features/audit-scraping/planner-client.ts PlannerRow, kept
+// here so the message union doesn't drag a feature module into every importer.
+export interface PlannerRowPayload {
+  keyCourseId: string;
+  keyCourseCcyys: string | null;
+  keyCourseSeq: string | null;
+  expired: boolean;
+  rowText: string;
+}
+
+export type PlannerResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -30,6 +54,17 @@ interface MessageResponses {
   };
   FETCH_AUDIT: FetchAuditResult;
   RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
+  PLANNER_READ: PlannerResult<PlannerRowPayload[]>;
+  PLANNER_ADD: PlannerResult<{
+    row: PlannerRowPayload;
+    candidateCount: number;
+    elapsedMs: number;
+  }>;
+  PLANNER_DELETE: PlannerResult<{
+    removed: number;
+    targetGone: boolean;
+    elapsedMs: number;
+  }>;
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -44,7 +79,10 @@ type ResponseRequest = Extract<
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
-      | "RUN_AUDIT_VIA_FETCH";
+      | "RUN_AUDIT_VIA_FETCH"
+      | "PLANNER_READ"
+      | "PLANNER_ADD"
+      | "PLANNER_DELETE";
   }
 >;
 

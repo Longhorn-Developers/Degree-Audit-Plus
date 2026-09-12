@@ -10,6 +10,11 @@ import {
   watchForAuditRunClicks,
 } from "./audit-history-sync";
 import { runAudit } from "./audit-runner";
+import {
+  addPlannedCourse,
+  deletePlannedCourse,
+  readPlanner,
+} from "./planner-client";
 
 // look at /audits and /submissions/history -> for when to scrape
 const SYNC_PAGE_PATTERNS = [
@@ -23,6 +28,7 @@ const RUN_PAGE_PATTERN =
 
 export function startAuditContentController(document: Document): void {
   recordLoginStateFromPage(document);
+  exposePlannerDevHandle();
   watchForAuditRunClicks(document);
 
   const pathname = document.location.pathname;
@@ -44,6 +50,17 @@ export function startAuditContentController(document: Document): void {
         return true;
       }
 
+      if (
+        message.type === "PLANNER_READ" ||
+        message.type === "PLANNER_ADD" ||
+        message.type === "PLANNER_DELETE"
+      ) {
+        void handlePlannerMessage(message).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
+
       if (message.type === "RUN_AUDIT_VIA_FETCH") {
         void runAudit(message.custom).then(
           () => sendMessageResponse(message, sendResponse, { ok: true }),
@@ -58,5 +75,53 @@ export function startAuditContentController(document: Document): void {
         return true;
       }
     },
+  );
+}
+
+/**
+ * Planner reads and writes run here rather than in the service worker: this
+ * page is same-origin with UT (so the session cookie rides along and the
+ * Referer check passes) and it has a DOMParser, which MV3 workers do not.
+ */
+async function handlePlannerMessage(
+  message: Extract<
+    ExtensionMessage,
+    { type: "PLANNER_READ" | "PLANNER_ADD" | "PLANNER_DELETE" }
+  >,
+) {
+  try {
+    if (message.type === "PLANNER_READ") {
+      return { ok: true as const, data: await readPlanner() };
+    }
+    if (message.type === "PLANNER_ADD") {
+      return {
+        ok: true as const,
+        data: await addPlannedCourse(message.course),
+      };
+    }
+    return { ok: true as const, data: await deletePlannedCourse(message.row) };
+  } catch (error) {
+    console.error(`${message.type} failed:`, error);
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Dev-only manual test handle for the planner client. Lets a UT audits page's
+ * console drive the *extension's* code path (content script, bundled module)
+ * rather than a pasted spike script, which is the thing DAP-117 needs to
+ * confirm. Stripped from production builds.
+ */
+function exposePlannerDevHandle(): void {
+  if (!import.meta.env.DEV) return;
+  Object.assign(window as unknown as Record<string, unknown>, {
+    dapPlanner: { readPlanner, addPlannedCourse, deletePlannedCourse },
+  });
+  console.log(
+    "[dap] planner dev handle ready: " +
+      'await dapPlanner.addPlannedCourse({ dept: "C S", num: "331", ccyys: "20272" })',
   );
 }
