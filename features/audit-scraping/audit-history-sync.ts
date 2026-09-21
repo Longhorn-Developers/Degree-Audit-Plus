@@ -7,6 +7,7 @@ import {
 import { isLoginPage } from "@/features/session/session";
 import {
   sendRuntimeMessage,
+  type FetchAuditHistoryResult,
   type FetchAuditResult,
 } from "@/lib/browser/messages";
 import { storage } from "wxt/utils/storage";
@@ -37,22 +38,57 @@ function getPendingRunItem() {
   return (pendingRunItem ??= createPendingRunItem());
 }
 
-export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+const NOT_LOGGED_IN = "Not logged in to UT Direct";
+
+async function fetchAuditHistoryPage(): Promise<Document> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  if (response.redirected) throw new Error("Not logged in to UT Direct");
+  if (response.redirected) throw new Error(NOT_LOGGED_IN);
 
   const document = new DOMParser().parseFromString(
     await response.text(),
     "text/html",
   );
-  if (isLoginPage(document)) {
-    throw new Error("Not logged in to UT Direct");
-  }
+  if (isLoginPage(document)) throw new Error(NOT_LOGGED_IN);
+  return document;
+}
+
+export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+  const document = await fetchAuditHistoryPage();
   // A logged-in student who has never requested an audit gets a history page
   if (!document.querySelector("table")) return [];
-
   return parseAuditHistory(document);
+}
+
+// every result id on the page, before parseAuditHistory dedupes rows away
+function parseAuditHistoryIds(document: Document): string[] {
+  const ids: string[] = [];
+  for (const row of document.querySelectorAll("table tbody tr")) {
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 8) continue;
+    const auditId = cells[6].querySelector("a")?.textContent?.trim();
+    if (auditId) ids.push(auditId);
+  }
+  return ids;
+}
+
+// same page but with the raw ids too, the background polls this after a run
+// since the dedupe in parseAuditHistory can hide the new row
+export async function fetchAuditHistorySnapshot(): Promise<FetchAuditHistoryResult> {
+  try {
+    const document = await fetchAuditHistoryPage();
+    if (!document.querySelector("table")) return { audits: [], auditIds: [] };
+    return {
+      audits: parseAuditHistory(document),
+      auditIds: parseAuditHistoryIds(document),
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message === NOT_LOGGED_IN) {
+      return { error: "AUTH_REQUIRED" };
+    }
+    console.error("Failed to fetch audit history:", error);
+    return { error: "SCRAPE_FAILED" };
+  }
 }
 
 // Fetch and parse one audit's results page. Runs in a content script on a UT
@@ -113,14 +149,16 @@ function pollForRequestedAudit(startedAt: number): Promise<void> {
       // Another audits page may have picked up the run and finished first.
       if ((await getPendingRunItem().getValue()) === null) return true;
 
-      const audits = await fetchAuditHistory();
+      const history = await fetchAuditHistorySnapshot();
+      if ("error" in history) throw new Error(history.error);
       // Skip storage writes (and their watcher fan-out into live UI) while
-      // UT still serves the same history as the previous tick.
-      const snapshot = JSON.stringify(audits);
+      // UT still serves the same history as the previous tick. Compare raw
+      // ids, the deduped list can stay the same when a new audit lands.
+      const snapshot = history.auditIds.join(",");
       if (snapshot === lastSeen) return false;
 
       lastSeen = snapshot;
-      return processAuditHistory(audits);
+      return processAuditHistory(history.audits);
     };
 
     try {

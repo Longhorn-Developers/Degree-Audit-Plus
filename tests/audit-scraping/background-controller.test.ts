@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import type { CachedAuditData } from "../../domain/audit";
 import {
   AuditBatchController,
+  createAuditRunner,
   type AuditBatchDependencies,
+  type AuditRunDependencies,
 } from "../../features/audit-scraping/background-controller";
 
 const audit: CachedAuditData = { courses: {}, requirements: [] };
@@ -132,4 +134,72 @@ describe("audit batch controller", () => {
     await controller.waitForIdle();
     expect(states).toEqual(["started", "complete"]);
   });
+});
+
+// a fake ut. a submitted audit takes a few polls to show up, and every row
+// dedupes to the same ui entry so only the raw ids tell them apart
+function createFakeUt() {
+  const events: string[] = [];
+  let rawIds = ["100", "101"];
+  let pendingId: string | undefined;
+  let pollsLeft = 0;
+  let nextId = 102;
+
+  const deps: AuditRunDependencies = {
+    getAuditPageTab: async () => ({ tabId: TAB_ID, created: true }),
+    fetchHistory: async () => {
+      if (pendingId && pollsLeft > 0) pollsLeft--;
+      if (pendingId && pollsLeft === 0) {
+        rawIds = [pendingId, ...rawIds];
+        pendingId = undefined;
+      }
+      return { audits: [{ auditId: rawIds[0] }], auditIds: rawIds };
+    },
+    submit: async () => {
+      pendingId = String(nextId);
+      pollsLeft = 3;
+      nextId++;
+      events.push(`submit ${pendingId}`);
+      return { ok: true };
+    },
+    scrapeAudit: async (auditId) => {
+      events.push(`scrape ${auditId}`);
+      return audit;
+    },
+    saveHistory: async () => {},
+    saveAudit: async (auditId) => {
+      events.push(`save ${auditId}`);
+    },
+    closeTab: async () => {
+      events.push("close tab");
+    },
+    pollIntervalMs: 1,
+  };
+  return { deps, events };
+}
+
+test("audit runs go one at a time and each resolves to its own new id", async () => {
+  const { deps, events } = createFakeUt();
+  const run = createAuditRunner(deps);
+
+  const [first, second] = await Promise.all([run(), run()]);
+
+  expect(first.auditId).toBe("102");
+  expect(second.auditId).toBe("103");
+  // the tab closes only after its run is scraped, then the next run starts
+  expect(events).toEqual([
+    "submit 102",
+    "scrape 102",
+    "save 102",
+    "close tab",
+    "submit 103",
+    "scrape 103",
+    "save 103",
+    "close tab",
+  ]);
+
+  const timing = first.timing;
+  expect(timing.submittedAt).toBeLessThanOrEqual(timing.detectedAt);
+  expect(timing.detectedAt).toBeLessThanOrEqual(timing.scrapeStartedAt);
+  expect(timing.scrapeStartedAt).toBeLessThanOrEqual(timing.scrapeEndedAt);
 });

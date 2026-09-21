@@ -31,6 +31,7 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
+  fetchAuditHistorySnapshot: async () => ({ audits: [], auditIds: [] }),
 }));
 mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async (custom?: unknown) => {

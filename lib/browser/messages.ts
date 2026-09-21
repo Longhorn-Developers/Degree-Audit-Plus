@@ -1,4 +1,8 @@
-import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import type {
+  AuditHistoryEntry,
+  CachedAuditData,
+  CustomAuditRunRequest,
+} from "@/domain/audit";
 import type {
   PlannedCourseRow,
   PlannerAddLink,
@@ -20,6 +24,8 @@ export type ExtensionMessage =
   | { type: "SCRAPE_ALL_COMPLETE" }
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
+  // Background -> UT tab: fetches the history page with its raw audit ids.
+  | { type: "FETCH_AUDIT_HISTORY" }
   // Background -> UT tab: submits the authenticated form.
   | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest }
   | { type: "PLANNER_READ" }
@@ -51,16 +57,30 @@ export type FetchAuditResult =
   | { audit: CachedAuditData }
   | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
+// when each step of a background run happened, in epoch ms
+export interface AuditRunTiming {
+  submittedAt: number;
+  detectedAt: number;
+  scrapeStartedAt: number;
+  scrapeEndedAt: number;
+}
+
+// raw ids keep every row, audits is the deduped list the ui shows
+export type FetchAuditHistoryResult =
+  | { audits: AuditHistoryEntry[]; auditIds: string[] }
+  | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
+
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
   RUN_NEW_AUDIT:
-    | { success: true; existing: boolean }
+    | { success: true; auditId: string; timing: AuditRunTiming }
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
   };
   FETCH_AUDIT: FetchAuditResult;
+  FETCH_AUDIT_HISTORY: FetchAuditHistoryResult;
   RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
   PLANNER_READ: PlannerResult<PlannerData["PLANNER_READ"]>;
   PLANNER_RESOLVE: PlannerResult<PlannerData["PLANNER_RESOLVE"]>;
@@ -81,6 +101,7 @@ type ResponseRequest = Extract<
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
+      | "FETCH_AUDIT_HISTORY"
       | "RUN_AUDIT_VIA_FETCH"
       | "PLANNER_READ"
       | "PLANNER_RESOLVE"

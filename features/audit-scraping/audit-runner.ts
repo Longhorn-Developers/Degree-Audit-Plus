@@ -3,10 +3,7 @@
 // CSRF checks (extension-origin POSTs get 403).
 import type { CustomAuditRunRequest } from "@/domain/audit";
 import { isLoginPage } from "@/features/session/session";
-import {
-  markAuditRunPending,
-  RUN_AUDIT_BUTTON_SELECTOR,
-} from "./audit-history-sync";
+import { RUN_AUDIT_BUTTON_SELECTOR } from "./audit-history-sync";
 
 const RUN_PAGE_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
@@ -16,14 +13,13 @@ const RUN_PAGE_URL =
 const CUSTOM_FORM_SELECTOR = "#single_request";
 
 // Runs the user's default profile audit, or a custom one when options are
-// given. Marks successful submissions pending so history polling finds them.
+// given. Only submits; the background polls history for the result.
 export async function runAudit(custom?: CustomAuditRunRequest): Promise<void> {
   if (custom) {
     await submitCustomAudit(custom);
   } else {
     await submitDefaultAudit();
   }
-  await markAuditRunPending();
 }
 
 async function submitDefaultAudit(): Promise<void> {

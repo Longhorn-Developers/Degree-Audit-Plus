@@ -4,6 +4,7 @@ import {
 } from "@/lib/browser/messages";
 import { recordLoginStateFromPage } from "@/features/session/session";
 import {
+  fetchAuditHistorySnapshot,
   fetchAuditResults,
   resumePendingAuditPoll,
   startAuditHistorySync,
@@ -40,6 +41,13 @@ export function startAuditContentController(document: Document): void {
     (message: ExtensionMessage, _sender, sendResponse) => {
       if (message.type === "FETCH_AUDIT") {
         void fetchAuditResults(message.auditId).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
+
+      if (message.type === "FETCH_AUDIT_HISTORY") {
+        void fetchAuditHistorySnapshot().then((result) =>
           sendMessageResponse(message, sendResponse, result),
         );
         return true;
