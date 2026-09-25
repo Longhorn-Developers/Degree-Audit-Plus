@@ -9,7 +9,8 @@ import {
   startAuditHistorySync,
   watchForAuditRunClicks,
 } from "./audit-history-sync";
-import { runAudit } from "./audit-runner";
+import { cancelRun, runAudit } from "./audit-runner";
+import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
 const SYNC_PAGE_PATTERNS = [
@@ -44,16 +45,37 @@ export function startAuditContentController(document: Document): void {
         return true;
       }
 
-      if (message.type === "RUN_AUDIT_VIA_FETCH") {
-        void runAudit(message.custom).then(
-          () => sendMessageResponse(message, sendResponse, { ok: true }),
-          (error) => {
-            console.error("Failed to run audit:", error);
+      if (message.type === "CANCEL_RUN") {
+        cancelRun(message.runId);
+        return;
+      }
+
+      if (message.type === "RUN_AUDIT") {
+        void runAudit(message.runId, message.custom).then(
+          (outcome) =>
+            sendMessageResponse(message, sendResponse, { ok: true, outcome }),
+          (error: unknown) => {
+            const reason =
+              error instanceof Error ? error.message : String(error);
+            if (reason === "CANCELLED") {
+              console.log(
+                `Audit run ${message.runId} cancelled by a newer request`,
+              );
+            } else {
+              console.error("Failed to run audit:", error);
+            }
             sendMessageResponse(message, sendResponse, {
               ok: false,
-              error: error instanceof Error ? error.message : String(error),
+              error: reason,
             });
           },
+        );
+        return true;
+      }
+
+      if (isPlannerMessage(message)) {
+        void handlePlannerMessage(message).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
         );
         return true;
       }
