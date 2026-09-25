@@ -30,6 +30,8 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
+  fetchAuditHistoryRows: async () => [],
+  RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
 mock.module("../../features/session/session", () => ({
   recordLoginStateFromPage: () => {
