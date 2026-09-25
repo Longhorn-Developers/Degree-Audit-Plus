@@ -1,7 +1,8 @@
 import type { AuditHistoryEntry } from "@/domain/audit";
 import { parseMajor } from "./parse-major";
 
-// Only used in this file so keep it here. 
+// One history row. `key` identifies it before the result link exists;
+// the runner and the sync code both read it.
 export interface AuditHistoryRow {
   key: string;
   auditId: string | null;
@@ -10,7 +11,7 @@ export interface AuditHistoryRow {
   percentage: number;
 }
 
-// Every row in page order without bs. 
+// Every row in page order without bs.
 export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
   const table = document.querySelector("table");
   if (!table) throw new Error("Audit history table not found");
@@ -22,7 +23,9 @@ export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
 
     const programText = cells[3].textContent ?? "";
     rows.push({
-      key: [...cells].slice(0, 6).map(cellText).join("|"),
+      // Columns: Rerun, Created, Type, Program, Requested, Status, Id, %.
+      // Status flips Processing → Completed, so the key stops before it.
+      key: [...cells].slice(0, 5).map(cellText).join("|"),
       auditId: cells[6].querySelector("a")?.textContent?.trim() ?? null,
       major: parseMajor(programText),
       credential: parseCredential(programText),

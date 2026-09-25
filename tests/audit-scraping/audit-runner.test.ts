@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { JSDOM } from "jsdom";
-import { runAudit } from "../../features/audit-scraping/audit-runner";
+import {
+  cancelRun,
+  runAudit,
+} from "../../features/audit-scraping/audit-runner";
+
+// history cell 5 is Status: it flips from Processing to Completed, exactly
+// like ut does, so a key that includes it would never match twice
+const status = (auditId: string | null) =>
+  auditId ? "Completed (00780)" : "Processing (00780)";
 
 // a real results capture, so the scrape step parses like it does on ut
 const RESULTS_HTML = await Bun.file(
@@ -26,7 +34,7 @@ function historyRow({ created, program, auditId }: HistoryRow): string {
     : "Processing";
   return `<tr>
     <td>${created}</td><td>Individual</td><td>2024-2026</td>
-    <td>${program}</td><td>Fall 2026</td><td>N</td>
+    <td>${program}</td><td>In progress Future</td><td>${status(auditId)}</td>
     <td>${link}</td><td>85%</td>
   </tr>`;
 }
@@ -144,7 +152,7 @@ afterEach(() => {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 test("submits, waits for its own row, scrapes it, and reports timing", async () => {
-  const outcome = await runAudit(undefined, FAST);
+  const outcome = await runAudit({}, FAST);
 
   expect(outcome.auditId).toBe("200");
   expect(outcome.history[0]).toMatchObject({ auditId: "200" });
@@ -157,7 +165,7 @@ test("submits, waits for its own row, scrapes it, and reports timing", async () 
 });
 
 test("reads history and the form before the POST, and does not follow the redirect", async () => {
-  await runAudit(undefined, FAST);
+  await runAudit({}, FAST);
 
   const post = ut.requests.findIndex((r) => r.init?.method === "POST");
   const before = ut.requests.slice(0, post).map((r) => r.url);
@@ -168,7 +176,7 @@ test("reads history and the form before the POST, and does not follow the redire
 
 test("does not adopt a foreign audit that finishes during the run", async () => {
   ut.generatePolls = 4;
-  const run = runAudit(undefined, FAST);
+  const run = runAudit({}, FAST);
   await settle();
   ut.finishForeign("999");
   expect((await run).auditId).toBe("200");
@@ -176,7 +184,7 @@ test("does not adopt a foreign audit that finishes during the run", async () => 
 
 test("the earlier still-generating row finishing is not mistaken for ours", async () => {
   ut.generatePolls = 4;
-  const run = runAudit(undefined, FAST);
+  const run = runAudit({}, FAST);
   await settle();
   ut.rows.find((r) => r.created === "09/24/2026 09:59 AM")!.auditId = "150";
   expect((await run).auditId).toBe("200");
@@ -184,22 +192,22 @@ test("the earlier still-generating row finishing is not mistaken for ours", asyn
 
 test("fails with RUN_FAILED when UT re-renders the form", async () => {
   ut.acceptsSubmit = false;
-  await expect(runAudit(undefined, FAST)).rejects.toThrow("RUN_FAILED");
+  await expect(runAudit({}, FAST)).rejects.toThrow("RUN_FAILED");
 });
 
 test("fails with RUN_NOT_ACCEPTED when the POST redirects but no row appears", async () => {
   ut.queuesRow = false;
-  await expect(runAudit(undefined, FAST)).rejects.toThrow("RUN_NOT_ACCEPTED");
+  await expect(runAudit({}, FAST)).rejects.toThrow("RUN_NOT_ACCEPTED");
 });
 
 test("fails with RUN_TIMEOUT when the link never appears", async () => {
   ut.generatePolls = Number.POSITIVE_INFINITY;
-  await expect(runAudit(undefined, FAST)).rejects.toThrow("RUN_TIMEOUT");
+  await expect(runAudit({}, FAST)).rejects.toThrow("RUN_TIMEOUT");
 });
 
 test("tolerates a flaky history fetch while polling", async () => {
   ut.generatePolls = 3;
-  const run = runAudit(undefined, FAST);
+  const run = runAudit({}, FAST);
   await settle();
   ut.failNextHistoryFetches = 2;
   expect((await run).auditId).toBe("200");
@@ -207,8 +215,28 @@ test("tolerates a flaky history fetch while polling", async () => {
 
 test("surfaces AUTH_REQUIRED when the session dies mid-poll", async () => {
   ut.generatePolls = 4;
-  const run = runAudit(undefined, FAST);
+  const run = runAudit({}, FAST);
   await settle();
   ut.loggedIn = false;
   await expect(run).rejects.toThrow("AUTH_REQUIRED");
+});
+
+test("a cancelled run stops polling and throws CANCELLED", async () => {
+  ut.generatePolls = Number.POSITIVE_INFINITY;
+  const run = runAudit({ runId: "r1" }, FAST);
+  await settle();
+  cancelRun("r1");
+  await expect(run).rejects.toThrow("CANCELLED");
+
+  const historyReads = () =>
+    ut.requests.filter((r) => r.url.endsWith("/history/")).length;
+  const readsAtCancel = historyReads();
+  await settle();
+  expect(historyReads()).toBe(readsAtCancel);
+});
+
+test("a run cancelled before its POST never submits", async () => {
+  cancelRun("r2");
+  await expect(runAudit({ runId: "r2" }, FAST)).rejects.toThrow("CANCELLED");
+  expect(ut.requests.some((r) => r.init?.method === "POST")).toBe(false);
 });

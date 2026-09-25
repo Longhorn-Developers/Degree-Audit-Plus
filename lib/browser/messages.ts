@@ -25,7 +25,9 @@ export type ExtensionMessage =
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
   // Background -> UT tab: runs one audit end to end (submit, wait, scrape).
-  | { type: "RUN_AUDIT"; custom?: CustomAuditRunRequest }
+  | { type: "RUN_AUDIT"; runId: string; custom?: CustomAuditRunRequest }
+  // Background -> UT tab: stop waiting on that run (no reply).
+  | { type: "CANCEL_RUN"; runId: string }
   | { type: "PLANNER_READ" }
   | { type: "PLANNER_RESOLVE"; course: PlannerCourseRequest }
   | { type: "PLANNER_ADD"; link: PlannerAddLink }

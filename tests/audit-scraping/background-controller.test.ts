@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import type { CachedAuditData } from "../../domain/audit";
 import {
   AuditBatchController,
-  createAuditRunner,
+  createRunNewAudit,
   type AuditBatchDependencies,
-  type AuditRunDependencies,
+  type RunNewAuditDependencies,
 } from "../../features/audit-scraping/background-controller";
 
 const audit: CachedAuditData = { courses: {}, requirements: [] };
@@ -136,70 +136,133 @@ describe("audit batch controller", () => {
   });
 });
 
-// a fake ut. a submitted audit takes a few polls to show up, and every row
-// dedupes to the same ui entry so only the raw ids tell them apart
-function createFakeUt() {
-  const events: string[] = [];
-  let rawIds = ["100", "101"];
-  let pendingId: string | undefined;
-  let pollsLeft = 0;
-  let nextId = 102;
+const OUTCOME = {
+  auditId: "200",
+  audit,
+  history: [{ auditId: "200" }],
+  timing: {
+    submittedAt: 1,
+    rowSeenAt: 2,
+    detectedAt: 3,
+    scrapeStartedAt: 4,
+    scrapeEndedAt: 5,
+  },
+};
 
-  const deps: AuditRunDependencies = {
+function createRunDeps(overrides: Partial<RunNewAuditDependencies> = {}) {
+  const events: string[] = [];
+  const deps: RunNewAuditDependencies = {
+    isLoggedIn: async () => true,
+    openLoginTab: async () => {
+      events.push("login tab");
+    },
     getAuditPageTab: async () => ({ tabId: TAB_ID, created: true }),
-    fetchHistory: async () => {
-      if (pendingId && pollsLeft > 0) pollsLeft--;
-      if (pendingId && pollsLeft === 0) {
-        rawIds = [pendingId, ...rawIds];
-        pendingId = undefined;
-      }
-      return { audits: [{ auditId: rawIds[0] }], auditIds: rawIds };
+    runInTab: async () => {
+      events.push("run");
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      return { ok: true, outcome: OUTCOME };
     },
-    submit: async () => {
-      pendingId = String(nextId);
-      pollsLeft = 3;
-      nextId++;
-      events.push(`submit ${pendingId}`);
-      return { ok: true };
+    saveHistory: async () => {
+      events.push("save history");
     },
-    scrapeAudit: async (auditId) => {
-      events.push(`scrape ${auditId}`);
-      return audit;
-    },
-    saveHistory: async () => {},
     saveAudit: async (auditId) => {
       events.push(`save ${auditId}`);
+    },
+    cancelInTab: async () => {
+      events.push("cancel");
     },
     closeTab: async () => {
       events.push("close tab");
     },
-    pollIntervalMs: 1,
+    recordTiming: async () => {
+      events.push("timing");
+    },
+    ...overrides,
   };
   return { deps, events };
 }
 
-test("audit runs go one at a time and each resolves to its own new id", async () => {
-  const { deps, events } = createFakeUt();
-  const run = createAuditRunner(deps);
+const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
+const ONE_RUN = ["run", "save history", "save 200", "timing", "close tab"];
 
-  const [first, second] = await Promise.all([run(), run()]);
+describe("run new audit", () => {
+  test("runs, saves, records timing, then closes the tab it opened", async () => {
+    const { deps, events } = createRunDeps();
+    const result = await createRunNewAudit(deps)();
 
-  expect(first.auditId).toBe("102");
-  expect(second.auditId).toBe("103");
-  // the tab closes only after its run is scraped, then the next run starts
-  expect(events).toEqual([
-    "submit 102",
-    "scrape 102",
-    "save 102",
-    "close tab",
-    "submit 103",
-    "scrape 103",
-    "save 103",
-    "close tab",
-  ]);
+    expect(result).toEqual({ auditId: "200", timing: OUTCOME.timing });
+    expect(events).toEqual(ONE_RUN);
+  });
 
-  const timing = first.timing;
-  expect(timing.submittedAt).toBeLessThanOrEqual(timing.detectedAt);
-  expect(timing.detectedAt).toBeLessThanOrEqual(timing.scrapeStartedAt);
-  expect(timing.scrapeStartedAt).toBeLessThanOrEqual(timing.scrapeEndedAt);
+  test("a new request cancels the run in flight and runs instead", async () => {
+    let release!: () => void;
+    const firstCancelled = new Promise<void>((resolve) => (release = resolve));
+    let calls = 0;
+    const { deps, events } = createRunDeps({
+      cancelInTab: async () => {
+        events.push("cancel");
+        release();
+      },
+      // the fake tab: the first run only ends once it is cancelled
+      runInTab: async () => {
+        events.push("run");
+        if (++calls === 1) {
+          await firstCancelled;
+          return { ok: false, error: "CANCELLED" };
+        }
+        return { ok: true, outcome: OUTCOME };
+      },
+    });
+    const run = createRunNewAudit(deps);
+    const first = run();
+    await settle();
+    const second = run();
+
+    await expect(first).rejects.toThrow("CANCELLED");
+    expect(await second).toEqual({ auditId: "200", timing: OUTCOME.timing });
+    expect(events).toEqual(["run", "cancel", "close tab", ...ONE_RUN]);
+  });
+
+  test("a request superseded before it starts never touches a tab", async () => {
+    const { deps, events } = createRunDeps();
+    const run = createRunNewAudit(deps);
+    const [first, second] = await Promise.allSettled([run(), run()]);
+
+    expect(first.status).toBe("rejected");
+    expect(second.status).toBe("fulfilled");
+    expect(events).toEqual(ONE_RUN);
+  });
+
+  test("a failed run closes its tab, opens login on AUTH_REQUIRED, and does not block the next", async () => {
+    let calls = 0;
+    const { deps, events } = createRunDeps({
+      runInTab: async () =>
+        ++calls === 1
+          ? { ok: false, error: "AUTH_REQUIRED" }
+          : { ok: true, outcome: OUTCOME },
+    });
+    const run = createRunNewAudit(deps);
+    await expect(run()).rejects.toThrow("AUTH_REQUIRED");
+    await run();
+
+    expect(events).toContain("login tab");
+    expect(events.filter((e) => e === "close tab")).toHaveLength(2);
+  });
+
+  test("never closes a tab the user already had open", async () => {
+    const { deps, events } = createRunDeps({
+      getAuditPageTab: async () => ({ tabId: TAB_ID, created: false }),
+    });
+    await createRunNewAudit(deps)();
+    expect(events).not.toContain("close tab");
+  });
+
+  test("gives up when the tab never answers", async () => {
+    const { deps, events } = createRunDeps({
+      runInTab: () => new Promise(() => {}),
+      runTimeoutMs: 5,
+    });
+    await expect(createRunNewAudit(deps)()).rejects.toThrow("RUN_TIMEOUT");
+    expect(events).toContain("close tab");
+  });
 });

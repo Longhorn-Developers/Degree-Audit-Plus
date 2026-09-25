@@ -1,8 +1,8 @@
 // Runs one audit on UT from a content script on a UT page.
-
-import type { CustomAuditRunRequest } from "@/domain/audit";
+// all of this run s in the tab itself.
+import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
 import { isLoginPage } from "@/features/session/session";
-import type { AuditRunOutcome } from "@/lib/browser/messages";
+import type { AuditRunOutcome, AuditRunTiming } from "@/lib/browser/messages";
 import {
   toAuditHistoryEntries,
   type AuditHistoryRow,
@@ -50,9 +50,22 @@ interface FoundAudit {
   detectedAt: number;
 }
 
+export interface RunAuditRequest {
+  custom?: CustomAuditRunRequest;
+  // Lets the background cancel this run by id (see cancelRun).
+  runId?: string;
+}
+
+// Runs the background no longer cares about; checked between steps.
+const cancelledRuns = new Set<string>(); // TODO: 5.5 we can remove all audits from this queue when we get some time. 
+
+export function cancelRun(runId: string): void {
+  cancelledRuns.add(runId);
+}
+
 // The one entry point. Everything below is a step of it.
 export async function runAudit(
-  custom?: CustomAuditRunRequest,
+  { custom, runId }: RunAuditRequest = {},
   timing: Partial<RunTimingOptions> = {},
 ): Promise<AuditRunOutcome> {
   const options = { ...DEFAULT_TIMING, ...timing };
@@ -64,27 +77,32 @@ export async function runAudit(
   ]);
   const known = new Set(before.map((row) => row.key));
 
+  // Cancelled before the POST: nothing on UT, nothing to clean up.
+  assertNotCancelled(runId);
   const submittedAt = Date.now();
   await submitForm(prepared);
 
-  const found = await waitForNewAudit(known, submittedAt, options);
+  const found = await waitForNewAudit(known, submittedAt, options, runId);
 
   const scrapeStartedAt = Date.now();
   const result = await fetchAuditResults(found.auditId);
   if ("error" in result) throw new Error(result.error);
   const scrapeEndedAt = Date.now();
 
+  const stamps = {
+    submittedAt,
+    rowSeenAt: found.rowSeenAt,
+    detectedAt: found.detectedAt,
+    scrapeStartedAt,
+    scrapeEndedAt,
+  };
+  logRun(found.auditId, result.audit, stamps);
+
   return {
     auditId: found.auditId,
     audit: result.audit,
     history: toAuditHistoryEntries(found.rows),
-    timing: {
-      submittedAt,
-      rowSeenAt: found.rowSeenAt,
-      detectedAt: found.detectedAt,
-      scrapeStartedAt,
-      scrapeEndedAt,
-    },
+    timing: stamps,
   };
 }
 
@@ -159,7 +177,7 @@ async function submitForm({ form, action }: PreparedRun): Promise<void> {
     redirect: "manual",
     body,
   });
-  // A logged-out session also redirects (to SSO); 
+  // A logged-out session also redirects (to SSO);
   if (response.type === "opaqueredirect") return;
 
   const page = new DOMParser().parseFromString(
@@ -176,6 +194,7 @@ async function waitForNewAudit(
   known: Set<string>,
   submittedAt: number,
   options: RunTimingOptions,
+  runId?: string,
 ): Promise<FoundAudit> {
   const acceptDeadline = submittedAt + options.acceptWindowMs;
   const runDeadline = submittedAt + options.runWindowMs;
@@ -184,6 +203,7 @@ async function waitForNewAudit(
   let failures = 0;
 
   while (Date.now() < (ourKey === undefined ? acceptDeadline : runDeadline)) {
+    assertNotCancelled(runId);
     let rows: AuditHistoryRow[];
     try {
       rows = await fetchAuditHistoryRows();
@@ -222,6 +242,28 @@ async function waitForNewAudit(
 }
 
 // ------------------------------------------------------------------ helpers
+
+// One line per run: how long each step took and what the scrape found.
+function logRun(
+  auditId: string,
+  audit: CachedAuditData,
+  t: AuditRunTiming,
+): void {
+  console.log(
+    `Audit ${auditId} done in ${t.scrapeEndedAt - t.submittedAt} ms: ` +
+      `accepted ${t.rowSeenAt - t.submittedAt} ms, ` +
+      `generate ${t.detectedAt - t.rowSeenAt} ms, ` +
+      `scrape ${t.scrapeEndedAt - t.scrapeStartedAt} ms · ` +
+      `${audit.requirements.length} requirements, ` +
+      `${Object.keys(audit.courses).length} courses`,
+  );
+}
+
+function assertNotCancelled(runId?: string): void {
+  if (runId === undefined || !cancelledRuns.has(runId)) return;
+  cancelledRuns.delete(runId);
+  throw new Error("CANCELLED");
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

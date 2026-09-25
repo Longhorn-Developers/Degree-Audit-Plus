@@ -41,8 +41,6 @@ function getPendingRunItem() {
   return (pendingRunItem ??= createPendingRunItem());
 }
 
-const NOT_LOGGED_IN = "Not logged in to UT Direct";
-
 async function fetchAuditHistoryPage(): Promise<Document> {
   const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -66,15 +64,7 @@ export async function fetchAuditHistoryRows(): Promise<AuditHistoryRow[]> {
 }
 
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
-  try {
-    return toAuditHistoryEntries(await fetchAuditHistoryRows());
-  } catch (error) {
-    // The sync page stores this message for the UI; keep the old wording.
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-      throw new Error(NOT_LOGGED_IN);
-    }
-    throw error;
-  }
+  return toAuditHistoryEntries(await fetchAuditHistoryRows());
 }
 
 // Fetch and parse one audit's results page. Runs in a content script on a UT

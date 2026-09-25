@@ -31,12 +31,14 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
-  fetchAuditHistorySnapshot: async () => ({ audits: [], auditIds: [] }),
 }));
+const OUTCOME = { auditId: "200", audit: { courses: {}, requirements: [] } };
 mock.module("../../features/audit-scraping/audit-runner", () => ({
-  runAudit: async (custom?: unknown) => {
+  runAudit: async ({ custom }: { custom?: unknown }) => {
     ranAudits.push(custom);
+    return OUTCOME;
   },
+  cancelRun: () => {},
 }));
 
 mock.module("../../features/session/session", () => ({
@@ -149,13 +151,13 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
 });
 
-test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
+test("serves RUN_AUDIT requests from the background", async () => {
   startAuditContentController(createDocument("/apps/degree/audits/"));
 
   const responses: unknown[] = [];
   const custom = { catalog: "20259", college: "E", degreePlan: "EBC SSA    " };
   const handled = listener?.(
-    { type: "RUN_AUDIT_VIA_FETCH", custom },
+    { type: "RUN_AUDIT", runId: "r1", custom },
     {},
     (response) => responses.push(response),
   );
@@ -163,7 +165,7 @@ test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
   expect(handled).toBe(true);
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(ranAudits).toEqual([custom]);
-  expect(responses).toEqual([{ ok: true }]);
+  expect(responses).toEqual([{ ok: true, outcome: OUTCOME }]);
 });
 
 test("ignores unrelated messages", () => {
