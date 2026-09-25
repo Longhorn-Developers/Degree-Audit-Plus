@@ -57,21 +57,11 @@ export type FetchAuditResult =
   | { audit: CachedAuditData }
   | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
-// When each step of a run happened (epoch ms), all stamped inside the UT tab.
-export interface AuditRunTiming {
-  submittedAt: number;
-  rowSeenAt: number;
-  detectedAt: number;
-  scrapeStartedAt: number;
-  scrapeEndedAt: number;
-}
-
 // Everything the tab learned from one run.
 export interface AuditRunOutcome {
   auditId: string;
   audit: CachedAuditData;
   history: AuditHistoryEntry[];
-  timing: AuditRunTiming;
 }
 
 export type RunAuditResult =
@@ -81,7 +71,7 @@ export type RunAuditResult =
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
   RUN_NEW_AUDIT:
-    | { success: true; auditId: string; timing: AuditRunTiming }
+    | { success: true; auditId: string }
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {

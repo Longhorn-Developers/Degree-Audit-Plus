@@ -51,7 +51,7 @@ export function startAuditContentController(document: Document): void {
       }
 
       if (message.type === "RUN_AUDIT") {
-        void runAudit(message).then(
+        void runAudit(message.runId, message.custom).then(
           (outcome) =>
             sendMessageResponse(message, sendResponse, { ok: true, outcome }),
           (error: unknown) => {

@@ -33,32 +33,33 @@ neither).
 ```text
 popup                background (background-controller.ts)         UT tab (audit-runner.ts)
 ─────                ─────────────────────────────────────         ────────────────────────
-RUN_NEW_AUDIT ─────▶ runNewAudit()
-                       createLatestOnly()    only the newest request matters:
-                       │                     cancels the run in flight (CANCEL_RUN)
-                       ├ isLoggedIn() false? → openLoginTab, fail
-                       ├ getAuditPageTab()   existing UT tab, or open one hidden
-                       ├ RUN_AUDIT ────────────────────────────▶ runAudit()
-                       │                                          ├ fetchAuditHistoryRows() ∥ fetchRunForm()
-                       │                                          │   known = every row's key
-                       │                                          ├ submitForm()   POST, redirect:"manual"
-                       │                                          ├ waitForNewAudit(known)   poll 150 ms
-                       │                                          │   1. row whose key ∉ known → ours
-                       │                                          │   2. that row has a link  → auditId
-                       │                                          └ fetchAuditResults(auditId)
-                       │ ◀───────────────────── { ok, outcome: { auditId, audit, history, timing } }
-                       ├ saveAuditHistory(history)   → popup + main page update via storage watchers
-                       ├ saveAuditData(auditId, audit)
-                       ├ recordRunTiming()           last 20 runs in storage.local.auditRunTimings
-                       └ finally: close the tab if we opened it
-◀──────────────────── { success, auditId, timing }  |  { success: false, error }
+RUN_NEW_AUDIT ─────▶ runNewAudit()          latest request wins: aborts the run in
+                       │                    flight (CANCEL_RUN), starts once it settled
+                       └ runInUtTab()
+                         ├ getCachedLoginState() false? → openLoginTab, fail
+                         ├ getAuditPageTab()   existing UT tab, or open one hidden
+                         ├ RUN_AUDIT ──────────────────────────▶ runAudit(runId, custom)
+                         │                                        ├ fetchAuditHistoryRows() ∥ fetchRunForm()
+                         │                                        │   known = every row's key
+                         │                                        ├ submitForm()   POST, redirect:"manual"
+                         │                                        ├ waitForNewAudit(known)   poll 150 ms
+                         │                                        │   1. row whose key ∉ known → ours
+                         │                                        │   2. that row has a link  → auditId
+                         │                                        ├ fetchAuditResults(auditId)
+                         │                                        └ console.log: total / generate / scrape ms
+                         │ ◀───────────────────── { ok, outcome: { auditId, audit, history } }
+                         ├ saveAuditHistory(history)   → popup + main page update via storage watchers
+                         ├ saveAuditData(auditId, audit)
+                         └ finally: close the tab if we opened it
+◀──────────────────── { success, auditId }  |  { success: false, error }
 ```
 
 Why the row, not the id: a history row exists from the moment UT accepts the
 request (~150 ms after the POST), with no link yet. Its identity is the first
-six cells (`AuditHistoryRow.key`). We remember the one row we didn't know
-before the POST and wait for _that_ row's link, so an audit finishing at the
-same time from UT's own page or another device is never mistaken for ours.
+five cells (`AuditHistoryRow.key`), everything before Status. We remember the
+one row we didn't know before the POST and wait for _that_ row's link, so an
+audit finishing at the same time from UT's own page or another device is never
+mistaken for ours.
 
 Failures cross the wire as a string and end as `{ success: false, error }` at
 the popup, which clears its spinner. A tab the background opened always
@@ -113,7 +114,7 @@ the session-cookie watcher in `session.ts` picks things back up after re-login.
 | `features/audit-scraping/audit-history-sync.ts`    | History fetch (`fetchAuditHistoryRows`), results fetch, UT-page run detection |
 | `features/audit-scraping/audit-history-parser.ts`  | History table → rows with identity → deduped `AuditHistoryEntry[]`            |
 | `features/audit-scraping/audit-page-parser.ts`     | Results DOM → `CachedAuditData`                                               |
-| `features/audit-scraping/background-controller.ts` | `createRunNewAudit()`, batch scraping, login gate (background)                |
+| `features/audit-scraping/background-controller.ts` | `runNewAudit()` (latest wins), batch scraping, login gate (background)        |
 | `features/audit-scraping/planner-bridge.ts`        | Planner calls: UI → background → UT tab                                       |
 | `features/session/session.ts`                      | Login state, probes, login tab                                                |
 | `lib/browser/messages.ts`                          | Typed message protocol                                                        |

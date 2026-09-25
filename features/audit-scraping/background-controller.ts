@@ -1,8 +1,4 @@
-import type {
-  AuditHistoryEntry,
-  CachedAuditData,
-  CustomAuditRunRequest,
-} from "@/domain/audit";
+import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
 import {
   saveAuditData,
   saveAuditHistory,
@@ -11,9 +7,7 @@ import {
   sendMessageResponse,
   sendRuntimeMessage,
   sendTabMessage,
-  type AuditRunTiming,
   type ExtensionMessage,
-  type RunAuditResult,
 } from "@/lib/browser/messages";
 import {
   getCachedLoginState,
@@ -217,153 +211,73 @@ export function registerAuditScrapingHandlers(): void {
   );
 }
 
+// ------------------------------------------------------ running an audit
+
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
-function registerAuditNavigationHandlers(
-  runNewAudit: (custom?: CustomAuditRunRequest) => Promise<AuditRunResult>,
-): void {
-  browser.runtime.onMessage.addListener(
-    (message: ExtensionMessage, _sender, sendResponse) => {
-      if (message.type === "OPEN_DEGREE_AUDIT") {
-        const url = browser.runtime.getURL(
-          `/degree-audit.html?auditId=${message.auditId}`,
-        );
-        browser.tabs
-          .create({ url })
-          .then(() =>
-            sendMessageResponse(message, sendResponse, { success: true }),
-          )
-          .catch((error) =>
-            sendMessageResponse(message, sendResponse, {
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-            }),
-          );
-        return true;
-      }
+// Latest request wins: a new request cancels the run in flight and starts once
+// it has settled, so two runs never share the UT tab.
+let current: AbortController | undefined;
+let last: Promise<unknown> = Promise.resolve();
 
-      if (message.type === "RUN_NEW_AUDIT") {
-        void runNewAudit(message.custom).then(
-          (result) =>
-            sendMessageResponse(message, sendResponse, {
-              success: true,
-              auditId: result.auditId,
-              timing: result.timing,
-            }),
-          (error) => {
-            console.error("Failed to run audit:", error);
-            sendMessageResponse(message, sendResponse, {
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          },
-        );
-        return true;
-      }
-    },
-  );
+function runNewAudit(custom?: CustomAuditRunRequest): Promise<string> {
+  current?.abort();
+  const controller = new AbortController();
+  current = controller;
+  const turn = last
+    .catch(() => undefined)
+    .then(() => runInUtTab(controller.signal, custom));
+  last = turn;
+  return turn;
 }
 
-export interface AuditRunResult {
-  auditId: string;
-  timing: AuditRunTiming;
-}
+// One run: gate on login, get a UT tab, let the tab do the run, save what came
+// back, close a tab we opened. Resolves with the new audit's id.
+async function runInUtTab(
+  signal: AbortSignal,
+  custom?: CustomAuditRunRequest,
+): Promise<string> {
+  if (signal.aborted) throw new Error("CANCELLED");
+  // A dead session would land a hidden tab on SSO, where our content script
+  // never runs. Send the user to log in instead.
+  if ((await getCachedLoginState()) === false) {
+    await openLoginTab();
+    throw new Error("AUTH_REQUIRED");
+  }
 
-export interface RunNewAuditDependencies {
-  isLoggedIn: () => Promise<boolean | null>;
-  openLoginTab: () => Promise<void>;
-  getAuditPageTab: () => Promise<{ tabId: number; created: boolean }>;
-  runInTab: (
-    tabId: number,
-    runId: string,
-    custom?: CustomAuditRunRequest,
-  ) => Promise<RunAuditResult | undefined>;
-  cancelInTab: (tabId: number, runId: string) => Promise<void>;
-  saveHistory: (audits: AuditHistoryEntry[]) => Promise<void>;
-  saveAudit: (auditId: string, audit: CachedAuditData) => Promise<void>;
-  closeTab: (tabId: number) => Promise<void>;
-  recordTiming: (result: AuditRunResult) => Promise<void>;
-  // Backstop above the tab's own 90 s window, for a tab that never answers.
-  runTimeoutMs?: number;
-}
-
-// The background's side of a run: cancel the run in flight, gate on login,
-// get a UT tab, let the tab do the run, save what came back, close a tab we
-// opened. A run superseded while waiting throws CANCELLED.
-export function createRunNewAudit(deps: RunNewAuditDependencies) {
-  const runTimeoutMs = deps.runTimeoutMs ?? 120_000;
-  const runLatest = createLatestOnly();
-
-  return function runNewAudit(
-    custom?: CustomAuditRunRequest,
-  ): Promise<AuditRunResult> {
-    return runLatest(async (signal) => {
-      // Superseded before it started: never touch a tab.
-      if (signal.aborted) throw new Error("CANCELLED");
-      // Catch a known-dead session up front — the run itself re-checks via
-      // its own responses, so the instant cached read is enough here.
-      if ((await deps.isLoggedIn()) === false) {
-        await deps.openLoginTab();
-        throw new Error("AUTH_REQUIRED");
-      }
-
-      const { tabId, created } = await deps.getAuditPageTab();
-      const runId = crypto.randomUUID();
-      // The tab checks for the cancel between steps and replies CANCELLED.
-      const onAbort = () =>
-        void deps.cancelInTab(tabId, runId).catch(() => undefined);
-      signal.addEventListener("abort", onAbort);
-      if (signal.aborted) onAbort();
-      const stopPing = keepAlive();
-      try {
-        const result = await withTimeout(
-          deps.runInTab(tabId, runId, custom),
-          runTimeoutMs,
-          "RUN_TIMEOUT",
-        );
-        if (!result) throw new Error("No response from audit page");
-        if (!result.ok) throw new Error(result.error);
-
-        const { outcome } = result;
-        await deps.saveHistory(outcome.history);
-        await deps.saveAudit(outcome.auditId, outcome.audit);
-        const summary = { auditId: outcome.auditId, timing: outcome.timing };
-        await deps.recordTiming(summary).catch((error: unknown) => {
-          console.warn("Failed to record audit run timing:", error);
-        });
-        return summary;
-      } catch (error) {
-        if (error instanceof Error && error.message === "AUTH_REQUIRED") {
-          await deps.openLoginTab();
-        }
-        throw error;
-      } finally {
-        signal.removeEventListener("abort", onAbort);
-        stopPing();
-        if (created) await deps.closeTab(tabId).catch(() => undefined);
-      }
+  const { tabId, created } = await getAuditPageTab();
+  const runId = crypto.randomUUID();
+  const cancel = () =>
+    void sendTabMessage(tabId, { type: "CANCEL_RUN", runId }).catch(
+      () => undefined,
+    );
+  signal.addEventListener("abort", cancel);
+  const stopPing = keepAlive();
+  try {
+    // Superseded while the tab was opening: nothing was sent, nothing to cancel.
+    if (signal.aborted) throw new Error("CANCELLED");
+    const result = await sendTabMessageWhenReady(tabId, {
+      type: "RUN_AUDIT",
+      runId,
+      custom,
     });
-  };
-}
-
-// Only the newest request matters. Each call aborts the previous job's signal,
-// waits for it to settle, then starts the new one:
-//   run(A) → A starts now
-//   run(B) → A's signal aborts; B starts once A has settled
-function createLatestOnly() {
-  let last: Promise<unknown> = Promise.resolve();
-  let current: AbortController | undefined;
-  return <T>(work: (signal: AbortSignal) => Promise<T>): Promise<T> => {
-    current?.abort();
-    const controller = new AbortController();
-    current = controller;
-    const turn = last
-      .catch(() => undefined)
-      .then(() => work(controller.signal));
-    last = turn;
-    return turn;
-  };
+    if (!result) throw new Error("No response from audit page");
+    if (!result.ok) throw new Error(result.error);
+    await saveAuditHistory(result.outcome.history);
+    await saveAuditData(result.outcome.auditId, result.outcome.audit);
+    return result.outcome.auditId;
+  } catch (error) {
+    // The tab found the session dead mid-run.
+    if (error instanceof Error && error.message === "AUTH_REQUIRED") {
+      await openLoginTab();
+    }
+    throw error;
+  } finally {
+    signal.removeEventListener("abort", cancel);
+    stopPing();
+    if (created) await browser.tabs.remove(tabId).catch(() => undefined);
+  }
 }
 
 // Chrome retires an idle service worker after 30 s. While the tab does a run
@@ -374,31 +288,6 @@ function keepAlive(): () => void {
     20_000,
   );
   return () => clearInterval(timer);
-}
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  message: string,
-): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
-const TIMING_LOG_KEY = "auditRunTimings";
-const TIMING_LOG_SIZE = 20;
-
-// Keeps the last few runs in storage so other tickets can read the numbers.
-async function recordRunTiming(result: AuditRunResult): Promise<void> {
-  const stored = await browser.storage.local.get(TIMING_LOG_KEY);
-  const previous = Array.isArray(stored[TIMING_LOG_KEY])
-    ? (stored[TIMING_LOG_KEY] as AuditRunResult[])
-    : [];
-  const log = [...previous, result].slice(-TIMING_LOG_SIZE);
-  await browser.storage.local.set({ [TIMING_LOG_KEY]: log });
 }
 
 // Any open audits page can host the run; otherwise open one in the background.
@@ -433,29 +322,60 @@ export async function sendTabMessageWhenReady<M extends ExtensionMessage>(
   throw new Error("Audit page did not respond");
 }
 
+function registerAuditRunHandlers(): void {
+  browser.runtime.onMessage.addListener(
+    (message: ExtensionMessage, _sender, sendResponse) => {
+      if (message.type === "OPEN_DEGREE_AUDIT") {
+        const url = browser.runtime.getURL(
+          `/degree-audit.html?auditId=${message.auditId}`,
+        );
+        browser.tabs
+          .create({ url })
+          .then(() =>
+            sendMessageResponse(message, sendResponse, { success: true }),
+          )
+          .catch((error) =>
+            sendMessageResponse(message, sendResponse, {
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        return true;
+      }
+
+      if (message.type === "RUN_NEW_AUDIT") {
+        void runNewAudit(message.custom).then(
+          (auditId) =>
+            sendMessageResponse(message, sendResponse, {
+              success: true,
+              auditId,
+            }),
+          (error: unknown) => {
+            const reason =
+              error instanceof Error ? error.message : String(error);
+            // The tab already logs a cancel.
+            if (reason !== "CANCELLED") {
+              console.error("Failed to run audit:", error);
+            }
+            sendMessageResponse(message, sendResponse, {
+              success: false,
+              error: reason,
+            });
+          },
+        );
+        return true;
+      }
+    },
+  );
+}
+
 export function registerAuditBackgroundController(): void {
-  const closeTab = (tabId: number) => browser.tabs.remove(tabId);
-
-  const runNewAudit = createRunNewAudit({
-    isLoggedIn: getCachedLoginState,
-    openLoginTab,
-    getAuditPageTab,
-    runInTab: (tabId, runId, custom) =>
-      sendTabMessageWhenReady(tabId, { type: "RUN_AUDIT", runId, custom }),
-    cancelInTab: (tabId, runId) =>
-      sendTabMessage(tabId, { type: "CANCEL_RUN", runId }),
-    saveHistory: saveAuditHistory,
-    saveAudit: saveAuditData,
-    closeTab,
-    recordTiming: recordRunTiming,
-  });
-
-  registerAuditNavigationHandlers(runNewAudit);
+  registerAuditRunHandlers();
   registerAuditScrapingHandlers();
   registerSessionCookieWatcher();
   registerPlannerBridge({
     getAuditPageTab,
     sendToTab: sendTabMessageWhenReady,
-    closeTab,
+    closeTab: (tabId) => browser.tabs.remove(tabId),
   });
 }
