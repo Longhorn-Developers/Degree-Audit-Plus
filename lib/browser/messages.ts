@@ -1,4 +1,8 @@
-import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import type {
+  AuditHistoryEntry,
+  CachedAuditData,
+  CustomAuditRunRequest,
+} from "@/domain/audit";
 import type {
   PlannedCourseRow,
   PlannerAddLink,
@@ -20,8 +24,10 @@ export type ExtensionMessage =
   | { type: "SCRAPE_ALL_COMPLETE" }
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
-  // Background -> UT tab: submits the authenticated form.
-  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest }
+  // Background -> UT tab: runs one audit end to end (submit, wait, scrape).
+  | { type: "RUN_AUDIT"; runId: string; custom?: CustomAuditRunRequest }
+  // Background -> UT tab: stop waiting on that run (no reply).
+  | { type: "CANCEL_RUN"; runId: string }
   | { type: "PLANNER_READ" }
   | { type: "PLANNER_RESOLVE"; course: PlannerCourseRequest }
   | { type: "PLANNER_ADD"; link: PlannerAddLink }
@@ -51,17 +57,28 @@ export type FetchAuditResult =
   | { audit: CachedAuditData }
   | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
+// Everything the tab learned from one run.
+export interface AuditRunOutcome {
+  auditId: string;
+  audit: CachedAuditData;
+  history: AuditHistoryEntry[];
+}
+
+export type RunAuditResult =
+  | { ok: true; outcome: AuditRunOutcome }
+  | { ok: false; error: string };
+
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
   RUN_NEW_AUDIT:
-    | { success: true; existing: boolean }
+    | { success: true; auditId: string }
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
   };
   FETCH_AUDIT: FetchAuditResult;
-  RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
+  RUN_AUDIT: RunAuditResult;
   PLANNER_READ: PlannerResult<PlannerData["PLANNER_READ"]>;
   PLANNER_RESOLVE: PlannerResult<PlannerData["PLANNER_RESOLVE"]>;
   PLANNER_ADD: PlannerResult<PlannerData["PLANNER_ADD"]>;
@@ -81,7 +98,7 @@ type ResponseRequest = Extract<
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
-      | "RUN_AUDIT_VIA_FETCH"
+      | "RUN_AUDIT"
       | "PLANNER_READ"
       | "PLANNER_RESOLVE"
       | "PLANNER_ADD"

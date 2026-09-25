@@ -14,7 +14,6 @@ let resumeCalls = 0;
 let watchedRunClicks = 0;
 let recordedLoginPages = 0;
 let fetchedAuditIds: string[] = [];
-let ranAudits: unknown[] = [];
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
@@ -31,13 +30,9 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
+  fetchAuditHistoryRows: async () => [],
+  RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
-mock.module("../../features/audit-scraping/audit-runner", () => ({
-  runAudit: async (custom?: unknown) => {
-    ranAudits.push(custom);
-  },
-}));
-
 mock.module("../../features/session/session", () => ({
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
@@ -85,7 +80,6 @@ beforeEach(() => {
   watchedRunClicks = 0;
   recordedLoginPages = 0;
   fetchedAuditIds = [];
-  ranAudits = [];
 });
 
 function createDocument(pathname: string, body = ""): Document {
@@ -146,23 +140,6 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(fetchedAuditIds).toEqual(["12345"]);
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
-});
-
-test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
-  startAuditContentController(createDocument("/apps/degree/audits/"));
-
-  const responses: unknown[] = [];
-  const custom = { catalog: "20259", college: "E", degreePlan: "EBC SSA    " };
-  const handled = listener?.(
-    { type: "RUN_AUDIT_VIA_FETCH", custom },
-    {},
-    (response) => responses.push(response),
-  );
-
-  expect(handled).toBe(true);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(ranAudits).toEqual([custom]);
-  expect(responses).toEqual([{ ok: true }]);
 });
 
 test("ignores unrelated messages", () => {

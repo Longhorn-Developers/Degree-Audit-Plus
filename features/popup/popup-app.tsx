@@ -144,6 +144,7 @@ export default function App() {
         <div className="flex items-center space-x-3">
           <Button
             className="rounded-md"
+            disabled={runningAudit} // avoid spams
             onClick={needsLogin ? handleLogin : handleRerunAudit}
           >
             {loggedIn === null ? (
