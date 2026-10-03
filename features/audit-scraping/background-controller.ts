@@ -248,6 +248,20 @@ function registerAuditNavigationHandlers(): void {
         );
         return true;
       }
+
+      if (message.type === "DELETE_AUDIT") {
+        void deleteAudit(message.auditId).then(
+          () => sendMessageResponse(message, sendResponse, { success: true }),
+          (error) => {
+            console.error("Failed to delete audit:", error);
+            sendMessageResponse(message, sendResponse, {
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          },
+        );
+        return true;
+      }
     },
   );
 }
@@ -266,7 +280,10 @@ async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
   const { tabId, created } = await getAuditPageTab();
   let submitted = false;
   try {
-    const result = await sendRunRequest(tabId, custom);
+    const result = await sendAuditPageRequest(tabId, {
+      type: "RUN_AUDIT_VIA_FETCH",
+      custom,
+    });
     if (!result.ok) {
       if (result.error === "AUTH_REQUIRED") await openLoginTab();
       throw new Error(result.error);
@@ -286,6 +303,28 @@ async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
   }
 }
 
+async function deleteAudit(auditId: string): Promise<void> {
+  if ((await getCachedLoginState()) === false) {
+    await openLoginTab();
+    throw new Error("Not logged in to UT Direct");
+  }
+
+  const { tabId, created } = await getAuditPageTab();
+  try {
+    const result = await sendAuditPageRequest(tabId, {
+      type: "DELETE_AUDIT_VIA_FETCH",
+      auditId,
+    });
+    if (!result.ok) {
+      if (result.error === "AUTH_REQUIRED") await openLoginTab();
+      throw new Error(result.error);
+    }
+  } finally {
+    // nothing to poll for after a delete so the created tab can go right away
+    if (created) void browser.tabs.remove(tabId).catch(() => {});
+  }
+}
+
 // Any open audits page can host the run; otherwise open one in the background.
 async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
   const tabs = await browser.tabs.query({
@@ -301,13 +340,13 @@ async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
 
 // A created tab's content script needs a moment to register; retry until it
 // answers instead of waiting out the page's full load event.
-async function sendRunRequest(tabId: number, custom?: CustomAuditRunRequest) {
+async function sendAuditPageRequest<M extends ExtensionMessage>(
+  tabId: number,
+  message: M,
+) {
   for (let attempt = 0; attempt < 40; attempt++) {
     try {
-      return await sendTabMessage(tabId, {
-        type: "RUN_AUDIT_VIA_FETCH",
-        custom,
-      });
+      return await sendTabMessage(tabId, message);
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }

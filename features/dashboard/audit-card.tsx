@@ -12,6 +12,7 @@ export interface DegreeAuditCardProps {
   isSelected?: boolean;
   onToggle?: () => void;
   onRename?: (title: string) => void;
+  onDelete?: () => Promise<boolean>;
 }
 
 /**
@@ -23,10 +24,12 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   isSelected = false,
   onToggle,
   onRename,
+  onDelete,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [draftTitle, setDraftTitle] = React.useState(title ?? "");
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -64,6 +67,28 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     setDraftTitle(title ?? "");
     setIsEditing(true);
     setMenuOpen(false);
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "Delete this audit from Degree Audit Plus and UT Direct? Duplicate runs of it on UT Direct are deleted too. This can't be undone.",
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    let deleted = false;
+    try {
+      deleted = (await onDelete?.()) ?? false;
+    } catch (error) {
+      console.error("Failed to delete audit:", error);
+    }
+    setIsDeleting(false);
+
+    if (deleted) {
+      setMenuOpen(false);
+    } else {
+      window.alert("Couldn't delete this audit. Please try again.");
+    }
   };
 
   return (
@@ -160,9 +185,13 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             <CopySimpleIcon size={20} className="shrink-0" />
             <span>Duplicate</span>
           </button>
-          <button className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg">
+          <button
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg disabled:opacity-50"
+            disabled={isDeleting}
+            onClick={handleDelete}
+          >
             <TrashIcon size={20} className="shrink-0" />
-            <span>Delete Audit</span>
+            <span>{isDeleting ? "Deleting..." : "Delete Audit"}</span>
           </button>
         </div>
       )}

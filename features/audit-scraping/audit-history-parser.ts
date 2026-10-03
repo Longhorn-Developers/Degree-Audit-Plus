@@ -9,12 +9,19 @@ function parsePercentage(percentText: string): number {
   return Number.parseInt(percentText.match(/(\d+)%/)?.[1] ?? "0", 10);
 }
 
-export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
+interface AuditHistoryRow {
+  auditId: string;
+  major: string;
+  credential: string | null;
+  percentage: number;
+  auditKey: string;
+}
+
+function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
   const table = document.querySelector("table");
   if (!table) throw new Error("Audit history table not found");
 
-  const audits: AuditHistoryEntry[] = [];
-  const seenAudits = new Set<string>();
+  const rows: AuditHistoryRow[] = [];
 
   for (const row of table.querySelectorAll("tbody tr")) {
     const cells = row.querySelectorAll("td");
@@ -26,17 +33,47 @@ export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
     const credential = parseCredential(programText);
     const percentage = parsePercentage(cells[7].textContent ?? "");
     const auditKey = `${major}-${credential ?? "none"}-${percentage}`;
-    if (seenAudits.has(auditKey)) continue;
+
+    rows.push({ auditId, major, credential, percentage, auditKey });
+  }
+
+  return rows;
+}
+
+export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
+  const audits: AuditHistoryEntry[] = [];
+  const seenAudits = new Set<string>();
+
+  for (const row of parseAuditHistoryRows(document)) {
+    if (seenAudits.has(row.auditKey)) continue;
 
     audits.push({
       title: `Degree Audit ${audits.length + 1}`,
-      majors: [major],
-      minors: credential ? [credential] : [],
-      percentage,
-      auditId,
+      majors: [row.major],
+      minors: row.credential ? [row.credential] : [],
+      percentage: row.percentage,
+      auditId: row.auditId,
     });
-    seenAudits.add(auditKey);
+    seenAudits.add(row.auditKey);
   }
 
   return audits;
+}
+
+// every ut row that parseAuditHistory folds into the same card as auditId
+export function findMergedAuditIds(
+  document: Document,
+  auditId: string,
+): string[] {
+  const rows = parseAuditHistoryRows(document);
+  const target = rows.find((row) => row.auditId === auditId);
+  if (!target) return [];
+
+  const auditIds: string[] = [];
+  for (const row of rows) {
+    if (row.auditId && row.auditKey === target.auditKey) {
+      auditIds.push(row.auditId);
+    }
+  }
+  return auditIds;
 }

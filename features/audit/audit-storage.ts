@@ -99,6 +99,11 @@ export async function getAuditData(
   return (result[key] as CachedAuditData | undefined) ?? null;
 }
 
+export function deleteAuditData(auditIds: string[]): Promise<void> {
+  const keys = auditIds.map((id) => `${AUDIT_DATA_PREFIX}${id}`);
+  return browser.storage.local.remove(keys);
+}
+
 export function watchAuditData(
   auditId: string,
   listener: (audit: CachedAuditData | null) => void,

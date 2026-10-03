@@ -5,6 +5,8 @@ export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
   // UI -> background: orchestrates an audit submission.
   | { type: "RUN_NEW_AUDIT"; custom?: CustomAuditRunRequest }
+  // UI -> background: deletes an audit on UT and locally.
+  | { type: "DELETE_AUDIT"; auditId: string }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
@@ -12,7 +14,9 @@ export type ExtensionMessage =
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
   // Background -> UT tab: submits the authenticated form.
-  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest };
+  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest }
+  // Background -> UT tab: submits the authenticated delete forms.
+  | { type: "DELETE_AUDIT_VIA_FETCH"; auditId: string };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -24,12 +28,14 @@ interface MessageResponses {
   RUN_NEW_AUDIT:
     | { success: true; existing: boolean }
     | { success: false; error: string };
+  DELETE_AUDIT: { success: true } | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
   };
   FETCH_AUDIT: FetchAuditResult;
   RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
+  DELETE_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -41,10 +47,12 @@ type ResponseRequest = Extract<
     type:
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
+      | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
-      | "RUN_AUDIT_VIA_FETCH";
+      | "RUN_AUDIT_VIA_FETCH"
+      | "DELETE_AUDIT_VIA_FETCH";
   }
 >;
 

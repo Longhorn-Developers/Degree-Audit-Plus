@@ -1,0 +1,2417 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="EN">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+
+
+  <title>Audit Results Listing - IDA</title>
+
+
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/utd_javascript.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/jquery-1.4.2.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/jquery.hint.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/utd.js"></script>
+
+
+<style type="text/css">
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/utd_typography.css);
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/custom_utdirect.css);
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/utd_subnav.css);
+
+</style>
+
+
+<link rel="stylesheet" href="https://utdirect.utexas.edu/utdirect/system/css/utd_css_print.css" media="print" />
+
+
+<script language="JavaScript" type="text/javascript">
+
+
+
+  function utd_load_a() {
+    utd_load();
+
+  }
+
+
+  function utd_unload_a() {
+    utd_unload();
+
+  }
+</script>
+
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery-1.4.4.min.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/requirements.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/dropdown_catalog_inputs.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery.tablednd-0.5.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery.infobar.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/credentials.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/profiles.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/degree_audit_system.css" media="all" />
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/submissions.css" media="all" />
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/requirements.css" media="all" />
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/infobar.css" media="all" />
+
+
+</head>
+
+
+<body class="minWidth" onload="utd_load_a();" onunload="utd_unload_a();" >
+<div id="skip"><a href="#main_content">Skip to Main Content</a></div>
+
+
+  <div id="header" role="navigation" aria-label="top"> <!-- HEADER -->
+    <div id="mainnavtext"> <!-- MAINNAVTEXT -->
+      <ul>
+	      <li>
+            <a href="https://utdirect.utexas.edu/utdirect/help/index.WBX?c=0" onclick="utd_openNPW('https://utdirect.utexas.edu/utdirect/help/index.WBX?c=0','win','height=400,width=500,location=no,menubar=no,resizable=yes,scrollbars=yes,status=no,toolbar=no'); return false;">
+              UT Direct Help
+            </a>
+          </li>
+          <li class="last_item">
+            <a href="https://utdirect.utexas.edu/security-443/logoff.cgi?goto=http://www.utexas.edu">
+              Logoff
+            </a>
+          </li>
+        <li class="last_item">
+          <a href="https://utdirect.utexas.edu/utdirect/index.WBX?t=MYHOME" title="My Home Tab" accesskey="1">
+            <img alt="UT Direct Home" title ="UT Direct Home" src="https://utdirect.utexas.edu/utdirect/system/images/home.png"/>
+          </a>
+        </li>
+        <li class="last_item">
+          <a id="search_link" href="#">
+            <img alt="Search UT Direct" title ="Search UT Direct" src="https://utdirect.utexas.edu/utdirect/system/images/search.png"/>
+          </a>
+        </li>
+      </ul>
+    </div> <!-- MAINNAVTEXT CLOSE -->
+    <div id="search_display">   <!-- SEARCH_DISPLAY -->
+      <form name="utd_search" id="search_form" action="https://utdirect.utexas.edu/utdirect/search/index.WBX" method="get">
+        <input type="hidden" name="s_component" value="0" />
+        <input type="hidden" name="s_environment" value="PUTD" />
+        <input type="hidden" name="s_security_flag" value="S" />
+
+        <label for="search_type" class="nodisplaytext">Select the type of search to perform:</label>
+        <select  id="search_type" name="s_search_type">
+          <option  value="SS">any word</option>
+          <option  value="AW">all words</option>
+          <option  value="EX">exact phrase</option>
+        </select>
+
+        <label for="search_term" class="nodisplaytext">Enter a search term:</label>
+        <input id="search_term" type="text" name="input_srch_string" size="72" maxlength="126" title="You may search for a maximum of 7 words" value="" />
+        <input type="submit" value="search" />
+      </form>
+    </div>   <!-- SEARCH_DISPLAY CLOSE -->
+    <div id="header_bottom"> <!-- HEADER_BOTTOM -->
+    </div> <!-- HEADER_BOTTOM CLOSE -->
+
+        <div id="ut_ribbon" onclick="location.href='http://www.utexas.edu';" style="cursor:pointer;" title="Link to University of Texas homepage">  <!-- UT_RIBBON -->
+        </div>  <!-- UT_RIBBON CLOSE -->
+
+  </div>  <!-- HEADER CLOSE -->
+
+
+      <div id="navbar_ut_direct_logo" onclick="location.href='https://utdirect.utexas.edu/utdirect/index.WBX';" style="cursor:pointer;" title="Link to UT Direct homepage">  <!-- NAVBAR_UT_DIRECT_LOGO -->
+      </div>
+
+
+  <div id="utd_container">  <!-- UTD_CONTAINER -->
+
+     <div id ="navbarFloat">  <!-- NAVBARFLOAT -->
+       <div id="navbarContainer">  <!-- NAVBARCONTAINER -->
+        <div id="navbar" role="navigation" aria-label="side">  <!-- NAVBAR -->
+          <div id="navbar_menu">  <!-- NAVBAR_MENU -->
+
+              <div id="navbar1" class="menu"> <!-- NAVBAR1 -->
+                <h1>NAVIGATION MENU</h1>
+                  <ul>
+
+	                        <li>
+                            <a href="/apps/degree/audits/" target="_blank">
+                              Home
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="/apps/degree/audits/submissions/student_individual" target="_blank">
+                              Audit Requests
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="/apps/degree/audits/submissions/history" target="_blank">
+                              Audit Results
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="/apps/degree/audits/planner/" target="_blank">
+                              Student Planner
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="https://utdirect.utexas.edu/apps/degree/minors/" target="_blank">
+                              Minor / Certificate Inventory
+                            </a>
+                          </li>
+
+                          </ul>
+                  </div>  <!-- NAVBAR1 CLOSE -->
+
+                    <div id="navbar3" class="menu">  <!-- NAVBAR3 -->
+                      <h1>RELATED LINKS</h1>
+                      <ul>
+
+	                                <li><a href="https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fforms.cloud.microsoft%2FPages%2FResponsePage.aspx%3Fid%3DpeLXMdi9TkGel76pmOvf4UpAFJkDrIhLsZ0YcVmJEy9UNFgyUkFZODdIMEJBWVhIOUcxUFIxVTNRMSQlQCN0PWcu&data=05%7C02%7C%7C4079455c0c744879cab508ded7a1f17e%7C31d7e2a5bdd8414e9e97bea998ebdfe1%7C0%7C0%7C639185287702957952%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=ssVWgjVVu55kB8zeLfYjm86Mg3boPSeX%2FiA8Tkfwqug%3D&reserved=0" target="_blank">Degree Audit Survey</a></li>
+
+	                                <li><a href="https://registrar.utexas.edu/students/degrees/ida2/intro" target="_blank">Using IDA</a></li>
+
+                      </ul>
+                    </div> <!-- NAVBAR3 CLOSE -->
+
+              </div>  <!-- NAVBAR_MENU CLOSE -->
+          </div>  <!-- NAVBAR CLOSE -->
+        </div>  <!-- NAVBARCONTAINER CLOSE -->
+
+
+          <div id = "navbar_bottom">  <!-- NAVBAR_BOTTOM -->
+          </div>  <!-- NAVBAR_BOTTOM CLOSE -->
+
+
+      </div>  <!-- NAVBARFLOAT -->
+
+        <div id="content" role="main">  <!-- CONTENT -->
+          <a name="main_content"></a>
+
+          <div id="utd_toppage">           <!-- UTD_TOPPAGE -->
+
+        <div class="pageTitle noTabs"> <!-- PAGETITLE -->
+
+                <div id="pgTitle"><h1>Interactive Degree Audit (IDA)</h1></div>
+
+            <div id="utilities"> <!-- UTILITIES -->
+
+                <ul>
+
+                    <li class="last_item">
+                        <a href="https://utdirect.utexas.edu/utdirect/bookmarks/bkms_popup.WBX" onclick="window.open('https://utdirect.utexas.edu/utdirect/bookmarks/bkms_popup.WBX?add_or_edit_sw=AC&amp;cname=Degree Audit Requests System&amp;env=PUTD&amp;sec=S','MyBookmarks','scrollbars=yes,resizable=yes,width=515,height=300');return false;">
+                          bookmark
+                        </a>
+                    </li>
+
+                </ul>
+
+              </div> <!-- UTILITIES CLOSE -->
+
+        </div> <!-- PAGETITLE CLOSE -->
+
+      </div><!-- UTD_TOPPAGE CLOSE-->
+
+    <div id="service_content">
+
+
+
+
+  
+
+  
+
+
+
+
+  <h2>Degree Plan Requests</h2>
+
+  <div class="clear-both"></div>
+    
+
+  
+
+  
+    <h3>Test Student (xy12345)</h3>
+  
+
+  
+
+  
+    <div>
+      27 Degree Audit Requests Returned.
+      
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          
+            <th colspan="9">Degree Audits Requested</th>
+          
+        </tr>
+        <tr>
+          <th>Rerun</th>
+          
+          <th>Request Created</th>
+          
+          <th>Audit Type</th>
+          <th>Program</th>
+          <th>Courses Requested</th>
+          <th>Request Status</th>
+          <th>Audit ID</th>
+          <th>Completion Percentage</th>
+          <th>Delete Option</th>
+        </tr>
+      </thead>
+
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39041)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587720/" target="_blank">100018587720</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587720" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39040)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587719/" target="_blank">100018587719</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587719" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39039)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587718/" target="_blank">100018587718</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587718" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39038)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587717/" target="_blank">100018587717</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587717" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39037)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587716/" target="_blank">100018587716</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587716" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39036)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587715/" target="_blank">100018587715</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587715" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:56 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39035)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587714/" target="_blank">100018587714</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587714" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39033)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587712/" target="_blank">100018587712</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587712" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39032)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587711/" target="_blank">100018587711</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587711" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39031)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587710/" target="_blank">100018587710</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587710" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39030)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587709/" target="_blank">100018587709</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587709" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39029)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587708/" target="_blank">100018587708</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587708" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39028)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587707/" target="_blank">100018587707</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587707" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39027)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587706/" target="_blank">100018587706</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587706" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39026)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587705/" target="_blank">100018587705</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587705" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39024)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587703/" target="_blank">100018587703</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587703" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:55 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39023)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587702/" target="_blank">100018587702</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587702" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              09/20/2026
+              08:54 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (39021)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018587701/" target="_blank">100018587701</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  58%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018587701" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:21 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01872)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374967/" target="_blank">100018374967</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374967" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:21 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01871)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374966/" target="_blank">100018374966</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374966" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:20 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01870)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374965/" target="_blank">100018374965</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374965" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:20 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01868)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374964/" target="_blank">100018374964</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374964" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:20 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01867)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374963/" target="_blank">100018374963</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374963" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=X&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              08/16/2026
+              10:18 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+               Planned 
+            </td>
+            <td>
+              Completed
+              (01864)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018374962/" target="_blank">100018374962</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018374962" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=4SC EBS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              07/29/2026
+              09:06 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Civil Engineering
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+              
+              
+            </td>
+            <td>
+              Completed
+              (35780)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018347796/" target="_blank">100018347796</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  41%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018347796" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2026&amp;form-0-degree_plan=5ADESBA&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              07/29/2026
+              08:51 PM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B A in Design
+              (2026-2028)
+              
+              
+                - Credential: INFORMATICS (MNE I  01)
+              
+            </td>
+            <td>
+               In progress<br />
+              
+              
+            </td>
+            <td>
+              Completed
+              (35738)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018347783/" target="_blank">100018347783</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  41%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018347783" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+          <tr>
+            <td>
+              <!-- Slotting, SSI, and 12th Class Day audits cannot be rerun from the web -->
+              
+                
+                  
+                    <a href="/apps/degree/audits/requests/student_individual/?form-0-eid=xy12345&amp;form-0-name=Test Student&amp;form-0-begin_ccyy=2024&amp;form-0-degree_plan=ESC SS CS&amp;form-0-secondary_deg_pln=&amp;current=X&amp;future=X&amp;planned=&amp;form-TOTAL_FORMS=20&amp;form-INITIAL_FORMS=0&amp;form-MAX_NUM_FORMS=&amp;rerun=" target="_blank">Rerun</a>
+                  
+                
+              
+            </td>
+
+            
+            <td>
+              07/18/2026
+              09:55 AM
+            </td>
+            
+            <td>
+              
+                Normal
+              
+            </td>
+            <td>
+              B S Computer Science, CS
+              (2024-2026)
+              
+              
+            </td>
+            <td>
+               In progress<br />
+               Future<br />
+              
+            </td>
+            <td>
+              Completed
+              (28998)
+            </td>
+            <td>
+              <!-- NRJEW 02/25/2014 Students should not view Slotting, SSI, or 12th Class Day audits -->
+              
+                
+                  <a href="/apps/degree/audits/results/100018328171/" target="_blank">100018328171</a>
+                
+              
+            </td>
+            <td style="text-align:right">
+              
+                
+                  61%
+                
+              
+            </td>
+            <td>
+              
+                <form id="delete_audit" name="delete_audit" action="/apps/degree/audits/requests/history/" method="post" onSubmit="if(!confirm('You are about to delete this audit.  Are you sure you want to continue?')){return false;}">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+                  <input type="hidden" name="audit_to_delete" value="100018328171" />
+                  <input type="hidden" name="next_date_time" value="" />
+                  <input type="hidden" name="next_isn" value="" />
+                  <input type="hidden" name="next_audit_id" value="" />
+                  <input type="hidden" name="query_eid" value="xy12345" />
+                  <input type="hidden" name="request_by_for_sw" value="F" />
+                  <input type="submit" name="delete" value="Delete" />
+                </form>
+              
+            </td>
+          </tr>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </table>
+  
+
+  <form method="get" action="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">
+
+    
+  </form>
+
+
+
+
+
+  </div> <!-- SERVICE_CONTENT -->
+ </div> <!-- CONTENT CLOSE  or  CONTENT_FULLPAGE CLOSE-->
+</div> <!-- UTD_CONTAINER CLOSE -->
+
+
+<div id="utd_close" class="#min_width_style" role="contentinfo">
+
+  <!--div "footer_top" contains the departmental footer div and the site map divs -->
+  <div id="footer_top">
+  <div id="dept_footer">
+
+
+<ul>
+
+    <li class="last_item"></li>
+
+</ul>
+<div>
+
+</div><!-- close for legal notice -->
+
+
+  </div> <!-- close DEPT_FOOTER div -->
+<div id="site_map">
+  <h3>Sitemap
+  <span class = "pad10"></span></h3>
+  
+  <div id = "site_map1">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ACADEMICS&amp;s_env=PUTD&amp;s_sf=S">Academics</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ADMINISTRATIVEAPPLICATIONS&amp;s_env=PUTD&amp;s_sf=S">Administrative Applications</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ADMISSIONS&amp;s_env=PUTD&amp;s_sf=S">Admissions</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=AROUNDCAMPUS&amp;s_env=PUTD&amp;s_sf=S">Around Campus</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=COLLEGES&amp;s_env=PUTD&amp;s_sf=S">Colleges, Schools and Academic Units</a></li>
+    </ul>
+  </div>
+  
+  <div id = "site_map2">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=COMPUTINGANDTECHNOLOGY&amp;s_env=PUTD&amp;s_sf=S">Computing and Technology</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=DIRECTORIESANDOFFICES&amp;s_env=PUTD&amp;s_sf=S">Directories and Offices</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=EMPLOYMENTANDCAREERS&amp;s_env=PUTD&amp;s_sf=S">Employment and Careers</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=FINANCES&amp;s_env=PUTD&amp;s_sf=S">Finances</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=GRADUATION&amp;s_env=PUTD&amp;s_sf=S">Graduation</a></li>
+    </ul>
+  </div>
+  
+  <div id = "site_map3">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=INSTRUCTION&amp;s_env=PUTD&amp;s_sf=S">Instruction</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=NEWS&amp;s_env=PUTD&amp;s_sf=S">News, Events and Calendars</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=PERSONALINFO&amp;s_env=PUTD&amp;s_sf=S">Personal Info</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=RESEARCH&amp;s_env=PUTD&amp;s_sf=S">Research</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=WORKINGATUT&amp;s_env=PUTD&amp;s_sf=S">Working at UT</a></li>
+    </ul>
+  </div>
+  
+  <div id = "ut_wordmark_footer" onclick="location.href='http://www.utexas.edu';" style="cursor:pointer;" title="Link to The University of Texas at Austin home page"><img src="https://utdirect.utexas.edu/utdirect/system/images/ut_logo_footer.png" width="130" height="69" alt="the university of texas at austin"/><br />
+              <!-- The University of Texas at Austin
+                   1 University Station
+                   Austin, Texas  78712 -->
+             
+  </div>
+
+</div><!-- close site_map div -->
+
+
+
+
+
+
+
+
+
+
+
+
+  </div> <!-- close for footer_top -->
+
+
+
+<div id="footer_bottom" class="_bottom">
+  <!--div "footer_tower" is absolutely positioned on top of the "footer_top" and "footer_bottom"  
+  and contains the graphic with the wordmark and tower in the background-->
+  <div id="footer_tower"></div>
+  <div id="footer_ribbon" class="">
+
+    <div id = "ut_footer">
+
+    <ul>
+
+
+        <li><a href="https://utdirect.utexas.edu/security-443/logoff.cgi?goto=http://www.utexas.edu" target="_top" onmouseover="status='LOGOFF'; return true;" onmouseout="status=' '; return true;">Logoff</a></li>
+
+    <li><a href="mailto:utd-stewards@utlists.utexas.edu" target="_top" onmouseover="status='Send a comment to the UT Direct team.'; return true;" onmouseout="status=' '; return true;">UT Direct Comments</a></li>
+    <li><a href="http://www.utexas.edu/web-privacy-policy" target="_blank" onmouseover="status='Read the UT Austin Web Privacy Policy.'; return true;" onmouseout="status=' '; return true;">Web Privacy Policy</a></li>
+    <li class="last_item"><a href="http://www.utexas.edu/web-accessibility-policy" target="_blank" accesskey="0">Web Accessibility</a></li>
+  </ul>
+
+  <div id="ut_copyright">&copy;<a href="http://www.utexas.edu" target="_blank" onmouseover="status='Go to the UT Home Page.'; return true;" onmouseout="status=' '; return true;">The University of Texas at Austin</a> 2019</div>
+
+  </div> <!-- close ut_footer -->
+</div> <!-- close footer_ribbon -->
+</div> <!-- close footer_bottom -->
+
+</div> <!-- utd_close -->
+
+
+</body>
+</html>

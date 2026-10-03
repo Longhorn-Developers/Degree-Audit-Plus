@@ -13,7 +13,7 @@ import { storage } from "wxt/utils/storage";
 import { parseAuditHistory } from "./audit-history-parser";
 import { parseAuditPage } from "./audit-page-parser";
 
-const AUDIT_HISTORY_URL =
+export const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 const AUDIT_RESULTS_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/results/";
@@ -86,7 +86,7 @@ async function refreshAuditHistory(): Promise<boolean> {
   return processAuditHistory(await fetchAuditHistory());
 }
 
-async function processAuditHistory(
+export async function processAuditHistory(
   audits: AuditHistoryEntry[],
 ): Promise<boolean> {
   const auditIds = audits.filter(hasAuditResult).map((audit) => audit.auditId);

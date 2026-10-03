@@ -22,6 +22,7 @@ import {
 } from "./audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePreferences } from "@/features/preferences/preferences-provider";
+import { sendRuntimeMessage } from "@/lib/browser/messages";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,
@@ -38,6 +39,7 @@ interface AuditContextValue {
   currentAuditName: string;
   setCurrentAuditId: (id: string) => void;
   renameAuditTitle: (auditId: string, title: string) => Promise<boolean>;
+  deleteAudit: (auditId: string) => Promise<boolean>;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
   getCourseById: (id: CourseId) => Course;
@@ -174,6 +176,13 @@ export function AuditContextProvider({
         if (!updatedHistory) return false;
         setHistory(updatedHistory);
         return true;
+      },
+      deleteAudit: async (auditId) => {
+        const response = await sendRuntimeMessage({
+          type: "DELETE_AUDIT",
+          auditId,
+        });
+        return Boolean(response?.success);
       },
       moveCourseToNewSemester: async (courseId, semester) => {
         if (!auditData || !currentAuditId) return false;

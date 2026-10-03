@@ -15,6 +15,7 @@ let watchedRunClicks = 0;
 let recordedLoginPages = 0;
 let fetchedAuditIds: string[] = [];
 let ranAudits: unknown[] = [];
+let deletedAuditIds: string[] = [];
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
@@ -31,10 +32,18 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
+  markAuditRunPending: async () => {},
+  processAuditHistory: async () => false,
+  AUDIT_HISTORY_URL:
+    "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/",
+  RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
 mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async (custom?: unknown) => {
     ranAudits.push(custom);
+  },
+  deleteAudit: async (auditId: string) => {
+    deletedAuditIds.push(auditId);
   },
 }));
 
@@ -81,6 +90,7 @@ beforeEach(() => {
   recordedLoginPages = 0;
   fetchedAuditIds = [];
   ranAudits = [];
+  deletedAuditIds = [];
 });
 
 function createDocument(pathname: string, body = ""): Document {
@@ -157,6 +167,22 @@ test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
   expect(handled).toBe(true);
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(ranAudits).toEqual([custom]);
+  expect(responses).toEqual([{ ok: true }]);
+});
+
+test("serves DELETE_AUDIT_VIA_FETCH requests from the background", async () => {
+  startAuditContentController(createDocument("/apps/degree/audits/"));
+
+  const responses: unknown[] = [];
+  const handled = listener?.(
+    { type: "DELETE_AUDIT_VIA_FETCH", auditId: "12345" },
+    {},
+    (response) => responses.push(response),
+  );
+
+  expect(handled).toBe(true);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(deletedAuditIds).toEqual(["12345"]);
   expect(responses).toEqual([{ ok: true }]);
 });
 

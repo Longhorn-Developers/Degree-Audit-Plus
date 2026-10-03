@@ -19,8 +19,13 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar, toggleDarkMode, isDarkMode } =
     usePreferences();
-  const { currentAuditId, setCurrentAuditId, history, renameAuditTitle } =
-    useAuditContext();
+  const {
+    currentAuditId,
+    setCurrentAuditId,
+    history,
+    renameAuditTitle,
+    deleteAudit,
+  } = useAuditContext();
   return (
     <div
       className={cn(
@@ -82,6 +87,10 @@ const Sidebar = () => {
                     if (audit.auditId) {
                       renameAuditTitle(audit.auditId, title);
                     }
+                  }}
+                  onDelete={async () => {
+                    if (!audit.auditId) return false;
+                    return deleteAudit(audit.auditId);
                   }}
                 />
               );

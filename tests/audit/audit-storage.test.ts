@@ -6,6 +6,7 @@ mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
 mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
 
 const {
+  deleteAuditData,
   getAuditData,
   getAuditHistory,
   getUncachedAuditIds,
@@ -146,4 +147,17 @@ test("reloads the exact canonical audit object that was saved", async () => {
   await saveAuditData("audit-1", audit);
 
   expect(await getAuditData("audit-1")).toEqual(audit);
+});
+
+test("deletes only the given audits' cached data", async () => {
+  const audit: CachedAuditData = { requirements: [], courses: {} };
+  await saveAuditData("audit-1", audit);
+  await saveAuditData("audit-2", audit);
+  await saveAuditData("audit-3", audit);
+
+  await deleteAuditData(["audit-1", "audit-3"]);
+
+  expect(await getAuditData("audit-1")).toBeNull();
+  expect(await getAuditData("audit-2")).toEqual(audit);
+  expect(await getAuditData("audit-3")).toBeNull();
 });
