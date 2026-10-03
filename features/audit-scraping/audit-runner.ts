@@ -153,7 +153,7 @@ function getFormBody(form: HTMLFormElement): URLSearchParams {
   for (const [key, value] of new FormData(form)) {
     body.append(key, String(value));
   }
-  
+
   const submit = form.querySelector<HTMLInputElement | HTMLButtonElement>(
     '[type="submit"]',
   );
