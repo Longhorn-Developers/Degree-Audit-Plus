@@ -18,6 +18,10 @@ export type ExtensionMessage =
   // Background -> UT tab: submits the authenticated delete forms.
   | { type: "DELETE_AUDIT_VIA_FETCH"; auditId: string };
 
+export type DeleteAuditResult =
+  | { success: true }
+  | { success: false; error: string };
+
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
   | { audit: CachedAuditData }
@@ -28,7 +32,7 @@ interface MessageResponses {
   RUN_NEW_AUDIT:
     | { success: true; existing: boolean }
     | { success: false; error: string };
-  DELETE_AUDIT: { success: true } | { success: false; error: string };
+  DELETE_AUDIT: DeleteAuditResult;
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";

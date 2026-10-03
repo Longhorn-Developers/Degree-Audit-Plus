@@ -101,7 +101,9 @@ const Sidebar = () => {
                           if (audit.auditId) void togglePin(audit.auditId);
                         }}
                         onDelete={async () => {
-                          if (!audit.auditId) return false;
+                          if (!audit.auditId) {
+                            return { success: false, error: "NO_AUDIT_ID" };
+                          }
                           return deleteAudit(audit.auditId);
                         }}
                       />
@@ -137,7 +139,9 @@ const Sidebar = () => {
                           if (audit.auditId) void togglePin(audit.auditId);
                         }}
                         onDelete={async () => {
-                          if (!audit.auditId) return false;
+                          if (!audit.auditId) {
+                            return { success: false, error: "NO_AUDIT_ID" };
+                          }
                           return deleteAudit(audit.auditId);
                         }}
                       />
