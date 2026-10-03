@@ -25,7 +25,12 @@ const Sidebar = () => {
     history,
     renameAuditTitle,
     deleteAudit,
+    togglePin,
   } = useAuditContext();
+
+  const pinnedAudits = history.audits.filter((audit) => audit.pinned);
+  const unpinnedAudits = history.audits.filter((audit) => !audit.pinned);
+
   return (
     <div
       className={cn(
@@ -70,31 +75,77 @@ const Sidebar = () => {
           {history.audits.length === 0 ? (
             <p className="text-sm text-muted">No audits found</p>
           ) : (
-            history.audits.map((audit, index) => {
-              const id = audit.auditId || String(index);
-              return (
-                <DegreeAuditCard
-                  key={id}
-                  title={audit.title}
-                  percentage={audit.percentage}
-                  isSelected={currentAuditId === id}
-                  onToggle={() => {
-                    if (audit.auditId) {
-                      setCurrentAuditId(audit.auditId); // No page refresh, just update state
-                    }
-                  }}
-                  onRename={(title) => {
-                    if (audit.auditId) {
-                      renameAuditTitle(audit.auditId, title);
-                    }
-                  }}
-                  onDelete={async () => {
-                    if (!audit.auditId) return false;
-                    return deleteAudit(audit.auditId);
-                  }}
-                />
-              );
-            })
+            <>
+              {pinnedAudits.length > 0 && (
+                <>
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+                    Pinned
+                  </p>
+                  {pinnedAudits.map((audit, index) => {
+                    const id = audit.auditId || String(index);
+                    return (
+                      <DegreeAuditCard
+                        key={id}
+                        title={audit.title}
+                        percentage={audit.percentage}
+                        isSelected={currentAuditId === id}
+                        isPinned={true}
+                        onToggle={() => {
+                          if (audit.auditId) setCurrentAuditId(audit.auditId);
+                        }}
+                        onRename={(title) => {
+                          if (audit.auditId)
+                            renameAuditTitle(audit.auditId, title);
+                        }}
+                        onTogglePin={() => {
+                          if (audit.auditId) void togglePin(audit.auditId);
+                        }}
+                        onDelete={async () => {
+                          if (!audit.auditId) return false;
+                          return deleteAudit(audit.auditId);
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              )}
+
+              {unpinnedAudits.length > 0 && (
+                <>
+                  {pinnedAudits.length > 0 && (
+                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+                      Unpinned
+                    </p>
+                  )}
+                  {unpinnedAudits.map((audit, index) => {
+                    const id = audit.auditId || String(index);
+                    return (
+                      <DegreeAuditCard
+                        key={id}
+                        title={audit.title}
+                        percentage={audit.percentage}
+                        isSelected={currentAuditId === id}
+                        isPinned={false}
+                        onToggle={() => {
+                          if (audit.auditId) setCurrentAuditId(audit.auditId);
+                        }}
+                        onRename={(title) => {
+                          if (audit.auditId)
+                            renameAuditTitle(audit.auditId, title);
+                        }}
+                        onTogglePin={() => {
+                          if (audit.auditId) void togglePin(audit.auditId);
+                        }}
+                        onDelete={async () => {
+                          if (!audit.auditId) return false;
+                          return deleteAudit(audit.auditId);
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </>
           )}
         </div>
       </div>
