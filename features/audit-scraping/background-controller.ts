@@ -6,7 +6,7 @@ import {
   saveAuditHistory,
   savePreviewAudit,
 } from "@/features/audit/audit-storage";
-import { diffAudits } from "@/features/audit/diff-audits";
+import { diffAudits } from "@/features/audit/audit-calculations";
 import {
   sendMessageResponse,
   sendRuntimeMessage,

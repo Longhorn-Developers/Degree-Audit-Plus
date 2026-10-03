@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { CachedAuditData, RequirementRule } from "../../domain/audit";
 import type { Course, CourseId } from "../../domain/course";
-import { diffAudits } from "../../features/audit/diff-audits";
+import { diffAudits } from "../../features/audit/audit-calculations";
 
 function rule(text: string, applied: number, courses: string[] = []) {
   return {
