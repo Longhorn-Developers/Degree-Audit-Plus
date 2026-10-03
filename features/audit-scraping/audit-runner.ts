@@ -3,7 +3,7 @@
 // UT's CSRF checks (extension-origin POSTs get 403).
 import type { CustomAuditRunRequest } from "@/domain/audit";
 import { deleteAuditData } from "@/features/audit/audit-storage";
-import { isLoginPage } from "@/features/session/session";
+import { isLoginPage, refreshLoginState } from "@/features/session/session";
 import { findMergedAuditIds, parseAuditHistory } from "./audit-history-parser";
 import {
   AUDIT_HISTORY_URL,
@@ -116,8 +116,16 @@ function findDeleteForm(page: Document, auditId: string) {
   return input?.closest("form") ?? null;
 }
 
+// Fetches and parses a UT page. Throws AUTH_REQUIRED when the session is gone.
 async function fetchPage(url: string, failure: string): Promise<Document> {
-  const response = await fetch(url, { credentials: "include" });
+  const response = await fetch(url, { credentials: "include" }).catch(
+    async (error: unknown) => {
+      // ut sends logged-out requests to its sso login on another origin, which
+      // fetch can't follow, so a failed fetch means checking the session
+      if (!(await refreshLoginState())) throw new Error("AUTH_REQUIRED");
+      throw error;
+    },
+  );
   if (!response.ok) throw new Error(failure);
 
   const page = new DOMParser().parseFromString(
