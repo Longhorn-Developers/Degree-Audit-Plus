@@ -1,12 +1,19 @@
 import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import type { PlannerSyncTarget } from "@/domain/course";
 import {
+  getAuditData,
   saveAuditData,
   saveAuditHistory,
+  savePreviewAudit,
 } from "@/features/audit/audit-storage";
+import { diffAudits } from "@/features/audit/diff-audits";
 import {
   sendMessageResponse,
   sendRuntimeMessage,
   sendTabMessage,
+  type AuditRunOutcome,
+  type AuditRunRequest,
+  type CoursePreview,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import {
@@ -216,28 +223,59 @@ export function registerAuditScrapingHandlers(): void {
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
+// Runs an audit and makes it the newest one in the app.
+async function runNewAudit(custom?: CustomAuditRunRequest): Promise<string> {
+  const { auditId, audit, history } = await runLatest({ custom });
+  await saveAuditHistory(history);
+  await saveAuditData(auditId, audit);
+  return auditId;
+}
+
+// Plans one course on UT, runs an audit with it, and diffs that against the
+// main audit. The main audit is never touched; the preview is kept on its own.
+async function previewCourse(
+  course: PlannerSyncTarget,
+  mainAuditId: string,
+): Promise<CoursePreview> {
+  const startedAt = Date.now();
+  const name = `${course.department} ${course.number}`;
+  const main = await getAuditData(mainAuditId);
+  if (!main) throw new Error("MAIN_AUDIT_NOT_FOUND");
+
+  console.log(`Preview ${name}: planning it and running an audit`);
+  const { auditId, audit, steps } = await runLatest({ preview: course });
+
+  const diff = diffAudits(main, audit);
+  await savePreviewAudit({ auditId, audit, diff });
+
+  // total minus the tab's steps = waiting for the tab and the message trip
+  steps.total = Date.now() - startedAt;
+  console.log(`Preview ${name}: audit ${auditId}`, diff, steps);
+  return { auditId, diff, steps };
+}
+
 // Latest request wins: a new request cancels the run in flight and starts once
 // it has settled, so two runs never share the UT tab.
 let current: AbortController | undefined;
 let last: Promise<unknown> = Promise.resolve();
 
-function runNewAudit(custom?: CustomAuditRunRequest): Promise<string> {
+function runLatest(request: AuditRunRequest): Promise<AuditRunOutcome> {
   current?.abort();
   const controller = new AbortController();
   current = controller;
   const turn = last
     .catch(() => undefined)
-    .then(() => runInUtTab(controller.signal, custom));
+    .then(() => runInUtTab(controller.signal, request));
   last = turn;
   return turn;
 }
 
-// One run: gate on login, get a UT tab, let the tab do the run, save what came
-// back, close a tab we opened. Resolves with the new audit's id.
+// One run: gate on login, get a UT tab, let the tab do the run, close a tab
+// we opened.
 async function runInUtTab(
   signal: AbortSignal,
-  custom?: CustomAuditRunRequest,
-): Promise<string> {
+  request: AuditRunRequest,
+): Promise<AuditRunOutcome> {
   if (signal.aborted) throw new Error("CANCELLED");
   // A dead session would land a hidden tab on SSO, where our content script
   // never runs. Send the user to log in instead.
@@ -260,13 +298,11 @@ async function runInUtTab(
     const result = await sendTabMessageWhenReady(tabId, {
       type: "RUN_AUDIT",
       runId,
-      custom,
+      ...request,
     });
     if (!result) throw new Error("No response from audit page");
     if (!result.ok) throw new Error(result.error);
-    await saveAuditHistory(result.outcome.history);
-    await saveAuditData(result.outcome.auditId, result.outcome.audit);
-    return result.outcome.auditId;
+    return result.outcome;
   } catch (error) {
     // The tab found the session dead mid-run.
     if (error instanceof Error && error.message === "AUTH_REQUIRED") {
@@ -350,23 +386,33 @@ function registerAuditRunHandlers(): void {
               success: true,
               auditId,
             }),
-          (error: unknown) => {
-            const reason =
-              error instanceof Error ? error.message : String(error);
-            // The tab already logs a cancel.
-            if (reason !== "CANCELLED") {
-              console.error("Failed to run audit:", error);
-            }
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, failure(error)),
+        );
+        return true;
+      }
+
+      if (message.type === "PREVIEW_COURSE") {
+        void previewCourse(message.course, message.mainAuditId).then(
+          (preview) =>
             sendMessageResponse(message, sendResponse, {
-              success: false,
-              error: reason,
-            });
-          },
+              success: true,
+              ...preview,
+            }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, failure(error)),
         );
         return true;
       }
     },
   );
+}
+
+// The failed reply for a run. A cancel is expected, so it is not an error log.
+function failure(error: unknown): { success: false; error: string } {
+  const reason = error instanceof Error ? error.message : String(error);
+  if (reason !== "CANCELLED") console.error("Failed to run audit:", error);
+  return { success: false, error: reason };
 }
 
 export function registerAuditBackgroundController(): void {

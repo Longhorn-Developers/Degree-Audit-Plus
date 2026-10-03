@@ -4,6 +4,7 @@ import {
   type CachedAuditData,
   type CachedCompositeAudit,
   type CompositeAuditData,
+  type PreviewAudit,
   getAuditDisplayName,
 } from "@/domain/audit";
 import { browser } from "wxt/browser";
@@ -11,6 +12,7 @@ import { storage } from "wxt/utils/storage";
 
 const AUDIT_DATA_PREFIX = "auditData_";
 const COMPOSITES_KEY = "compositeAudits";
+const PREVIEW_KEY = "curr_preview";
 
 const createAuditHistoryItem = () =>
   storage.defineItem<AuditHistoryData>("local:auditHistory");
@@ -89,6 +91,11 @@ export function saveAuditData(
   return browser.storage.local.set({
     [`${AUDIT_DATA_PREFIX}${auditId}`]: data,
   });
+}
+
+// Only one preview exists at a time; a new one replaces it.
+export function savePreviewAudit(preview: PreviewAudit): Promise<void> {
+  return browser.storage.local.set({ [PREVIEW_KEY]: preview });
 }
 
 export async function getAuditData(

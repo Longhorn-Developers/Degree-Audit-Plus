@@ -3,6 +3,7 @@ import type {
   CachedAuditData,
   CustomAuditRunRequest,
 } from "@/domain/audit";
+import type { AuditDiff } from "@/domain/audit";
 import type {
   PlannedCourseRow,
   PlannerAddLink,
@@ -18,6 +19,9 @@ export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
   // UI -> background: orchestrates an audit submission.
   | { type: "RUN_NEW_AUDIT"; custom?: CustomAuditRunRequest }
+  // UI -> background: plan this one course on UT, run an audit with it, and
+  // diff the result against the audit the user has open.
+  | { type: "PREVIEW_COURSE"; course: PlannerSyncTarget; mainAuditId: string }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
@@ -25,7 +29,7 @@ export type ExtensionMessage =
   // Background -> UT tab: fetches and parses one result.
   | { type: "FETCH_AUDIT"; auditId: string }
   // Background -> UT tab: runs one audit end to end (submit, wait, scrape).
-  | { type: "RUN_AUDIT"; runId: string; custom?: CustomAuditRunRequest }
+  | ({ type: "RUN_AUDIT"; runId: string } & AuditRunRequest)
   // Background -> UT tab: stop waiting on that run (no reply).
   | { type: "CANCEL_RUN"; runId: string }
   | { type: "PLANNER_READ" }
@@ -57,11 +61,28 @@ export type FetchAuditResult =
   | { audit: CachedAuditData }
   | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
+// What to run: the default degree, a custom one, or the default degree with
+// `preview` as the only planned course.
+export interface AuditRunRequest {
+  custom?: CustomAuditRunRequest;
+  preview?: PlannerSyncTarget;
+}
+
 // Everything the tab learned from one run.
 export interface AuditRunOutcome {
   auditId: string;
   audit: CachedAuditData;
   history: AuditHistoryEntry[];
+  // ms per step, in the order they ran
+  steps: Record<string, number>;
+}
+
+// The reply to PREVIEW_COURSE: the preview audit, what it changed, and how
+// long each step took.
+export interface CoursePreview {
+  auditId: string;
+  diff: AuditDiff;
+  steps: Record<string, number>;
 }
 
 export type RunAuditResult =
@@ -72,6 +93,9 @@ interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
   RUN_NEW_AUDIT:
     | { success: true; auditId: string }
+    | { success: false; error: string };
+  PREVIEW_COURSE:
+    | ({ success: true } & CoursePreview)
     | { success: false; error: string };
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
@@ -95,6 +119,7 @@ type ResponseRequest = Extract<
     type:
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
+      | "PREVIEW_COURSE"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"

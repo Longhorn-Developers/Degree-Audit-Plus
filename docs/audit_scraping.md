@@ -80,6 +80,28 @@ then b: a is dropped, b runs).
 | `RUN_TIMEOUT`      | `waitForNewAudit` / bg | Link never appeared in 90 s (120 s backstop in bg)    |
 | `SCRAPE_FAILED`    | `fetchAuditResults`    | Results page didn't parse                             |
 
+## Previewing a course
+
+Clicking a course in the Add-courses panel asks UT what it would fulfill. It is
+the same run as above with one extra step at the start and one at the end.
+
+```text
+side panel (course-preview-list.tsx)     background                     UT tab
+────────────────────────────────────     ──────────                     ──────
+click ──PREVIEW_COURSE {course, mainAuditId}──▶ previewCourse()
+                                           ├ getAuditData(mainAuditId)
+                                           ├ runLatest({ preview }) ──▶ runAudit(runId, { preview })
+                                           │                              ├ syncPlannerTo([course])   planner = this one course
+                                           │                              └ same run, with incl_planned_crswk=Y
+                                           ├ diffAudits(main, preview)
+                                           └ savePreviewAudit()         storage key curr_preview, one at a time
+◀──────────────── { auditId, diff }
+```
+
+`diff` is an `AuditDiff`: the percentage before and after, and one `RuleChange`
+per rule whose applied hours moved. The main audit and the history list are
+never written. Clicking another course cancels the run in flight.
+
 ## Detecting an audit run on UT's own page
 
 Clicks on UT's own Run button don't go through the path above, so detection
