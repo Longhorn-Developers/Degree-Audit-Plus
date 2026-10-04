@@ -45,32 +45,32 @@ export function startAuditContentController(document: Document): void {
       }
 
       if (message.type === "RUN_AUDIT_VIA_FETCH") {
-        void runAudit(message.custom).then(
-          () => sendMessageResponse(message, sendResponse, { ok: true }),
-          (error) => {
-            console.error("Failed to run audit:", error);
-            sendMessageResponse(message, sendResponse, {
-              ok: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          },
+        void toOkReply(runAudit(message.custom)).then((reply) =>
+          sendMessageResponse(message, sendResponse, reply),
         );
         return true;
       }
 
       if (message.type === "DELETE_AUDIT_VIA_FETCH") {
-        void deleteAudit(message.auditId).then(
-          () => sendMessageResponse(message, sendResponse, { ok: true }),
-          (error) => {
-            console.error("Failed to delete audit:", error);
-            sendMessageResponse(message, sendResponse, {
-              ok: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          },
+        void toOkReply(deleteAudit(message.auditId)).then((reply) =>
+          sendMessageResponse(message, sendResponse, reply),
         );
         return true;
       }
+    },
+  );
+}
+
+// Settles a run or delete into the {ok} reply the background expects.
+function toOkReply(
+  action: Promise<void>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return action.then(
+    () => ({ ok: true }),
+    (error: unknown) => {
+      console.error("UT request failed:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, error: message };
     },
   );
 }
