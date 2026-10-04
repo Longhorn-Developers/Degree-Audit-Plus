@@ -5,7 +5,7 @@ import {
   PushPin,
   Trash,
 } from "@phosphor-icons/react";
-import type { DeleteAuditResult } from "@/lib/browser/messages";
+import type { ActionResult } from "@/lib/browser/messages";
 import React from "react";
 
 export interface DegreeAuditCardProps {
@@ -15,7 +15,7 @@ export interface DegreeAuditCardProps {
   isPinned?: boolean;
   onToggle?: () => void;
   onRename?: (title: string) => void;
-  onDelete?: () => Promise<DeleteAuditResult>;
+  onDelete?: () => Promise<ActionResult>;
   onTogglePin?: () => void;
 }
 
@@ -90,7 +90,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     const result = await onDelete();
     setIsDeleting(false);
     setMenuOpen(false);
-    if (result.success) return;
+    if (result.ok) return;
 
     // the background already opened a login tab for AUTH_REQUIRED
     setDeleteError(

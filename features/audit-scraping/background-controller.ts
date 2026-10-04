@@ -1,9 +1,10 @@
-import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import type { CachedAuditData } from "@/domain/audit";
 import { saveAuditData } from "@/features/audit/audit-storage";
 import {
   sendMessageResponse,
   sendRuntimeMessage,
   sendTabMessage,
+  toActionResult,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import {
@@ -231,34 +232,10 @@ function registerAuditNavigationHandlers(): void {
         return true;
       }
 
-      if (message.type === "RUN_NEW_AUDIT") {
-        void runNewAudit(message.custom).then(
-          (existing) =>
-            sendMessageResponse(message, sendResponse, {
-              success: true,
-              existing,
-            }),
-          (error) => {
-            console.error("Failed to run audit:", error);
-            sendMessageResponse(message, sendResponse, {
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          },
-        );
-        return true;
-      }
-
-      if (message.type === "DELETE_AUDIT") {
-        void deleteAudit(message.auditId).then(
-          () => sendMessageResponse(message, sendResponse, { success: true }),
-          (error) => {
-            console.error("Failed to delete audit:", error);
-            sendMessageResponse(message, sendResponse, {
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          },
+      // the UI hop of a run or delete; the UT tab does the work
+      if (message.type === "RUN_NEW_AUDIT" || message.type === "DELETE_AUDIT") {
+        void toActionResult(forwardToUtTab(message)).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
         );
         return true;
       }
@@ -266,42 +243,29 @@ function registerAuditNavigationHandlers(): void {
   );
 }
 
-// Submits the run through a content script on a UT audits page — the only
-// context whose origin passes UT's CSRF checks. Returns whether an existing
-// tab was used.
-async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
+// Forwards a run or delete to a content script on a UT audits page — the only
+// context whose origin passes UT's CSRF checks.
+async function forwardToUtTab(
+  // only runs and deletes are forwarded, and narrowing to them is what lets
+  // the tab's reply be typed as { ok } in sendAuditPageRequest
+  message: Extract<
+    ExtensionMessage,
+    { type: "RUN_NEW_AUDIT" | "DELETE_AUDIT" }
+  >,
+): Promise<void> {
   await failIfLoggedOut();
   const { tabId, created } = await getAuditPageTab();
-  let submitted = false;
+  let succeeded = false;
   try {
-    await sendAuditPageRequest(tabId, { type: "RUN_AUDIT_VIA_FETCH", custom });
-    submitted = true;
-    return !created;
+    await sendAuditPageRequest(tabId, message);
+    succeeded = true;
   } finally {
-    // After a submission the created tab hosts the poll that picks up the
-    // finished audit — give it time to complete. A failed run has nothing to
-    // wait for.
+    // A created tab hosts the poll that picks up a submitted run's result, so
+    // give it time; anything else has nothing to wait for.
     if (created) {
-      setTimeout(
-        () => void browser.tabs.remove(tabId).catch(() => {}),
-        submitted ? 30_000 : 0,
-      );
+      const keepMs = succeeded && message.type === "RUN_NEW_AUDIT" ? 30_000 : 0;
+      setTimeout(() => void browser.tabs.remove(tabId).catch(() => {}), keepMs);
     }
-  }
-}
-
-// Deletes through a content script on a UT audits page, same as a run.
-async function deleteAudit(auditId: string): Promise<void> {
-  await failIfLoggedOut();
-  const { tabId, created } = await getAuditPageTab();
-  try {
-    await sendAuditPageRequest(tabId, {
-      type: "DELETE_AUDIT_VIA_FETCH",
-      auditId,
-    });
-  } finally {
-    // nothing to poll for after a delete so the created tab can go right away
-    if (created) void browser.tabs.remove(tabId).catch(() => {});
   }
 }
 
@@ -331,9 +295,10 @@ async function failIfLoggedOut(): Promise<void> {
 // to register; retry until it answers instead of waiting out the full load.
 async function sendAuditPageRequest(
   tabId: number,
+  // a run or delete: its reply is { ok }, unlike other tab messages
   message: Extract<
     ExtensionMessage,
-    { type: "RUN_AUDIT_VIA_FETCH" | "DELETE_AUDIT_VIA_FETCH" }
+    { type: "RUN_NEW_AUDIT" | "DELETE_AUDIT" }
   >,
 ): Promise<void> {
   for (let attempt = 0; attempt < 40; attempt++) {

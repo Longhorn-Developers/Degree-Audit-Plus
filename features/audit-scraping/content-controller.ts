@@ -1,5 +1,6 @@
 import {
   sendMessageResponse,
+  toActionResult,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import { recordLoginStateFromPage } from "@/features/session/session";
@@ -44,33 +45,17 @@ export function startAuditContentController(document: Document): void {
         return true;
       }
 
-      if (message.type === "RUN_AUDIT_VIA_FETCH") {
-        void toOkReply(runAudit(message.custom)).then((reply) =>
-          sendMessageResponse(message, sendResponse, reply),
+      // the tab hop of a run or delete forwarded by the background
+      if (message.type === "RUN_NEW_AUDIT" || message.type === "DELETE_AUDIT") {
+        const action =
+          message.type === "RUN_NEW_AUDIT"
+            ? runAudit(message.custom)
+            : deleteAudit(message.auditId);
+        void toActionResult(action).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
         );
         return true;
       }
-
-      if (message.type === "DELETE_AUDIT_VIA_FETCH") {
-        void toOkReply(deleteAudit(message.auditId)).then((reply) =>
-          sendMessageResponse(message, sendResponse, reply),
-        );
-        return true;
-      }
-    },
-  );
-}
-
-// Settles a run or delete into the {ok} reply the background expects.
-function toOkReply(
-  action: Promise<void>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  return action.then(
-    () => ({ ok: true }),
-    (error: unknown) => {
-      console.error("UT request failed:", error);
-      const message = error instanceof Error ? error.message : String(error);
-      return { ok: false, error: message };
     },
   );
 }

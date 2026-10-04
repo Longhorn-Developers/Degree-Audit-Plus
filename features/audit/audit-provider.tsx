@@ -23,10 +23,7 @@ import {
 } from "./audit-storage";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePreferences } from "@/features/preferences/preferences-provider";
-import {
-  sendRuntimeMessage,
-  type DeleteAuditResult,
-} from "@/lib/browser/messages";
+import { sendRuntimeMessage, type ActionResult } from "@/lib/browser/messages";
 import {
   addPlannedCourse as addCourse,
   moveCourseToSemester,
@@ -43,7 +40,7 @@ interface AuditContextValue {
   currentAuditName: string;
   setCurrentAuditId: (id: string) => void;
   renameAuditTitle: (auditId: string, title: string) => Promise<boolean>;
-  deleteAudit: (auditId: string) => Promise<DeleteAuditResult>;
+  deleteAudit: (auditId: string) => Promise<ActionResult>;
   togglePin: (auditId: string) => Promise<boolean>;
   progresses: CurrentAuditProgress;
   semesters: SemesterInfo;
@@ -186,7 +183,7 @@ export function AuditContextProvider({
       // the background replies with the result; a dead background rejects
       deleteAudit: (auditId) =>
         sendRuntimeMessage({ type: "DELETE_AUDIT", auditId }).catch(
-          (error: unknown) => ({ success: false, error: String(error) }),
+          (error: unknown) => ({ ok: false, error: String(error) }),
         ),
       togglePin: async (auditId) => {
         const updatedHistory = await togglePinAudit(auditId);

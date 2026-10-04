@@ -50,15 +50,6 @@ mock.module("../../features/session/session", () => ({
   openLoginTab: async () => {},
   registerSessionCookieWatcher: () => {},
 }));
-mock.module("../../lib/browser/messages", () => ({
-  sendMessageResponse: (
-    _request: ExtensionMessage,
-    sendResponse: (response: unknown) => void,
-    response: unknown,
-  ) => sendResponse(response),
-  sendRuntimeMessage: async () => undefined,
-  sendTabMessage: async () => undefined,
-}));
 
 (
   globalThis as typeof globalThis & {
@@ -148,13 +139,13 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
 });
 
-test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
+test("serves forwarded RUN_NEW_AUDIT requests from the background", async () => {
   startAuditContentController(createDocument("/apps/degree/audits/"));
 
   const responses: unknown[] = [];
   const custom = { catalog: "20259", college: "E", degreePlan: "EBC SSA    " };
   const handled = listener?.(
-    { type: "RUN_AUDIT_VIA_FETCH", custom },
+    { type: "RUN_NEW_AUDIT", custom },
     {},
     (response) => responses.push(response),
   );
@@ -165,12 +156,12 @@ test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
   expect(responses).toEqual([{ ok: true }]);
 });
 
-test("serves DELETE_AUDIT_VIA_FETCH requests from the background", async () => {
+test("serves forwarded DELETE_AUDIT requests from the background", async () => {
   startAuditContentController(createDocument("/apps/degree/audits/"));
 
   const responses: unknown[] = [];
   const handled = listener?.(
-    { type: "DELETE_AUDIT_VIA_FETCH", auditId: "12345" },
+    { type: "DELETE_AUDIT", auditId: "12345" },
     {},
     (response) => responses.push(response),
   );

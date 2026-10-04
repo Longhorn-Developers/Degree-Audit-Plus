@@ -103,7 +103,7 @@ export default function App() {
     setRunningAudit(true);
     try {
       const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
-      if (response && !response.success) setRunningAudit(false);
+      if (response && !response.ok) setRunningAudit(false);
     } catch (error) {
       console.error("Failed to run audit:", error);
       setRunningAudit(false);
