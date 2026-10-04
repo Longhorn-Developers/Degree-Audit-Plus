@@ -1,4 +1,8 @@
-import type { CachedAuditData, CustomAuditRunRequest } from "@/domain/audit";
+import {
+  hasAuditResult,
+  type CachedAuditData,
+  type CustomAuditRunRequest,
+} from "@/domain/audit";
 import type { PlannerSyncTarget } from "@/domain/course";
 import {
   getAuditData,
@@ -11,6 +15,7 @@ import {
   sendMessageResponse,
   sendRuntimeMessage,
   sendTabMessage,
+  toActionResult,
   type AuditRunOutcome,
   type AuditRunRequest,
   type CoursePreview,
@@ -226,7 +231,8 @@ const NEW_AUDIT_URL =
 // Runs an audit and makes it the newest one in the app.
 async function runNewAudit(custom?: CustomAuditRunRequest): Promise<string> {
   const { auditId, audit, history } = await runLatest({ custom });
-  await saveAuditHistory(history);
+  // only finished audits are stored, so other runs still pending stay hidden
+  await saveAuditHistory(history.filter(hasAuditResult));
   await saveAuditData(auditId, audit);
   return auditId;
 }
@@ -277,12 +283,7 @@ async function runInUtTab(
   request: AuditRunRequest,
 ): Promise<AuditRunOutcome> {
   if (signal.aborted) throw new Error("CANCELLED");
-  // A dead session would land a hidden tab on SSO, where our content script
-  // never runs. Send the user to log in instead.
-  if ((await getCachedLoginState()) === false) {
-    await openLoginTab();
-    throw new Error("AUTH_REQUIRED");
-  }
+  await failIfLoggedOut();
 
   const { tabId, created } = await getAuditPageTab();
   const runId = crypto.randomUUID();
@@ -404,6 +405,14 @@ function registerAuditRunHandlers(): void {
         );
         return true;
       }
+
+      // the UI hop of a delete; the UT tab does the work
+      if (message.type === "DELETE_AUDIT") {
+        void toActionResult(deleteAudit(message.auditId)).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
     },
   );
 }
@@ -413,6 +422,36 @@ function failure(error: unknown): { success: false; error: string } {
   const reason = error instanceof Error ? error.message : String(error);
   if (reason !== "CANCELLED") console.error("Failed to run audit:", error);
   return { success: false, error: reason };
+}
+
+// Forwards a delete to a content script on a UT audits page — the only
+// context whose origin passes UT's CSRF checks. Not queued behind runs: it
+// adds no history row, so a run waiting on its own row is unaffected.
+async function deleteAudit(auditId: string): Promise<void> {
+  await failIfLoggedOut();
+  const { tabId, created } = await getAuditPageTab();
+  try {
+    const result = await sendTabMessageWhenReady(tabId, {
+      type: "DELETE_AUDIT",
+      auditId,
+    });
+    if (!result) throw new Error("No response from audit page");
+    if (!result.ok) {
+      if (result.error === "AUTH_REQUIRED") await openLoginTab();
+      throw new Error(result.error);
+    }
+  } finally {
+    if (created) await browser.tabs.remove(tabId).catch(() => undefined);
+  }
+}
+
+// A dead session would land a hidden tab on SSO, where our content script
+// never runs. Send the user to log in instead. The cached read is instant;
+// the UT tab re-checks the session on every request.
+async function failIfLoggedOut(): Promise<void> {
+  if ((await getCachedLoginState()) !== false) return;
+  await openLoginTab();
+  throw new Error("AUTH_REQUIRED");
 }
 
 export function registerAuditBackgroundController(): void {

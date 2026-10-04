@@ -14,6 +14,7 @@ let resumeCalls = 0;
 let watchedRunClicks = 0;
 let recordedLoginPages = 0;
 let fetchedAuditIds: string[] = [];
+let deletedAuditIds: string[] = [];
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
@@ -33,6 +34,15 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   fetchAuditHistoryRows: async () => [],
   RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
+// no test file runs the real runner, so this mock can't leak into one
+mock.module("../../features/audit-scraping/audit-runner", () => ({
+  runAudit: async () => {},
+  cancelRun: () => {},
+  deleteAudit: async (auditId: string) => {
+    deletedAuditIds.push(auditId);
+  },
+}));
+
 mock.module("../../features/session/session", () => ({
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
@@ -45,15 +55,6 @@ mock.module("../../features/session/session", () => ({
   getCachedLoginState: async () => true,
   openLoginTab: async () => {},
   registerSessionCookieWatcher: () => {},
-}));
-mock.module("../../lib/browser/messages", () => ({
-  sendMessageResponse: (
-    _request: ExtensionMessage,
-    sendResponse: (response: unknown) => void,
-    response: unknown,
-  ) => sendResponse(response),
-  sendRuntimeMessage: async () => undefined,
-  sendTabMessage: async () => undefined,
 }));
 
 (
@@ -80,6 +81,7 @@ beforeEach(() => {
   watchedRunClicks = 0;
   recordedLoginPages = 0;
   fetchedAuditIds = [];
+  deletedAuditIds = [];
 });
 
 function createDocument(pathname: string, body = ""): Document {
@@ -140,6 +142,22 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(fetchedAuditIds).toEqual(["12345"]);
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
+});
+
+test("serves forwarded DELETE_AUDIT requests from the background", async () => {
+  startAuditContentController(createDocument("/apps/degree/audits/"));
+
+  const responses: unknown[] = [];
+  const handled = listener?.(
+    { type: "DELETE_AUDIT", auditId: "12345" },
+    {},
+    (response) => responses.push(response),
+  );
+
+  expect(handled).toBe(true);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(deletedAuditIds).toEqual(["12345"]);
+  expect(responses).toEqual([{ ok: true }]);
 });
 
 test("ignores unrelated messages", () => {

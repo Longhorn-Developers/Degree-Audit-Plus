@@ -6,12 +6,15 @@ mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
 mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
 
 const {
+  deleteAuditData,
   getAuditData,
   getAuditHistory,
   getUncachedAuditIds,
   observeAuditHistory,
+  renameAudit,
   saveAuditData,
   saveAuditHistory,
+  togglePinAudit,
   watchAuditHistory,
 } = await import("../../features/audit/audit-storage");
 
@@ -146,4 +149,39 @@ test("reloads the exact canonical audit object that was saved", async () => {
   await saveAuditData("audit-1", audit);
 
   expect(await getAuditData("audit-1")).toEqual(audit);
+});
+
+test("deletes only the given audits' cached data", async () => {
+  const audit: CachedAuditData = { requirements: [], courses: {} };
+  await saveAuditData("audit-1", audit);
+  await saveAuditData("audit-2", audit);
+  await saveAuditData("audit-3", audit);
+
+  await deleteAuditData(["audit-1", "audit-3"]);
+
+  expect(await getAuditData("audit-1")).toBeNull();
+  expect(await getAuditData("audit-2")).toEqual(audit);
+  expect(await getAuditData("audit-3")).toBeNull();
+});
+
+test("keeps renames and pins when a sync rewrites the history", async () => {
+  await saveAuditHistory([
+    { auditId: "audit-1", title: "Degree Audit 1" },
+    { auditId: "audit-2", title: "Degree Audit 2" },
+  ]);
+  await renameAudit("audit-1", "My CS Audit");
+  await togglePinAudit("audit-2");
+
+  // a sync rebuilds every entry from UT's page with default titles
+  await saveAuditHistory([
+    { auditId: "audit-1", title: "Degree Audit 1" },
+    { auditId: "audit-2", title: "Degree Audit 2" },
+    { auditId: "audit-3", title: "Degree Audit 3" },
+  ]);
+
+  expect((await getAuditHistory())?.audits).toEqual([
+    { auditId: "audit-1", title: "My CS Audit" },
+    { auditId: "audit-2", title: "Degree Audit 2", pinned: true },
+    { auditId: "audit-3", title: "Degree Audit 3" },
+  ]);
 });

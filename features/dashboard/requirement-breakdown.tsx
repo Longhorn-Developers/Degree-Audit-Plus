@@ -288,8 +288,9 @@ type CollapsibleProgressCardProps = {
   children: React.ReactNode;
 };
 
-// Shared card shell: colored left border, a collapsible header with title,
-// progress bar and summary, plus children rendered only while expanded.
+// Shared card shell: colored strip inside the left border, a collapsible
+// header with title, progress bar and summary, plus children rendered only
+// while expanded.
 const CollapsibleProgressCard = ({
   title,
   current,
@@ -302,34 +303,37 @@ const CollapsibleProgressCard = ({
   const borderColor = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
 
   return (
-    <div
-      className="w-full bg-background rounded-md border border-gray-200 overflow-hidden border-l-4"
-      style={{ borderLeftColor: borderColor.tailwind }}
-    >
-      <button
-        className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <VStack gap={2}>
-          <span className="font-bold text-base text-text">{title}</span>
-          <ProgressBar
-            current={current}
-            total={total}
-            colorIndex={colorIndex}
-          />
-        </VStack>
-        <HStack y="middle" gap={2}>
-          <span className="text-text font-medium text-sm">
-            {formatProgressSummary(current, total, unit)}
-          </span>
-          {isOpen ? (
-            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
-          ) : (
-            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
-          )}
-        </HStack>
-      </button>
-      {isOpen && children}
+    <div className="w-full flex bg-background rounded-md border border-gray-200 overflow-hidden">
+      <div
+        className="w-2.5 shrink-0"
+        style={{ backgroundColor: borderColor.tailwind }}
+      />
+      <div className="flex-1 min-w-0">
+        <button
+          className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <VStack gap={2}>
+            <span className="font-bold text-base text-text">{title}</span>
+            <ProgressBar
+              current={current}
+              total={total}
+              colorIndex={colorIndex}
+            />
+          </VStack>
+          <HStack y="middle" gap={2}>
+            <span className="text-text font-medium text-sm">
+              {formatProgressSummary(current, total, unit)}
+            </span>
+            {isOpen ? (
+              <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
+            ) : (
+              <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
+            )}
+          </HStack>
+        </button>
+        {isOpen && children}
+      </div>
     </div>
   );
 };

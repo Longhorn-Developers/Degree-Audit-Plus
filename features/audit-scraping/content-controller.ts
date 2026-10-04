@@ -1,5 +1,6 @@
 import {
   sendMessageResponse,
+  toActionResult,
   type ExtensionMessage,
 } from "@/lib/browser/messages";
 import { recordLoginStateFromPage } from "@/features/session/session";
@@ -9,7 +10,7 @@ import {
   startAuditHistorySync,
   watchForAuditRunClicks,
 } from "./audit-history-sync";
-import { cancelRun, runAudit } from "./audit-runner";
+import { cancelRun, deleteAudit, runAudit } from "./audit-runner";
 import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
@@ -33,7 +34,7 @@ export function startAuditContentController(document: Document): void {
     void resumePendingAuditPoll();
   }
 
-  // The background delegates fetches and run submissions here: this page's
+  // The background delegates fetches, run submissions, and deletes here: this page's
   // origin carries the UT session (and passes CSRF), and the service worker
   // has no DOMParser of its own.
   browser.runtime.onMessage.addListener(
@@ -69,6 +70,14 @@ export function startAuditContentController(document: Document): void {
               error: reason,
             });
           },
+        );
+        return true;
+      }
+
+      // the tab hop of a delete forwarded by the background
+      if (message.type === "DELETE_AUDIT") {
+        void toActionResult(deleteAudit(message.auditId)).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
         );
         return true;
       }

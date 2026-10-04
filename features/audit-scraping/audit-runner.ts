@@ -1,16 +1,21 @@
-// Runs one audit inside a UT tab: submit the form, wait for our row in the
-// history table, scrape the result. It lives in the tab because the tab has
-// the UT cookies, passes CSRF, and has a DOMParser.
+// Runs and deletes audits inside a UT tab. A run submits the form, waits for
+// our row in the history table, and scrapes the result. It lives in the tab
+// because the tab has the UT cookies, passes CSRF, and has a DOMParser.
 import type { CustomAuditRunRequest } from "@/domain/audit";
-import { isLoginPage } from "@/features/session/session";
+import { deleteAuditData } from "@/features/audit/audit-storage";
+import { fetchUtPage, isLoginPage } from "@/features/session/session";
 import type { AuditRunOutcome, AuditRunRequest } from "@/lib/browser/messages";
 import {
+  findDedupedAuditIds,
+  parseAuditHistory,
   toAuditHistoryEntries,
   type AuditHistoryRow,
 } from "./audit-history-parser";
 import {
+  AUDIT_HISTORY_URL,
   fetchAuditHistoryRows,
   fetchAuditResults,
+  processAuditHistory,
   RUN_AUDIT_BUTTON_SELECTOR,
 } from "./audit-history-sync";
 import { syncPlannerTo } from "./planner-client";
@@ -96,7 +101,7 @@ async function fetchRunForm(custom?: CustomAuditRunRequest): Promise<RunForm> {
   const url = custom
     ? `${RUN_PAGE_URL}?${new URLSearchParams({ catalog: custom.catalog, college: custom.college })}`
     : RUN_PAGE_URL;
-  const page = await fetchPage(url);
+  const { page } = await fetchUtPage(url);
   const form = custom
     ? fillCustomForm(page, custom)
     : page.querySelector(RUN_AUDIT_BUTTON_SELECTOR)?.closest("form");
@@ -123,37 +128,17 @@ function fillCustomForm(
   return form;
 }
 
-// GET + parse, with UT's login page turned into AUTH_REQUIRED.
-async function fetchPage(url: string): Promise<Document> {
-  const response = await fetch(url, { credentials: "include" });
-  if (!response.ok) throw new Error("RUN_FAILED");
-  const page = new DOMParser().parseFromString(
-    await response.text(),
-    "text/html",
-  );
-  if (isLoginPage(page)) throw new Error("AUTH_REQUIRED");
-  return page;
-}
-
 // POSTs the form without following UT's redirect: the redirect itself is the
 // "accepted" signal. A 200 means UT re-rendered the form and queued nothing.
 async function submitForm(
   { form, action }: RunForm,
   includePlanned: boolean,
 ): Promise<void> {
-  const body = new URLSearchParams();
-  for (const [key, value] of new FormData(form)) {
-    body.append(key, String(value));
-  }
+  const body = getFormBody(form);
   // A hidden field on the default form; UT's default is " " (leave out).
   if (includePlanned) body.set("incl_planned_crswk", "Y");
-  // FormData skips the submit button, which UT's views expect
-  // (e.g. audit="Submit Audit").
-  const submit = form.querySelector<HTMLInputElement | HTMLButtonElement>(
-    '[type="submit"]',
-  );
-  if (submit?.name) body.append(submit.name, submit.value);
 
+  // The one UT request that skips fetchUtPage: it must not follow the redirect.
   const response = await fetch(action, {
     method: "POST",
     credentials: "include",
@@ -193,7 +178,57 @@ async function waitForNewAudit(
   throw new Error(ourKey === undefined ? "RUN_NOT_ACCEPTED" : "RUN_TIMEOUT");
 }
 
+// ------------------------------------------------------------------ delete
+
+// Deletes the audit on UT along with every rerun the dashboard folds into the
+// same card, then syncs the cache to whatever UT's history shows afterwards.
+export async function deleteAudit(auditId: string): Promise<void> {
+  const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+  const auditIds = findDedupedAuditIds(page, auditId);
+  for (const id of auditIds) {
+    const form = findDeleteForm(page, id);
+    if (!form) throw new Error("DELETE_FORM_NOT_FOUND");
+    // a parsed page has no URL of its own, so resolve against the one fetched
+    const action = new URL(
+      form.getAttribute("action") ?? "",
+      AUDIT_HISTORY_URL,
+    );
+    await fetchUtPage(action.href, { method: "POST", body: getFormBody(form) });
+  }
+
+  const { page: updatedPage } = await fetchUtPage(AUDIT_HISTORY_URL);
+  const isGone = (id: string) => !findDeleteForm(updatedPage, id);
+  // history first so the dashboard moves off the card before its data goes;
+  // auditId covers a card already deleted on UT but still cached here
+  await processAuditHistory(parseAuditHistory(updatedPage));
+  await deleteAuditData([auditId, ...auditIds].filter(isGone));
+
+  if (!auditIds.every(isGone)) throw new Error("DELETE_FAILED");
+}
+
+// UT's delete form for one history row, or null once the row is gone.
+function findDeleteForm(page: Document, auditId: string) {
+  const input = page.querySelector(
+    `input[name="audit_to_delete"][value="${auditId}"]`,
+  );
+  return input?.closest("form") ?? null;
+}
+
 // ------------------------------------------------------------------ helpers
+
+// A form's fields as a POST body. FormData skips the submit button, which UT's
+// views expect (e.g. audit="Submit Audit").
+function getFormBody(form: HTMLFormElement): URLSearchParams {
+  const body = new URLSearchParams();
+  for (const [key, value] of new FormData(form)) {
+    body.append(key, String(value));
+  }
+  const submit = form.querySelector<HTMLInputElement | HTMLButtonElement>(
+    '[type="submit"]',
+  );
+  if (submit?.name) body.append(submit.name, submit.value);
+  return body;
+}
 
 // ms per step: mark(step) closes the step that just ran.
 function stopwatch() {

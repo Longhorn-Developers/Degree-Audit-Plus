@@ -73,6 +73,7 @@ export interface AuditHistoryEntry {
   minors?: string[];
   percentage?: number;
   auditId?: string;
+  pinned?: boolean;
 }
 
 export interface AuditHistoryData {

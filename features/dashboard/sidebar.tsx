@@ -1,4 +1,5 @@
 import DegreeAuditCard from "./audit-card";
+import { hasAuditResult } from "@/domain/audit";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import logo from "@/public/logo.png";
 import {
@@ -19,8 +20,38 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar, toggleDarkMode, isDarkMode } =
     usePreferences();
-  const { currentAuditId, setCurrentAuditId, history, renameAuditTitle } =
-    useAuditContext();
+  const {
+    currentAuditId,
+    setCurrentAuditId,
+    history,
+    renameAuditTitle,
+    deleteAudit,
+    togglePin,
+  } = useAuditContext();
+
+  // history only holds finished audits; the filter narrows auditId to string
+  const audits = history.audits.filter(hasAuditResult);
+  const pinnedAudits = audits.filter((audit) => audit.pinned);
+  const unpinnedAudits = audits.filter((audit) => !audit.pinned);
+
+  // One sidebar card wired to the audit actions.
+  const renderCard = (audit: (typeof audits)[number]) => {
+    const id = audit.auditId;
+    return (
+      <DegreeAuditCard
+        key={id}
+        title={audit.title}
+        percentage={audit.percentage}
+        isSelected={currentAuditId === id}
+        isPinned={Boolean(audit.pinned)}
+        onToggle={() => setCurrentAuditId(id)}
+        onRename={(title) => renameAuditTitle(id, title)}
+        onTogglePin={() => void togglePin(id)}
+        onDelete={() => deleteAudit(id)}
+      />
+    );
+  };
+
   return (
     <div
       className={cn(
@@ -62,30 +93,30 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-2 flex flex-col gap-3">
-          {history.audits.length === 0 ? (
+          {audits.length === 0 ? (
             <p className="text-sm text-muted">No audits found</p>
           ) : (
-            history.audits.map((audit, index) => {
-              const id = audit.auditId || String(index);
-              return (
-                <DegreeAuditCard
-                  key={id}
-                  title={audit.title}
-                  percentage={audit.percentage}
-                  isSelected={currentAuditId === id}
-                  onToggle={() => {
-                    if (audit.auditId) {
-                      setCurrentAuditId(audit.auditId); // No page refresh, just update state
-                    }
-                  }}
-                  onRename={(title) => {
-                    if (audit.auditId) {
-                      renameAuditTitle(audit.auditId, title);
-                    }
-                  }}
-                />
-              );
-            })
+            <>
+              {pinnedAudits.length > 0 && (
+                <>
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+                    Pinned
+                  </p>
+                  {pinnedAudits.map(renderCard)}
+                </>
+              )}
+
+              {unpinnedAudits.length > 0 && (
+                <>
+                  {pinnedAudits.length > 0 && (
+                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+                      Unpinned
+                    </p>
+                  )}
+                  {unpinnedAudits.map(renderCard)}
+                </>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -11,10 +11,11 @@ export interface AuditHistoryRow {
   percentage: number;
 }
 
-// Every row in page order without bs.
+// Every row in page order without bs. UT drops the table when the student has
+// no audits.
 export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
   const table = document.querySelector("table");
-  if (!table) throw new Error("Audit history table not found");
+  if (!table) return [];
 
   const rows: AuditHistoryRow[] = [];
   for (const row of table.querySelectorAll("tbody tr")) {
@@ -35,31 +36,54 @@ export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
   return rows;
 }
 
-// The list the UI shows: one entry per program+percentage, first row wins.
+// The list the UI shows: one card per major+credential+percentage. UT lists
+// newest first; each card keeps its oldest run so a duplicate rerun never
+// changes its id or position.
 export function toAuditHistoryEntries(
   rows: AuditHistoryRow[],
 ): AuditHistoryEntry[] {
-  const audits: AuditHistoryEntry[] = [];
+  const cards: AuditHistoryRow[] = [];
   const seen = new Set<string>();
-
-  for (const row of rows) {
-    const auditKey = `${row.major}-${row.credential ?? "none"}-${row.percentage}`;
-    if (seen.has(auditKey)) continue;
-    seen.add(auditKey);
-    audits.push({
-      title: `Degree Audit ${audits.length + 1}`,
-      majors: [row.major],
-      minors: row.credential ? [row.credential] : [],
-      percentage: row.percentage,
-      // "" keeps hasAuditResult reading a linkless row as "still generating"
-      auditId: row.auditId ?? "",
-    });
+  for (const row of [...rows].reverse()) {
+    const key = cardKey(row);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cards.unshift(row);
   }
-  return audits;
+
+  // only finished audits are numbered so a pending run can't shift titles
+  let finished = 0;
+  return cards.map((row) => ({
+    title: row.auditId ? `Degree Audit ${++finished}` : undefined,
+    majors: [row.major],
+    minors: row.credential ? [row.credential] : [],
+    percentage: row.percentage,
+    // "" keeps hasAuditResult reading a linkless row as "still generating"
+    auditId: row.auditId ?? "",
+  }));
 }
 
 export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
   return toAuditHistoryEntries(parseAuditHistoryRows(document));
+}
+
+// Given a card's id, returns every run folded into that card, so deleting a
+// card deletes all its reruns on UT.
+export function findDedupedAuditIds(
+  document: Document,
+  auditId: string,
+): string[] {
+  const rows = parseAuditHistoryRows(document);
+  const target = rows.find((row) => row.auditId === auditId);
+  if (!target) return [];
+  return rows
+    .filter((row) => row.auditId && cardKey(row) === cardKey(target))
+    .map((row) => row.auditId as string);
+}
+
+// Rows with the same major, credential and percentage fold into one card.
+function cardKey(row: AuditHistoryRow): string {
+  return `${row.major}-${row.credential ?? "none"}-${row.percentage}`;
 }
 
 function parseCredential(programText: string): string | null {

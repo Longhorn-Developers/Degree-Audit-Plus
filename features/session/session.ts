@@ -78,6 +78,35 @@ export function isLoginPage(document: Document): boolean {
   );
 }
 
+// The one way to talk to UT Direct: sends the session cookies, parses the
+// reply, and throws AUTH_REQUIRED (updating the cache) when logged out. Also
+// returns the final url, since form posts check where UT redirected them.
+// Content scripts only: the service worker has no DOMParser.
+export async function fetchUtPage(
+  url: string,
+  init?: RequestInit,
+): Promise<{ page: Document; url: string }> {
+  const response = await fetch(url, { ...init, credentials: "include" }).catch(
+    async (error: unknown) => {
+      // logged-out requests redirect to ut's sso login on another origin,
+      // which fetch can't follow, so a failed fetch means checking the session
+      if (!(await refreshLoginState())) throw new Error("AUTH_REQUIRED");
+      throw error;
+    },
+  );
+  if (!response.ok) throw new Error(`UT request failed (${response.status})`);
+
+  const page = new DOMParser().parseFromString(
+    await response.text(),
+    "text/html",
+  );
+  if (isLoginPage(page)) {
+    await saveLoginState(false);
+    throw new Error("AUTH_REQUIRED");
+  }
+  return { page, url: response.url };
+}
+
 // Event-driven cache updates from the background service worker: react the
 // moment the session cookie is removed or (re)created, instead of waiting for
 // the next popup open. Requires the "cookies" permission.

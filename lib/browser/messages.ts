@@ -22,6 +22,9 @@ export type ExtensionMessage =
   // UI -> background: plan this one course on UT, run an audit with it, and
   // diff the result against the audit the user has open.
   | { type: "PREVIEW_COURSE"; course: PlannerSyncTarget; mainAuditId: string }
+  // UI -> background -> UT tab: the background opens a UT tab and forwards it
+  // unchanged; the tab deletes on UT (only it passes UT's CSRF).
+  | { type: "DELETE_AUDIT"; auditId: string }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
@@ -55,6 +58,9 @@ export interface PlannerData {
 export type PlannerResult<T> =
   | { ok: true; data: T }
   | { ok: false; code: PlannerErrorCode };
+
+// Reply to a delete, on both hops.
+export type ActionResult = { ok: true } | { ok: false; error: string };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -97,6 +103,7 @@ interface MessageResponses {
   PREVIEW_COURSE:
     | ({ success: true } & CoursePreview)
     | { success: false; error: string };
+  DELETE_AUDIT: ActionResult;
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
@@ -120,6 +127,7 @@ type ResponseRequest = Extract<
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
       | "PREVIEW_COURSE"
+      | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
       | "FETCH_AUDIT"
@@ -168,4 +176,18 @@ export function sendMessageResponse<M extends ResponseRequest>(
   response: MessageResponse<M>,
 ): void {
   sendResponse(response);
+}
+
+// Settles a delete into the reply sent back on either hop.
+export function toActionResult(
+  action: Promise<unknown>,
+): Promise<ActionResult> {
+  return action.then(
+    () => ({ ok: true }),
+    (error: unknown) => {
+      console.error("Failed to delete audit:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, error: message };
+    },
+  );
 }
