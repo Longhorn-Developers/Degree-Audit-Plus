@@ -3,16 +3,19 @@ import { browser } from "wxt/browser";
 
 export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
-  // UI -> background: orchestrates an audit submission.
+  // UI -> background -> UT tab: the background opens a UT tab and forwards
+  // these unchanged; the tab submits UT's form (only it passes UT's CSRF).
   | { type: "RUN_NEW_AUDIT"; custom?: CustomAuditRunRequest }
+  | { type: "DELETE_AUDIT"; auditId: string }
   | { type: "GET_SYNC_STATUS" }
   | { type: "SCRAPE_ALL_AUDITS"; auditIds: string[] }
   | { type: "SCRAPE_ALL_STARTED" }
   | { type: "SCRAPE_ALL_COMPLETE" }
   // Background -> UT tab: fetches and parses one result.
-  | { type: "FETCH_AUDIT"; auditId: string }
-  // Background -> UT tab: submits the authenticated form.
-  | { type: "RUN_AUDIT_VIA_FETCH"; custom?: CustomAuditRunRequest };
+  | { type: "FETCH_AUDIT"; auditId: string };
+
+// Reply to a run or delete, on both hops.
+export type ActionResult = { ok: true } | { ok: false; error: string };
 
 // Sent by a content script asked to fetch and parse one audit's results page.
 export type FetchAuditResult =
@@ -21,15 +24,13 @@ export type FetchAuditResult =
 
 interface MessageResponses {
   OPEN_DEGREE_AUDIT: { success: true } | { success: false; error: string };
-  RUN_NEW_AUDIT:
-    | { success: true; existing: boolean }
-    | { success: false; error: string };
+  RUN_NEW_AUDIT: ActionResult;
+  DELETE_AUDIT: ActionResult;
   GET_SYNC_STATUS: { isSyncing: boolean };
   SCRAPE_ALL_AUDITS: {
     status: "started" | "already-running" | "auth-required" | "no-source-tab";
   };
   FETCH_AUDIT: FetchAuditResult;
-  RUN_AUDIT_VIA_FETCH: { ok: true } | { ok: false; error: string };
 }
 
 type MessageResponse<M extends ExtensionMessage> =
@@ -41,10 +42,10 @@ type ResponseRequest = Extract<
     type:
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
+      | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
-      | "FETCH_AUDIT"
-      | "RUN_AUDIT_VIA_FETCH";
+      | "FETCH_AUDIT";
   }
 >;
 
@@ -84,4 +85,18 @@ export function sendMessageResponse<M extends ResponseRequest>(
   response: MessageResponse<M>,
 ): void {
   sendResponse(response);
+}
+
+// Settles a run or delete into the reply sent back on either hop.
+export function toActionResult(
+  action: Promise<unknown>,
+): Promise<ActionResult> {
+  return action.then(
+    () => ({ ok: true }),
+    (error: unknown) => {
+      console.error("Audit action failed:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, error: message };
+    },
+  );
 }

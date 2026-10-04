@@ -1,10 +1,14 @@
-// Submits audit runs to UT via authenticated same-origin fetches. Runs in a
-// content script on a UT page — the only context whose origin passes UT's
-// CSRF checks (extension-origin POSTs get 403).
+// Submits audit runs and deletes to UT via authenticated same-origin fetches.
+// Runs in a content script on a UT page — the only context whose origin passes
+// UT's CSRF checks (extension-origin POSTs get 403).
 import type { CustomAuditRunRequest } from "@/domain/audit";
-import { isLoginPage } from "@/features/session/session";
+import { deleteAuditData } from "@/features/audit/audit-storage";
+import { fetchUtPage } from "@/features/session/session";
+import { findDedupedAuditIds, parseAuditHistory } from "./audit-history-parser";
 import {
+  AUDIT_HISTORY_URL,
   markAuditRunPending,
+  processAuditHistory,
   RUN_AUDIT_BUTTON_SELECTOR,
 } from "./audit-history-sync";
 
@@ -27,14 +31,11 @@ export async function runAudit(custom?: CustomAuditRunRequest): Promise<void> {
 }
 
 async function submitDefaultAudit(): Promise<void> {
-  const page = await fetchRunPage();
+  const { page } = await fetchUtPage(RUN_PAGE_URL);
   const form = page.querySelector(RUN_AUDIT_BUTTON_SELECTOR)?.closest("form");
   if (!form) throw new Error("RUN_BUTTON_NOT_FOUND");
 
-  // Resolve the form's action against the fetched page, not the current one —
-  // DOMParser documents inherit the creating page's base URL.
-  const target = new URL(form.getAttribute("action") ?? "", RUN_PAGE_URL);
-  await submitForm(form, target.toString());
+  await submitForm(form, RUN_PAGE_URL);
 }
 
 async function submitCustomAudit(
@@ -44,7 +45,7 @@ async function submitCustomAudit(
     catalog: options.catalog,
     college: options.college,
   });
-  const page = await fetchRunPage(`?${query}`);
+  const { page } = await fetchUtPage(`${RUN_PAGE_URL}?${query}`);
   const form = page.querySelector<HTMLFormElement>(CUSTOM_FORM_SELECTOR);
   if (!form) throw new Error("RUN_FORM_NOT_FOUND");
 
@@ -59,24 +60,49 @@ async function submitCustomAudit(
   await submitForm(form, `${RUN_PAGE_URL}?${query}`);
 }
 
-async function fetchRunPage(search = ""): Promise<Document> {
-  const response = await fetch(`${RUN_PAGE_URL}${search}`, {
-    credentials: "include",
-  });
-  if (!response.ok) throw new Error("RUN_FAILED");
+// Deletes the audit on UT along with every rerun the dashboard folds into the
+// same card, then syncs the cache to whatever UT's history shows afterwards.
+export async function deleteAudit(auditId: string): Promise<void> {
+  const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+  const auditIds = findDedupedAuditIds(page, auditId);
+  for (const id of auditIds) {
+    const form = findDeleteForm(page, id);
+    if (!form) throw new Error("DELETE_FORM_NOT_FOUND");
+    await submitForm(form, AUDIT_HISTORY_URL);
+  }
 
-  const page = new DOMParser().parseFromString(
-    await response.text(),
-    "text/html",
-  );
-  if (isLoginPage(page)) throw new Error("AUTH_REQUIRED");
-  return page;
+  const { page: updatedPage } = await fetchUtPage(AUDIT_HISTORY_URL);
+  const isGone = (id: string) => !findDeleteForm(updatedPage, id);
+  // history first so the dashboard moves off the card before its data goes;
+  // auditId covers a card already deleted on UT but still cached here
+  await processAuditHistory(parseAuditHistory(updatedPage));
+  await deleteAuditData([auditId, ...auditIds].filter(isGone));
+
+  if (!auditIds.every(isGone)) throw new Error("DELETE_FAILED");
 }
 
-async function submitForm(
-  form: HTMLFormElement,
-  targetUrl: string,
-): Promise<void> {
+// UT's delete form for one history row, or null once the row is gone.
+function findDeleteForm(page: Document, auditId: string) {
+  const input = page.querySelector(
+    `input[name="audit_to_delete"][value="${auditId}"]`,
+  );
+  return input?.closest("form") ?? null;
+}
+
+// Posts a UT form fetched from pageUrl. UT answers a successful run or delete
+// with its history page.
+async function submitForm(form: HTMLFormElement, pageUrl: string) {
+  // Resolve the action against the fetched page, not the current one —
+  // DOMParser documents inherit the creating page's base URL.
+  const target = new URL(form.getAttribute("action") ?? "", pageUrl);
+  const { url } = await fetchUtPage(target.toString(), {
+    method: "POST",
+    body: getFormBody(form),
+  });
+  if (!url.includes("/history/")) throw new Error("SUBMIT_FAILED");
+}
+
+function getFormBody(form: HTMLFormElement): URLSearchParams {
   const body = new URLSearchParams();
   for (const [key, value] of new FormData(form)) {
     body.append(key, String(value));
@@ -87,21 +113,7 @@ async function submitForm(
     '[type="submit"]',
   );
   if (submit?.name) body.append(submit.name, submit.value);
-
-  const response = await fetch(targetUrl, {
-    method: "POST",
-    credentials: "include",
-    body,
-  });
-  // A successful submission 302s to the request-history page.
-  if (response.ok && response.redirected && response.url.includes("/history/"))
-    return;
-
-  const page = new DOMParser().parseFromString(
-    await response.text(),
-    "text/html",
-  );
-  throw new Error(isLoginPage(page) ? "AUTH_REQUIRED" : "RUN_FAILED");
+  return body;
 }
 
 function setSelect(form: HTMLFormElement, name: string, value: string): void {

@@ -4,7 +4,7 @@ import {
   getUncachedAuditIds,
   saveAuditHistory,
 } from "@/features/audit/audit-storage";
-import { isLoginPage } from "@/features/session/session";
+import { fetchUtPage } from "@/features/session/session";
 import {
   sendRuntimeMessage,
   type FetchAuditResult,
@@ -13,7 +13,7 @@ import { storage } from "wxt/utils/storage";
 import { parseAuditHistory } from "./audit-history-parser";
 import { parseAuditPage } from "./audit-page-parser";
 
-const AUDIT_HISTORY_URL =
+export const AUDIT_HISTORY_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/";
 const AUDIT_RESULTS_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/results/";
@@ -38,21 +38,8 @@ function getPendingRunItem() {
 }
 
 export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
-  const response = await fetch(AUDIT_HISTORY_URL, { credentials: "include" });
-  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  if (response.redirected) throw new Error("Not logged in to UT Direct");
-
-  const document = new DOMParser().parseFromString(
-    await response.text(),
-    "text/html",
-  );
-  if (isLoginPage(document)) {
-    throw new Error("Not logged in to UT Direct");
-  }
-  // A logged-in student who has never requested an audit gets a history page
-  if (!document.querySelector("table")) return [];
-
-  return parseAuditHistory(document);
+  const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+  return parseAuditHistory(page);
 }
 
 // Fetch and parse one audit's results page. Runs in a content script on a UT
@@ -62,21 +49,13 @@ export async function fetchAuditResults(
   auditId: string,
 ): Promise<FetchAuditResult> {
   try {
-    const response = await fetch(`${AUDIT_RESULTS_URL}${auditId}/`, {
-      credentials: "include",
-    });
-    if (response.redirected) return { error: "AUTH_REQUIRED" };
-    if (!response.ok) return { error: "SCRAPE_FAILED" };
-
-    const document = new DOMParser().parseFromString(
-      await response.text(),
-      "text/html",
-    );
-    if (isLoginPage(document)) return { error: "AUTH_REQUIRED" };
-    return { audit: parseAuditPage(document) };
+    const { page } = await fetchUtPage(`${AUDIT_RESULTS_URL}${auditId}/`);
+    return { audit: parseAuditPage(page) };
   } catch (error) {
     console.error(`Failed to fetch audit ${auditId}:`, error);
-    return { error: "SCRAPE_FAILED" };
+    const loggedOut =
+      error instanceof Error && error.message === "AUTH_REQUIRED";
+    return { error: loggedOut ? "AUTH_REQUIRED" : "SCRAPE_FAILED" };
   }
 }
 
@@ -86,12 +65,15 @@ async function refreshAuditHistory(): Promise<boolean> {
   return processAuditHistory(await fetchAuditHistory());
 }
 
-async function processAuditHistory(
+// Only finished audits are stored, so no UI shows a run until it's scraped
+// and deduped. Pending rows still reach the caller's polling via `audits`.
+export async function processAuditHistory(
   audits: AuditHistoryEntry[],
 ): Promise<boolean> {
-  const auditIds = audits.filter(hasAuditResult).map((audit) => audit.auditId);
+  const finished = audits.filter(hasAuditResult);
+  const auditIds = finished.map((audit) => audit.auditId);
   const [, uncachedIds] = await Promise.all([
-    saveAuditHistory(audits),
+    saveAuditHistory(finished),
     getUncachedAuditIds(auditIds),
   ]);
   if (!uncachedIds.length) return false;
@@ -109,6 +91,7 @@ let activePoll: Promise<void> | null = null;
 function pollForRequestedAudit(startedAt: number): Promise<void> {
   return (activePoll ??= (async () => {
     let lastSeen: string | undefined;
+    let sawPending = false;
     const tick = async (): Promise<boolean> => {
       // Another audits page may have picked up the run and finished first.
       if ((await getPendingRunItem().getValue()) === null) return true;
@@ -120,7 +103,12 @@ function pollForRequestedAudit(startedAt: number): Promise<void> {
       if (snapshot === lastSeen) return false;
 
       lastSeen = snapshot;
-      return processAuditHistory(audits);
+      // a duplicate rerun folds into its card with nothing new to scrape, so
+      // the run is also done once its pending row has come and gone
+      const pending = audits.some((audit) => !hasAuditResult(audit));
+      sawPending ||= pending;
+      const dispatched = await processAuditHistory(audits);
+      return dispatched || (sawPending && !pending);
     };
 
     try {

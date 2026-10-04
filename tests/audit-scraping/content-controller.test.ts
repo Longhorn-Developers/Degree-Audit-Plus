@@ -15,6 +15,7 @@ let watchedRunClicks = 0;
 let recordedLoginPages = 0;
 let fetchedAuditIds: string[] = [];
 let ranAudits: unknown[] = [];
+let deletedAuditIds: string[] = [];
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
   startAuditHistorySync: async () => {
@@ -36,6 +37,9 @@ mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async (custom?: unknown) => {
     ranAudits.push(custom);
   },
+  deleteAudit: async (auditId: string) => {
+    deletedAuditIds.push(auditId);
+  },
 }));
 
 mock.module("../../features/session/session", () => ({
@@ -45,15 +49,6 @@ mock.module("../../features/session/session", () => ({
   getCachedLoginState: async () => true,
   openLoginTab: async () => {},
   registerSessionCookieWatcher: () => {},
-}));
-mock.module("../../lib/browser/messages", () => ({
-  sendMessageResponse: (
-    _request: ExtensionMessage,
-    sendResponse: (response: unknown) => void,
-    response: unknown,
-  ) => sendResponse(response),
-  sendRuntimeMessage: async () => undefined,
-  sendTabMessage: async () => undefined,
 }));
 
 (
@@ -81,6 +76,7 @@ beforeEach(() => {
   recordedLoginPages = 0;
   fetchedAuditIds = [];
   ranAudits = [];
+  deletedAuditIds = [];
 });
 
 function createDocument(pathname: string, body = ""): Document {
@@ -143,13 +139,13 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
 });
 
-test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
+test("serves forwarded RUN_NEW_AUDIT requests from the background", async () => {
   startAuditContentController(createDocument("/apps/degree/audits/"));
 
   const responses: unknown[] = [];
   const custom = { catalog: "20259", college: "E", degreePlan: "EBC SSA    " };
   const handled = listener?.(
-    { type: "RUN_AUDIT_VIA_FETCH", custom },
+    { type: "RUN_NEW_AUDIT", custom },
     {},
     (response) => responses.push(response),
   );
@@ -157,6 +153,22 @@ test("serves RUN_AUDIT_VIA_FETCH requests from the background", async () => {
   expect(handled).toBe(true);
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(ranAudits).toEqual([custom]);
+  expect(responses).toEqual([{ ok: true }]);
+});
+
+test("serves forwarded DELETE_AUDIT requests from the background", async () => {
+  startAuditContentController(createDocument("/apps/degree/audits/"));
+
+  const responses: unknown[] = [];
+  const handled = listener?.(
+    { type: "DELETE_AUDIT", auditId: "12345" },
+    {},
+    (response) => responses.push(response),
+  );
+
+  expect(handled).toBe(true);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(deletedAuditIds).toEqual(["12345"]);
   expect(responses).toEqual([{ ok: true }]);
 });
 

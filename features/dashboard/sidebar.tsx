@@ -1,4 +1,5 @@
 import DegreeAuditCard from "./audit-card";
+import { hasAuditResult } from "@/domain/audit";
 import { usePreferences } from "@/features/preferences/preferences-provider";
 import logo from "@/public/logo.png";
 import {
@@ -24,11 +25,32 @@ const Sidebar = () => {
     setCurrentAuditId,
     history,
     renameAuditTitle,
+    deleteAudit,
     togglePin,
   } = useAuditContext();
 
-  const pinnedAudits = history.audits.filter((audit) => audit.pinned);
-  const unpinnedAudits = history.audits.filter((audit) => !audit.pinned);
+  // history only holds finished audits; the filter narrows auditId to string
+  const audits = history.audits.filter(hasAuditResult);
+  const pinnedAudits = audits.filter((audit) => audit.pinned);
+  const unpinnedAudits = audits.filter((audit) => !audit.pinned);
+
+  // One sidebar card wired to the audit actions.
+  const renderCard = (audit: (typeof audits)[number]) => {
+    const id = audit.auditId;
+    return (
+      <DegreeAuditCard
+        key={id}
+        title={audit.title}
+        percentage={audit.percentage}
+        isSelected={currentAuditId === id}
+        isPinned={Boolean(audit.pinned)}
+        onToggle={() => setCurrentAuditId(id)}
+        onRename={(title) => renameAuditTitle(id, title)}
+        onTogglePin={() => void togglePin(id)}
+        onDelete={() => deleteAudit(id)}
+      />
+    );
+  };
 
   return (
     <div
@@ -71,7 +93,7 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-2 flex flex-col gap-3">
-          {history.audits.length === 0 ? (
+          {audits.length === 0 ? (
             <p className="text-sm text-muted">No audits found</p>
           ) : (
             <>
@@ -80,28 +102,7 @@ const Sidebar = () => {
                   <p className="text-xs font-semibold text-muted uppercase tracking-wide">
                     Pinned
                   </p>
-                  {pinnedAudits.map((audit, index) => {
-                    const id = audit.auditId || String(index);
-                    return (
-                      <DegreeAuditCard
-                        key={id}
-                        title={audit.title}
-                        percentage={audit.percentage}
-                        isSelected={currentAuditId === id}
-                        isPinned={true}
-                        onToggle={() => {
-                          if (audit.auditId) setCurrentAuditId(audit.auditId);
-                        }}
-                        onRename={(title) => {
-                          if (audit.auditId)
-                            renameAuditTitle(audit.auditId, title);
-                        }}
-                        onTogglePin={() => {
-                          if (audit.auditId) void togglePin(audit.auditId);
-                        }}
-                      />
-                    );
-                  })}
+                  {pinnedAudits.map(renderCard)}
                 </>
               )}
 
@@ -112,28 +113,7 @@ const Sidebar = () => {
                       Unpinned
                     </p>
                   )}
-                  {unpinnedAudits.map((audit, index) => {
-                    const id = audit.auditId || String(index);
-                    return (
-                      <DegreeAuditCard
-                        key={id}
-                        title={audit.title}
-                        percentage={audit.percentage}
-                        isSelected={currentAuditId === id}
-                        isPinned={false}
-                        onToggle={() => {
-                          if (audit.auditId) setCurrentAuditId(audit.auditId);
-                        }}
-                        onRename={(title) => {
-                          if (audit.auditId)
-                            renameAuditTitle(audit.auditId, title);
-                        }}
-                        onTogglePin={() => {
-                          if (audit.auditId) void togglePin(audit.auditId);
-                        }}
-                      />
-                    );
-                  })}
+                  {unpinnedAudits.map(renderCard)}
                 </>
               )}
             </>

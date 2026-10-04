@@ -52,11 +52,32 @@ export function observeAuditHistory(
   };
 }
 
-export function saveAuditHistory(
+// The user's renames and pins by auditId. Kept apart from the history so a
+// sync from UT, which rebuilds every entry, can't wipe them.
+type AuditPrefs = Record<string, Pick<AuditHistoryEntry, "title" | "pinned">>;
+
+const createAuditPrefsItem = () =>
+  storage.defineItem<AuditPrefs>("local:auditPrefs", { defaultValue: {} });
+let auditPrefsItem: ReturnType<typeof createAuditPrefsItem> | undefined;
+
+function getAuditPrefsItem() {
+  return (auditPrefsItem ??= createAuditPrefsItem());
+}
+
+// Saves UT's history with the user's renames and pins layered on top.
+export async function saveAuditHistory(
   audits: AuditHistoryEntry[],
   error?: string,
 ): Promise<void> {
-  const data: AuditHistoryData = { audits, timestamp: Date.now(), error };
+  const prefs = await getAuditPrefsItem().getValue();
+  const data: AuditHistoryData = {
+    audits: audits.map((audit) => ({
+      ...audit,
+      ...prefs[audit.auditId ?? ""],
+    })),
+    timestamp: Date.now(),
+    error,
+  };
   return getAuditHistoryItem().setValue(data);
 }
 
@@ -64,34 +85,40 @@ export function getAuditHistory(): Promise<AuditHistoryData | null> {
   return getAuditHistoryItem().getValue();
 }
 
-export async function renameAudit(
+export function renameAudit(
   auditId: string,
   title: string,
 ): Promise<AuditHistoryData | null> {
-  const history = await getAuditHistory();
-  if (!history) return null;
-
-  const updatedHistory = {
-    ...history,
-    audits: history.audits.map((audit) =>
-      audit.auditId === auditId ? { ...audit, title } : audit,
-    ),
-    timestamp: Date.now(),
-  };
-  await getAuditHistoryItem().setValue(updatedHistory);
-  return updatedHistory;
+  return editAudit(auditId, () => ({ title }));
 }
 
-export async function togglePinAudit(
+export function togglePinAudit(
   auditId: string,
 ): Promise<AuditHistoryData | null> {
+  return editAudit(auditId, (audit) => ({ pinned: !audit.pinned }));
+}
+
+// Applies a user edit to the stored history and remembers it in prefs so the
+// next sync keeps it. Returns the updated history, or null if the audit is gone.
+async function editAudit(
+  auditId: string,
+  getEdit: (audit: AuditHistoryEntry) => AuditPrefs[string],
+): Promise<AuditHistoryData | null> {
   const history = await getAuditHistory();
-  if (!history) return null;
+  const audit = history?.audits.find((entry) => entry.auditId === auditId);
+  if (!history || !audit) return null;
+
+  const edit = getEdit(audit);
+  const prefs = await getAuditPrefsItem().getValue();
+  await getAuditPrefsItem().setValue({
+    ...prefs,
+    [auditId]: { ...prefs[auditId], ...edit },
+  });
 
   const updatedHistory = {
     ...history,
-    audits: history.audits.map((audit) =>
-      audit.auditId === auditId ? { ...audit, pinned: !audit.pinned } : audit,
+    audits: history.audits.map((entry) =>
+      entry.auditId === auditId ? { ...entry, ...edit } : entry,
     ),
     timestamp: Date.now(),
   };
@@ -114,6 +141,11 @@ export async function getAuditData(
   const key = `${AUDIT_DATA_PREFIX}${auditId}`;
   const result = await browser.storage.local.get(key);
   return (result[key] as CachedAuditData | undefined) ?? null;
+}
+
+export function deleteAuditData(auditIds: string[]): Promise<void> {
+  const keys = auditIds.map((id) => `${AUDIT_DATA_PREFIX}${id}`);
+  return browser.storage.local.remove(keys);
 }
 
 export function watchAuditData(
