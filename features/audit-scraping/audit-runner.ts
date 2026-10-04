@@ -3,7 +3,7 @@
 // the UT cookies, passes CSRF, and has a DOMParser.
 import type { CustomAuditRunRequest } from "@/domain/audit";
 import { isLoginPage } from "@/features/session/session";
-import type { AuditRunOutcome } from "@/lib/browser/messages";
+import type { AuditRunOutcome, AuditRunRequest } from "@/lib/browser/messages";
 import {
   toAuditHistoryEntries,
   type AuditHistoryRow,
@@ -13,6 +13,7 @@ import {
   fetchAuditResults,
   RUN_AUDIT_BUTTON_SELECTOR,
 } from "./audit-history-sync";
+import { syncPlannerTo } from "./planner-client";
 
 const RUN_PAGE_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
@@ -37,41 +38,49 @@ export function cancelRun(runId: string): void {
   cancelledRuns.add(runId);
 }
 
-// The whole run. Throws AUTH_REQUIRED, RUN_FAILED, RUN_NOT_ACCEPTED,
-// RUN_TIMEOUT, SCRAPE_FAILED or CANCELLED.
+// The whole run. With `preview`, the planner is first set to that one course
+// and the audit includes planned courses. Throws AUTH_REQUIRED, RUN_FAILED,
+// RUN_NOT_ACCEPTED, RUN_TIMEOUT, SCRAPE_FAILED, CANCELLED or a planner code.
 export async function runAudit(
   runId: string,
-  custom?: CustomAuditRunRequest,
+  { custom, preview }: AuditRunRequest = {},
   timing = DEFAULT_TIMING,
 ): Promise<AuditRunOutcome> {
+  const { steps, mark } = stopwatch();
   try {
+    if (preview) {
+      await syncPlannerTo([preview]);
+      mark("planner sync");
+    }
+
     // Both are read-only, so overlap them.
     const [before, form] = await Promise.all([
       fetchAuditHistoryRows(),
       fetchRunForm(custom),
     ]);
     const known = new Set(before.map((row) => row.key));
+    mark("read history + form");
 
     assertNotCancelled(runId);
-    const startedAt = Date.now();
-    await submitForm(form);
+    await submitForm(form, Boolean(preview));
+    mark("submit");
     const { auditId, rows } = await waitForNewAudit(known, runId, timing);
-    const generatedAt = Date.now();
+    mark("UT generates audit");
 
     const result = await fetchAuditResults(auditId);
     if ("error" in result) throw new Error(result.error);
-    const doneAt = Date.now();
+    mark("scrape");
 
     console.log(
-      `Audit ${auditId} done in ${doneAt - startedAt} ms ` +
-        `(generate ${generatedAt - startedAt} ms, scrape ${doneAt - generatedAt} ms) · ` +
-        `${result.audit.requirements.length} requirements, ` +
-        `${Object.keys(result.audit.courses).length} courses`,
+      `Audit ${auditId} done · ${result.audit.requirements.length} requirements, ` +
+        `${Object.keys(result.audit.courses).length} courses · ms per step:`,
+      steps,
     );
     return {
       auditId,
       audit: result.audit,
       history: toAuditHistoryEntries(rows),
+      steps,
     };
   } finally {
     // A cancel that lands after our last check must not linger.
@@ -128,11 +137,16 @@ async function fetchPage(url: string): Promise<Document> {
 
 // POSTs the form without following UT's redirect: the redirect itself is the
 // "accepted" signal. A 200 means UT re-rendered the form and queued nothing.
-async function submitForm({ form, action }: RunForm): Promise<void> {
+async function submitForm(
+  { form, action }: RunForm,
+  includePlanned: boolean,
+): Promise<void> {
   const body = new URLSearchParams();
   for (const [key, value] of new FormData(form)) {
     body.append(key, String(value));
   }
+  // A hidden field on the default form; UT's default is " " (leave out).
+  if (includePlanned) body.set("incl_planned_crswk", "Y");
   // FormData skips the submit button, which UT's views expect
   // (e.g. audit="Submit Audit").
   const submit = form.querySelector<HTMLInputElement | HTMLButtonElement>(
@@ -180,6 +194,17 @@ async function waitForNewAudit(
 }
 
 // ------------------------------------------------------------------ helpers
+
+// ms per step: mark(step) closes the step that just ran.
+function stopwatch() {
+  const steps: Record<string, number> = {};
+  let lap = Date.now();
+  const mark = (step: string) => {
+    steps[step] = Date.now() - lap;
+    lap = Date.now();
+  };
+  return { steps, mark };
+}
 
 function assertNotCancelled(runId: string): void {
   if (cancelledRuns.has(runId)) throw new Error("CANCELLED");

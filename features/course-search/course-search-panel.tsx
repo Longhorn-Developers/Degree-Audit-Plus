@@ -1,10 +1,7 @@
 import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import type { CatalogCourse } from "@/domain/catalog";
-import {
-  dedupeCatalogCoursesByCode,
-  mapCatalogCourseToPreview,
-} from "@/features/catalog/catalog-course-mappers";
+import { dedupeCatalogCoursesByCode } from "@/features/catalog/catalog-course-mappers";
 import { searchCatalogCourses } from "@/features/catalog/catalog-db";
 import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
 import { cn } from "@/lib/utils";
@@ -14,7 +11,7 @@ import {
   CircleNotchIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
-import CourseCard from "./course-card";
+import CoursePreviewList from "./course-preview-list";
 import { useCourseModalContext } from "./course-modal-provider";
 
 interface CourseSearchData {
@@ -132,15 +129,7 @@ function CourseSearchContent({
     <div>
       <div className="mb-6">
         <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
-        <div className="space-y-2">
-          {displayedRecommendedCourses.map((course) => (
-            <CourseCard
-              key={course.uniqueId}
-              course={mapCatalogCourseToPreview(course)}
-              type="add"
-            />
-          ))}
-        </div>
+        <CoursePreviewList courses={displayedRecommendedCourses} />
       </div>
 
       <form onSubmit={handleSearch}>
@@ -243,16 +232,10 @@ function CourseSearchResults({
         <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
-      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-        {courses.map((course) => (
-          <CourseCard
-            key={course.uniqueId}
-            course={mapCatalogCourseToPreview(course)}
-            className="w-full"
-            type="add"
-          />
-        ))}
-      </div>
+      <CoursePreviewList
+        courses={courses}
+        className="max-h-[60vh] overflow-y-auto pr-1"
+      />
     </div>
   );
 }

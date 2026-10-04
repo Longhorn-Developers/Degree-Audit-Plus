@@ -18,6 +18,29 @@ export interface AuditRequirement {
   rules: RequirementRule[];
 }
 
+// One rule whose progress moved between two audits.
+export interface RuleChange {
+  requirement: string;
+  rule: string;
+  unit: RequirementProgressUnit;
+  required: number;
+  appliedBefore: number;
+  appliedAfter: number;
+}
+
+// What a preview audit changed against the main one. Percentages are 0-100.
+export interface AuditDiff {
+  progress: { before: number; after: number };
+  rules: RuleChange[];
+}
+
+// The one preview kept in storage at a time.
+export interface PreviewAudit {
+  auditId: string;
+  audit: CachedAuditData;
+  diff: AuditDiff;
+}
+
 export interface CachedAuditData {
   name?: string;
   requirements: AuditRequirement[];
