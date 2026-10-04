@@ -33,6 +33,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   onTogglePin,
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [menuPosition, setMenuPosition] = React.useState({ top: 0, right: 0 });
   const [isEditing, setIsEditing] = React.useState(false);
   const [draftTitle, setDraftTitle] = React.useState(title ?? "");
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -47,9 +48,16 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
         setMenuOpen(false);
       }
     };
+    const closeMenu = () => setMenuOpen(false);
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("resize", closeMenu);
+    };
   }, [menuOpen]);
 
   React.useEffect(() => {
@@ -171,6 +179,13 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteError("");
+                const bounds = cardRef.current?.getBoundingClientRect();
+                if (!menuOpen && bounds) {
+                  setMenuPosition({
+                    top: bounds.bottom + 8,
+                    right: window.innerWidth - bounds.right,
+                  });
+                }
                 setMenuOpen((prev) => !prev);
               }}
               aria-label="Audit options"
@@ -182,7 +197,8 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
 
         {menuOpen && (
           <div
-            className="absolute right-0 top-full z-30 mt-2 min-w-[180px] rounded-[8px] border border-dap-border bg-background p-2 shadow-lg"
+            className="fixed z-30 min-w-[180px] rounded-[8px] border border-dap-border bg-background p-2 shadow-lg"
+            style={menuPosition}
             onClick={(e) => e.stopPropagation()}
           >
             <button
