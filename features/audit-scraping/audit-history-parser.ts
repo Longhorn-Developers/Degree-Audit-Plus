@@ -18,8 +18,9 @@ interface AuditHistoryRow {
 }
 
 function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
+  // ut drops the table when the student has no audits
   const table = document.querySelector("table");
-  if (!table) throw new Error("Audit history table not found");
+  if (!table) return [];
 
   const rows: AuditHistoryRow[] = [];
 
@@ -40,40 +41,37 @@ function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
   return rows;
 }
 
+// One card per major+credential+percentage. UT lists newest first; each card
+// keeps its oldest run so a duplicate rerun never changes its id or position.
 export function parseAuditHistory(document: Document): AuditHistoryEntry[] {
-  const audits: AuditHistoryEntry[] = [];
+  const cards: AuditHistoryRow[] = [];
   const seenAudits = new Set<string>();
-
-  for (const row of parseAuditHistoryRows(document)) {
+  for (const row of parseAuditHistoryRows(document).reverse()) {
     if (seenAudits.has(row.auditKey)) continue;
-
-    audits.push({
-      title: `Degree Audit ${audits.length + 1}`,
-      majors: [row.major],
-      minors: row.credential ? [row.credential] : [],
-      percentage: row.percentage,
-      auditId: row.auditId,
-    });
     seenAudits.add(row.auditKey);
+    cards.unshift(row);
   }
 
-  return audits;
+  // only finished audits are numbered so a pending run can't shift titles
+  let finished = 0;
+  return cards.map((row) => ({
+    title: row.auditId ? `Degree Audit ${++finished}` : undefined,
+    majors: [row.major],
+    minors: row.credential ? [row.credential] : [],
+    percentage: row.percentage,
+    auditId: row.auditId,
+  }));
 }
 
-// every ut row that parseAuditHistory folds into the same card as auditId
-export function findMergedAuditIds(
+// Given a card's id, returns every run folded into that card, so deleting a
+// card deletes all its reruns on UT.
+export function findDedupedAuditIds(
   document: Document,
   auditId: string,
 ): string[] {
   const rows = parseAuditHistoryRows(document);
-  const target = rows.find((row) => row.auditId === auditId);
-  if (!target) return [];
-
-  const auditIds: string[] = [];
-  for (const row of rows) {
-    if (row.auditId && row.auditKey === target.auditKey) {
-      auditIds.push(row.auditId);
-    }
-  }
-  return auditIds;
+  const key = rows.find((row) => row.auditId === auditId)?.auditKey;
+  return rows
+    .filter((row) => row.auditId && row.auditKey === key)
+    .map((row) => row.auditId);
 }

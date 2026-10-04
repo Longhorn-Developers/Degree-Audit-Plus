@@ -32,11 +32,6 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
-  markAuditRunPending: async () => {},
-  processAuditHistory: async () => false,
-  AUDIT_HISTORY_URL:
-    "https://utdirect.utexas.edu/apps/degree/audits/submissions/history/",
-  RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
 mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async (custom?: unknown) => {

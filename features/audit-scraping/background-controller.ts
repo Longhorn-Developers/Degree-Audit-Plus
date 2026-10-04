@@ -270,24 +270,11 @@ function registerAuditNavigationHandlers(): void {
 // context whose origin passes UT's CSRF checks. Returns whether an existing
 // tab was used.
 async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
-  // Catch a known-dead session up front — the run itself re-checks via its
-  // own responses, so the instant cached read is enough here.
-  if ((await getCachedLoginState()) === false) {
-    await openLoginTab();
-    throw new Error("Not logged in to UT Direct");
-  }
-
+  await failIfLoggedOut();
   const { tabId, created } = await getAuditPageTab();
   let submitted = false;
   try {
-    const result = await sendAuditPageRequest(tabId, {
-      type: "RUN_AUDIT_VIA_FETCH",
-      custom,
-    });
-    if (!result.ok) {
-      if (result.error === "AUTH_REQUIRED") await openLoginTab();
-      throw new Error(result.error);
-    }
+    await sendAuditPageRequest(tabId, { type: "RUN_AUDIT_VIA_FETCH", custom });
     submitted = true;
     return !created;
   } finally {
@@ -303,22 +290,15 @@ async function runNewAudit(custom?: CustomAuditRunRequest): Promise<boolean> {
   }
 }
 
+// Deletes through a content script on a UT audits page, same as a run.
 async function deleteAudit(auditId: string): Promise<void> {
-  if ((await getCachedLoginState()) === false) {
-    await openLoginTab();
-    throw new Error("Not logged in to UT Direct");
-  }
-
+  await failIfLoggedOut();
   const { tabId, created } = await getAuditPageTab();
   try {
-    const result = await sendAuditPageRequest(tabId, {
+    await sendAuditPageRequest(tabId, {
       type: "DELETE_AUDIT_VIA_FETCH",
       auditId,
     });
-    if (!result.ok) {
-      if (result.error === "AUTH_REQUIRED") await openLoginTab();
-      throw new Error(result.error);
-    }
   } finally {
     // nothing to poll for after a delete so the created tab can go right away
     if (created) void browser.tabs.remove(tabId).catch(() => {});
@@ -338,18 +318,35 @@ async function getAuditPageTab(): Promise<{ tabId: number; created: boolean }> {
   return { tabId: tab.id, created: true };
 }
 
-// A created tab's content script needs a moment to register; retry until it
-// answers instead of waiting out the page's full load event.
-async function sendAuditPageRequest<M extends ExtensionMessage>(
+// Catches a known-dead session up front and sends the user to log in. The
+// cached read is instant; the UT tab re-checks the session on every request.
+async function failIfLoggedOut(): Promise<void> {
+  if ((await getCachedLoginState()) !== false) return;
+  await openLoginTab();
+  throw new Error("AUTH_REQUIRED");
+}
+
+// Sends a run or delete to the UT tab and throws its error, opening the login
+// tab when UT's session is gone. A created tab's content script needs a moment
+// to register; retry until it answers instead of waiting out the full load.
+async function sendAuditPageRequest(
   tabId: number,
-  message: M,
-) {
+  message: Extract<
+    ExtensionMessage,
+    { type: "RUN_AUDIT_VIA_FETCH" | "DELETE_AUDIT_VIA_FETCH" }
+  >,
+): Promise<void> {
   for (let attempt = 0; attempt < 40; attempt++) {
+    let result;
     try {
-      return await sendTabMessage(tabId, message);
+      result = await sendTabMessage(tabId, message);
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 250));
+      continue;
     }
+    if (result.ok) return;
+    if (result.error === "AUTH_REQUIRED") await openLoginTab();
+    throw new Error(result.error);
   }
   throw new Error("Audit page did not respond");
 }

@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { JSDOM } from "jsdom";
-import { act, createElement } from "react";
+import { act, createElement, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 mock.module("wxt/browser", () => ({ browser: fakeBrowser }));
 mock.module("@wxt-dev/browser", () => ({ browser: fakeBrowser }));
 
-const { default: AuditContextProvider } =
+const { default: AuditContextProvider, useAuditContext } =
   await import("../../features/audit/audit-provider");
 const { PreferencesProvider } =
   await import("../../features/preferences/preferences-provider");
@@ -66,4 +66,40 @@ test("renders children when the selected audit has no cached data", async () => 
   });
 
   expect(document.querySelector('[data-testid="audit-shell"]')).not.toBeNull();
+});
+
+test("switching audits keeps the app mounted instead of showing the loading page", async () => {
+  await fakeBrowser.storage.local.set({
+    auditHistory: {
+      audits: [{ auditId: "failed-audit" }, { auditId: "other-audit" }],
+      timestamp: 1,
+    },
+  });
+
+  let mounts = 0;
+  let selectAudit: (id: string) => void = () => {};
+  const Shell = () => {
+    selectAudit = useAuditContext().setCurrentAuditId;
+    useEffect(() => {
+      mounts++;
+    }, []);
+    return null;
+  };
+
+  await act(async () => {
+    root.render(
+      createElement(
+        PreferencesProvider,
+        null,
+        createElement(AuditContextProvider, null, createElement(Shell)),
+      ),
+    );
+    await Bun.sleep(10);
+  });
+  await act(async () => {
+    selectAudit("other-audit");
+    await Bun.sleep(10);
+  });
+
+  expect(mounts).toBe(1);
 });

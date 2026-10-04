@@ -53,14 +53,6 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   }, [menuOpen]);
 
   React.useEffect(() => {
-    if (!deleteError) return;
-
-    const clearError = () => setDeleteError("");
-    document.addEventListener("mousedown", clearError);
-    return () => document.removeEventListener("mousedown", clearError);
-  }, [deleteError]);
-
-  React.useEffect(() => {
     if (!isSelected) {
       setMenuOpen(false);
     }
@@ -84,24 +76,28 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     setMenuOpen(false);
   };
 
+  // Confirms, deletes on UT and locally, and shows an inline error on failure.
   const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "Delete this audit from Degree Audit Plus and UT Direct? Duplicate runs of it on UT Direct are deleted too. This can't be undone.",
-    );
-    if (!confirmed) return;
-
-    if (!onDelete) return;
+    if (
+      !onDelete ||
+      !window.confirm(
+        "Delete this audit from Degree Audit Plus and UT Direct? Duplicate runs of it on UT Direct are deleted too. This can't be undone.",
+      )
+    )
+      return;
 
     setIsDeleting(true);
-    setDeleteError("");
     const result = await onDelete();
     setIsDeleting(false);
-
     setMenuOpen(false);
-    if (!result.success) {
-      console.error("Failed to delete audit:", result.error);
-      setDeleteError(getDeleteErrorMessage(result.error));
-    }
+    if (result.success) return;
+
+    // the background already opened a login tab for AUTH_REQUIRED
+    setDeleteError(
+      result.error === "AUTH_REQUIRED"
+        ? "Log in to UT Direct and try again."
+        : "Could not delete this audit. Please try again.",
+    );
   };
 
   return (
@@ -174,6 +170,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
               className={isSelected ? "text-white" : "text-dap-orange"}
               onClick={(e) => {
                 e.stopPropagation();
+                setDeleteError("");
                 setMenuOpen((prev) => !prev);
               }}
               aria-label="Audit options"
@@ -225,13 +222,5 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     </div>
   );
 };
-
-function getDeleteErrorMessage(error: string): string {
-  // the background opens a login tab for these
-  if (error === "AUTH_REQUIRED" || error === "Not logged in to UT Direct") {
-    return "Log in to UT Direct and try again.";
-  }
-  return "Could not delete this audit. Please try again.";
-}
 
 export default DegreeAuditCard;

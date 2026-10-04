@@ -69,11 +69,16 @@ export function AuditContextProvider({
   children: React.ReactNode;
 }) {
   const { lastAuditId, updateLastAuditId } = usePreferences();
-  const [loaded, setLoaded] = useState(false);
   const [currentAuditId, setCurrentAuditIdState] = useState<string | null>(
     new URLSearchParams(window.location.search).get("auditId") ?? lastAuditId,
   );
-  const [auditData, setAuditData] = useState<CachedAuditData | null>(null);
+  // The last loaded audit's data, tagged with its id. Stays on screen while a
+  // newly selected audit loads, so switching never unmounts the app.
+  const [loadedAudit, setLoadedAudit] = useState<{
+    auditId: string;
+    data: CachedAuditData | null;
+  } | null>(null);
+  const auditData = loadedAudit?.data ?? null;
   const [history, setHistory] = useState<AuditHistoryData | null>(null);
 
   const currentAudit = useMemo<AuditHistoryEntry>(
@@ -133,21 +138,17 @@ export function AuditContextProvider({
   }, [currentAuditId, history, updateLastAuditId]);
 
   // Effect B (sole auditData writer): observe the selected audit. The watch wins
-  // over a late initial read, so switching audits never flashes null — the
-  // `loaded` gate shows LoadingPage until the observed data arrives.
+  // over a late initial read, and the previous audit stays up until this one
+  // arrives, so switching never flashes null or the loading page.
   useEffect(() => {
     if (!currentAuditId) return;
 
-    setLoaded(false);
     return observeAuditData(
       currentAuditId,
-      (audit) => {
-        setAuditData(audit);
-        setLoaded(true);
-      },
+      (audit) => setLoadedAudit({ auditId: currentAuditId, data: audit }),
       (error) => {
         console.error("Failed to load audit:", error);
-        setLoaded(true);
+        setLoadedAudit({ auditId: currentAuditId, data: null });
       },
     );
   }, [currentAuditId]);
@@ -182,20 +183,11 @@ export function AuditContextProvider({
         setHistory(updatedHistory);
         return true;
       },
-      deleteAudit: async (auditId) => {
-        try {
-          const response = await sendRuntimeMessage({
-            type: "DELETE_AUDIT",
-            auditId,
-          });
-          return response ?? { success: false, error: "NO_RESPONSE" };
-        } catch (error) {
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          };
-        }
-      },
+      // the background replies with the result; a dead background rejects
+      deleteAudit: (auditId) =>
+        sendRuntimeMessage({ type: "DELETE_AUDIT", auditId }).catch(
+          (error: unknown) => ({ success: false, error: String(error) }),
+        ),
       togglePin: async (auditId) => {
         const updatedHistory = await togglePinAudit(auditId);
         if (!updatedHistory) return false;
@@ -203,29 +195,33 @@ export function AuditContextProvider({
         return true;
       },
       moveCourseToNewSemester: async (courseId, semester) => {
-        if (!auditData || !currentAuditId) return false;
-        const updated = moveCourseToSemester(auditData, courseId, semester);
+        if (!loadedAudit?.data) return false;
+        const updated = moveCourseToSemester(
+          loadedAudit.data,
+          courseId,
+          semester,
+        );
         if (!updated) return false;
-        await saveAuditData(currentAuditId, updated);
+        await saveAuditData(loadedAudit.auditId, updated);
         return true;
       },
       addPlannedCourse: async (course, requirementTitle, ruleTitle) => {
-        if (!auditData || !currentAuditId) return null;
+        if (!loadedAudit?.data) return null;
         const result = addCourse(
-          auditData,
+          loadedAudit.data,
           course,
           requirementTitle,
           ruleTitle,
         );
         if (!result) return null;
-        await saveAuditData(currentAuditId, result.audit);
+        await saveAuditData(loadedAudit.auditId, result.audit);
         return result.courseId;
       },
       removePlannedCourse: async (courseId) => {
-        if (!auditData || !currentAuditId) return false;
-        const updated = removeCourse(auditData, courseId);
+        if (!loadedAudit?.data) return false;
+        const updated = removeCourse(loadedAudit.data, courseId);
         if (!updated) return false;
-        await saveAuditData(currentAuditId, updated);
+        await saveAuditData(loadedAudit.auditId, updated);
         return true;
       },
     };
@@ -238,11 +234,11 @@ export function AuditContextProvider({
     currentAuditName,
     progresses,
     courseMap,
-    auditData,
+    loadedAudit,
     updateLastAuditId,
   ]);
 
-  if (!loaded || !currentAuditId || !history) {
+  if (!loadedAudit || !currentAuditId || !history) {
     return <LoadingPage />;
   }
 
