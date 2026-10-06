@@ -14,7 +14,6 @@ let resumeCalls = 0;
 let watchedRunClicks = 0;
 let recordedLoginPages = 0;
 let fetchedAuditIds: string[] = [];
-let ranAudits: unknown[] = [];
 let deletedAuditIds: string[] = [];
 
 mock.module("../../features/audit-scraping/audit-history-sync", () => ({
@@ -32,11 +31,13 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
     fetchedAuditIds.push(auditId);
     return { audit: { courses: {}, requirements: [] } };
   },
+  fetchAuditHistoryRows: async () => [],
+  RUN_AUDIT_BUTTON_SELECTOR: ".run_button",
 }));
+// no test file runs the real runner, so this mock can't leak into one
 mock.module("../../features/audit-scraping/audit-runner", () => ({
-  runAudit: async (custom?: unknown) => {
-    ranAudits.push(custom);
-  },
+  runAudit: async () => {},
+  cancelRun: () => {},
   deleteAudit: async (auditId: string) => {
     deletedAuditIds.push(auditId);
   },
@@ -46,6 +47,11 @@ mock.module("../../features/session/session", () => ({
   recordLoginStateFromPage: () => {
     recordedLoginPages++;
   },
+  isLoginPage: (document: Document) =>
+    Boolean(
+      document.querySelector('form[action*="login"]') ||
+      document.querySelector('input[type="password"]'),
+    ),
   getCachedLoginState: async () => true,
   openLoginTab: async () => {},
   registerSessionCookieWatcher: () => {},
@@ -75,7 +81,6 @@ beforeEach(() => {
   watchedRunClicks = 0;
   recordedLoginPages = 0;
   fetchedAuditIds = [];
-  ranAudits = [];
   deletedAuditIds = [];
 });
 
@@ -137,23 +142,6 @@ test("serves FETCH_AUDIT requests from the background", async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(fetchedAuditIds).toEqual(["12345"]);
   expect(responses).toEqual([{ audit: { courses: {}, requirements: [] } }]);
-});
-
-test("serves forwarded RUN_NEW_AUDIT requests from the background", async () => {
-  startAuditContentController(createDocument("/apps/degree/audits/"));
-
-  const responses: unknown[] = [];
-  const custom = { catalog: "20259", college: "E", degreePlan: "EBC SSA    " };
-  const handled = listener?.(
-    { type: "RUN_NEW_AUDIT", custom },
-    {},
-    (response) => responses.push(response),
-  );
-
-  expect(handled).toBe(true);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(ranAudits).toEqual([custom]);
-  expect(responses).toEqual([{ ok: true }]);
 });
 
 test("serves forwarded DELETE_AUDIT requests from the background", async () => {
