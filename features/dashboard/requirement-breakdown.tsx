@@ -111,7 +111,7 @@ const RequirementBadge = ({
 }) => {
   const isComplete = current >= total;
   return (
-    <span className="text-sm text-text border border-text rounded-full px-3 py-0.5 font-medium">
+    <span className="text-base text-text border border-text rounded-full px-3 py-0.5">
       {isComplete
         ? pluralizeUnit(total, unit)
         : current === 0
@@ -140,7 +140,7 @@ const CoursePill = ({ course }: { course: Course }) => {
         statusColors[course.status],
       )}
     >
-      <span className="font-semibold min-w-[80px]">{course.code}</span>
+      <span className="min-w-[80px]">{course.code}</span>
       <span className="flex-1">{course.name}</span>
       <span className="text-gray-700">
         {isValidSemester ? course.semester : ""}
@@ -191,7 +191,7 @@ const RequirementRow = ({
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
       {/* Requirement header */}
       <button
-        className="w-full py-3 px-3 flex items-start gap-3 hover:bg-hover-bg transition-colors bg-background"
+        className="w-full py-3 pl-3 pr-6 flex items-start gap-3 hover:bg-hover-bg transition-colors bg-background"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <RequirementStatusIcon
@@ -199,19 +199,23 @@ const RequirementRow = ({
           total={requirement.requiredHours}
         />
         <VStack gap={0} className="flex-1 text-left">
-          <span className="font-bold text-base text-text">{code}</span>
-          <span className="text-sm text-muted mt-0.5">{description}</span>
+          <span className="text-[20.25px] font-medium leading-normal text-text">
+            {code}
+          </span>
+          <span className="text-base leading-normal tracking-[0.32px] text-text mt-0.5">
+            {description}
+          </span>
         </VStack>
-        <HStack y="middle" gap={3}>
+        <HStack y="middle" gap={3} className="self-center">
           <RequirementBadge
             current={requirement.appliedHours}
             total={requirement.requiredHours}
             unit={requirement.progressUnit ?? "hours"}
           />
           {isExpanded ? (
-            <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
+            <CaretUpIcon className="w-5 h-5 text-text" />
           ) : (
-            <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
+            <CaretDownIcon className="w-5 h-5 text-text" />
           )}
         </HStack>
       </button>
@@ -310,11 +314,13 @@ const CollapsibleProgressCard = ({
       />
       <div className="flex-1 min-w-0">
         <button
-          className="w-full p-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
+          className="w-full pl-5 pr-8 pt-6 pb-4 flex items-center justify-between hover:bg-hover-bg transition-colors bg-background"
           onClick={() => setIsOpen(!isOpen)}
         >
           <VStack gap={2}>
-            <span className="font-bold text-base text-text">{title}</span>
+            <span className="text-[20.25px] font-semibold leading-normal text-text">
+              {title}
+            </span>
             <ProgressBar
               current={current}
               total={total}
@@ -322,13 +328,13 @@ const CollapsibleProgressCard = ({
             />
           </VStack>
           <HStack y="middle" gap={2}>
-            <span className="text-text font-medium text-sm">
+            <span className="text-text text-base">
               {formatProgressSummary(current, total, unit)}
             </span>
             {isOpen ? (
-              <CaretUpIcon className="w-5 h-5 text-text" weight="bold" />
+              <CaretUpIcon className="w-5 h-5 text-text" />
             ) : (
-              <CaretDownIcon className="w-5 h-5 text-text" weight="bold" />
+              <CaretDownIcon className="w-5 h-5 text-text" />
             )}
           </HStack>
         </button>
@@ -358,7 +364,7 @@ const RequirementBreakdown = ({
     colorIndex={colorIndex}
   >
     <div className="bg-background">
-      <div className="px-4 py-4">
+      <div className="pl-5 pr-8 pt-2 pb-4">
         {requirements.map((requirement, idx) => (
           <RequirementRow
             key={`${requirement.text.slice(0, 20)}-${idx}`}
@@ -403,7 +409,7 @@ export const UnifiedDegreeCard = ({
       unit={totalProgressUnit}
       colorIndex={5}
     >
-      <div className="bg-background px-4 pt-4 pb-4">
+      <div className="bg-background pl-5 pr-8 pt-2 pb-4">
         {sections.map((section, idx) => (
           <div key={section.title || idx} className={idx > 0 ? "mt-4" : ""}>
             <span

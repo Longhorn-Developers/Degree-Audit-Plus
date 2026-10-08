@@ -1,5 +1,4 @@
 import { HStack, VStack } from "@/components/ui/stack";
-import Title from "@/components/ui/title";
 import { CourseSearchPanel } from "@/features/course-search/course-search-panel";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
@@ -64,7 +63,6 @@ const MainContent = () => {
 
   return (
     <VStack className="min-w-0 flex-1">
-      <Title text="Degree Progress Overview" />
       {pre.map((section, idx) => (
         <RequirementBreakdown
           key={section.title}
