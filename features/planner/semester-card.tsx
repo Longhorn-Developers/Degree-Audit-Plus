@@ -25,14 +25,16 @@ const SemesterCardVisual = forwardRef<
       {...props}
       ref={ref}
       className={cn(
-        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-background",
+        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-surface",
         className,
       )}
       gap={6}
     >
       <DropdownHeader>
         <HStack y="middle" x="between" fill>
-          <h2 className="text-lg text-dap-orange font-bold">{semester}</h2>
+          <h2 className="text-[20.25px] font-semibold leading-normal uppercase text-dap-orange">
+            {semester}
+          </h2>
         </HStack>
       </DropdownHeader>
       <DropdownContent className="w-full max-h-86 overflow-y-auto">
