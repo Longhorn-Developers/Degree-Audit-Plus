@@ -67,8 +67,8 @@ const Sidebar = () => {
       {/* Header */}
       <div className="px-8 pb-4 flex items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="DAP Logo" className="w-12 h-12" />
-          <span className="text-dap-orange font-semibold text-xl">
+          <img src={logo} alt="DAP Logo" className="w-16 h-16" />
+          <span className="text-dap-orange font-semibold text-2xl">
             Degree Audit Plus
           </span>
         </div>
@@ -119,39 +119,36 @@ const Sidebar = () => {
             </>
           )}
         </div>
-      </div>
 
-      {/* Pinned Resources + Feedback (stick to bottom, above footer) */}
-      <div className="px-8">
         {/* Divider */}
         <hr className="my-5 border-dap-border" />
 
         {/* RESOURCES Section */}
-        <div className="text-[25px] font-bold tracking-[-0.19px]">
+        <div className="text-[19px] font-bold tracking-[-0.19px]">
           RESOURCES
         </div>
         <div className="mt-3 flex flex-col gap-2 ">
           <a
             href="#"
-            className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
+            className="text-dap-orange text-base leading-[22px] font-medium hover:underline flex items-center gap-1"
           >
             UT Core Requirements <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
-            className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
+            className="text-dap-orange text-base leading-[22px] font-medium hover:underline flex items-center gap-1"
           >
             UT Degree Plans <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
-            className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
+            className="text-dap-orange text-base leading-[22px] font-medium hover:underline flex items-center gap-1"
           >
             Registration Info Sheet (RIS) <ArrowUpRightIcon size={14} />
           </a>
           <a
             href="#"
-            className="text-dap-orange text-[15px] font-medium hover:underline flex items-center gap-1"
+            className="text-dap-orange text-base leading-[22px] font-medium hover:underline flex items-center gap-1"
           >
             Register for Courses <ArrowUpRightIcon size={14} />
           </a>
@@ -163,7 +160,7 @@ const Sidebar = () => {
         {/* Feedback Link */}
         <a
           href="#"
-          className="text-dap-orange font-semibold hover:underline flex items-center gap-1"
+          className="text-dap-orange text-base leading-[22px] font-medium hover:underline flex items-center gap-1"
         >
           Send us Feedback! <ArrowUpRightIcon size={14} />
         </a>
