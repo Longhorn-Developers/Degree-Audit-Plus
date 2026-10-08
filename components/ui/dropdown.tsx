@@ -92,13 +92,25 @@ const Dropdown = forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
     gap?: number;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
   }
 >((props, ref) => {
-  const { children, gap, className, ...rest } = props;
-  const [isOpen, setIsOpen] = useState(false);
+  const {
+    children,
+    gap,
+    className,
+    isOpen: isOpenProp,
+    onOpenChange,
+    ...rest
+  } = props;
+  const [isOpenState, setIsOpenState] = useState(false);
+
+  const isOpen = isOpenProp ?? isOpenState;
 
   const toggleDropdown = () => {
-    setIsOpen(!isOpen);
+    setIsOpenState(!isOpen);
+    onOpenChange?.(!isOpen);
   };
 
   // Separate children into header and content
