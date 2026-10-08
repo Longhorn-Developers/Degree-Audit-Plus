@@ -78,12 +78,13 @@ const DroppableSemesterCard = ({ semester, courses }: SemesterCardProps) => {
   const { isOver, setNodeRef: droppableRef } = useDroppable({ id: semester });
 
   return (
-    <SemesterCardVisual
-      ref={droppableRef}
-      semester={semester}
-      courses={courses}
-      className={cn(isOver ? "opacity-35" : "opacity-100")}
-    />
+    <div ref={droppableRef} className="h-full">
+      <SemesterCardVisual
+        semester={semester}
+        courses={courses}
+        className={cn(isOver ? "opacity-35" : "opacity-100")}
+      />
+    </div>
   );
 };
 
