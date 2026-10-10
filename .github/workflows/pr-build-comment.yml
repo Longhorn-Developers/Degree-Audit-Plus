@@ -1,0 +1,42 @@
+# .github/workflows/pr-build-comment.yml
+# Runs after CI finishes so it has a write token even for fork PRs. It never checks out or runs PR code.
+name: PR build comment
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      # Post (or refresh) one download-link comment on the PR that the CI run built.
+      - name: Comment download link on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+            // Fork runs don't list their PR, so find it by "fork-owner:branch"
+            const head = `${run.head_repository.owner.login}:${run.head_branch}`;
+            const { data: prs } = await github.rest.pulls.list({ owner, repo, state: 'open', head });
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: run.id });
+            if (!prs.length || !artifacts.length) return console.log(`skip: ${prs.length} PRs for ${head}, ${artifacts.length} artifacts`);
+
+            const marker = '<!-- extension-build -->';
+            const body = `${marker}
+            ### Extension build ready
+            [Download degree-audit-plus.zip](${run.html_url}/artifacts/${artifacts[0].id}) (commit ${run.head_sha.slice(0, 7)})
+
+            **Install:** unzip, open \`chrome://extensions\`, turn on Developer mode, click **Load unpacked**, pick the folder.
+            **Update:** replace the folder contents and hit the reload icon on the extension card.`;
+            const issue_number = prs[0].number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
