@@ -72,12 +72,11 @@ export function searchCatalogCourses(filters: {
         departmentCodes.length === 0 ||
         departmentCodes.includes(course.department);
 
-      // Split lower vs upper division by the first digit in the course number.
-      const courseLevel = Number(course.number[0]);
+      // Split lower vs upper division by the last two digits of the course number (01-19 is lower).
+      const courseLevel = Number(course.number.match(/\d(\d\d)/)?.[1]);
       const matchesDivision =
         filters.lowerDivision === filters.upperDivision ||
-        (filters.lowerDivision && courseLevel >= 1 && courseLevel <= 3) ||
-        (filters.upperDivision && courseLevel >= 4 && courseLevel <= 6);
+        (filters.lowerDivision ? courseLevel < 20 : courseLevel >= 20);
 
       return matchesQuery && matchesDepartment && matchesDivision;
     })
