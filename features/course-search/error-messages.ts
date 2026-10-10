@@ -5,6 +5,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   TOPIC_REQUIRED: "Topics courses can't be checked yet.",
   RUN_TIMEOUT: "UT took too long to run the audit. Try again.",
   MAIN_AUDIT_NOT_FOUND: "Run an audit of your degree first, then try again.",
+  NO_PREVIEW: "This preview is out of date. Click the course again.",
   NOT_PREVIEWABLE:
     "Courses can't be checked against this audit. Run a new audit and try again.",
 };

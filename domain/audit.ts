@@ -41,14 +41,19 @@ export interface AuditDiff {
   rules: RuleChange[];
 }
 
-// The course the last preview put on UT's planner. `row` is null when the
-// course was already planned, so dropping the preview leaves it alone.
+// The last preview: the course it put on UT's planner and the audit it ran.
+// `row` is null when the course was already planned, so dropping the preview
+// leaves it alone. `auditId` is null until UT has the audit. The audit stays
+// on UT, hidden from the app, until it's added to the plan or dropped.
 export interface PendingPreview {
   course: PlannerSyncTarget;
   row: PlannerRowKey | null;
+  auditId: string | null;
 }
 
-export interface AcceptedCourse extends PendingPreview {
+export interface AcceptedCourse {
+  course: PlannerSyncTarget;
+  row: PlannerRowKey | null;
   acceptedAt: number;
 }
 

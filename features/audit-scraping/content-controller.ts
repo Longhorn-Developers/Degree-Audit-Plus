@@ -10,7 +10,13 @@ import {
   startAuditHistorySync,
   watchForAuditRunClicks,
 } from "./audit-history-sync";
-import { cancelRun, deleteAudit, readPlanner, runAudit } from "./audit-runner";
+import {
+  cancelRun,
+  deleteAudit,
+  promotePreview,
+  readPlanner,
+  runAudit,
+} from "./audit-runner";
 import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
@@ -86,6 +92,22 @@ export function startAuditContentController(document: Document): void {
         void readPlanner().then(
           (rows) =>
             sendMessageResponse(message, sendResponse, { ok: true, rows }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+        );
+        return true;
+      }
+
+      if (message.type === "PROMOTE_PREVIEW") {
+        void promotePreview(message.auditId, message.replaces).then(
+          (promoted) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: true,
+              ...promoted,
+            }),
           (error: unknown) =>
             sendMessageResponse(message, sendResponse, {
               ok: false,

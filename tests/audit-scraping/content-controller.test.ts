@@ -38,6 +38,7 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
 mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async () => {},
   readPlanner: async () => [],
+  promotePreview: async () => ({ cardId: "", history: [] }),
   cancelRun: () => {},
   deleteAudit: async (auditId: string) => {
     deletedAuditIds.push(auditId);

@@ -102,17 +102,23 @@ export async function savePlanAudit(
   await getPlanAuditsItem().setValue({ ...planAudits, [degree]: auditId });
 }
 
-// Saves UT's history with the user's renames and pins layered on top.
+// Saves UT's history with the user's renames and pins layered on top. The
+// pending preview's audit is on UT but stays out of the app until it's added.
 export async function saveAuditHistory(
   audits: AuditHistoryEntry[],
   error?: string,
 ): Promise<void> {
-  const prefs = await getAuditPrefsItem().getValue();
+  const [prefs, pending] = await Promise.all([
+    getAuditPrefsItem().getValue(),
+    getPendingPreview(),
+  ]);
   const data: AuditHistoryData = {
-    audits: audits.map((audit) => ({
-      ...audit,
-      ...prefs[audit.auditId ?? ""],
-    })),
+    audits: audits
+      .filter((audit) => !pending?.auditId || audit.auditId !== pending.auditId)
+      .map((audit) => ({
+        ...audit,
+        ...prefs[audit.auditId ?? ""],
+      })),
     timestamp: Date.now(),
     error,
   };
@@ -204,7 +210,11 @@ export async function acceptPendingPreview(): Promise<AcceptedCourse | null> {
   const pending = await getPendingPreview();
   if (!pending) return null;
 
-  const accepted: AcceptedCourse = { ...pending, acceptedAt: Date.now() };
+  const accepted: AcceptedCourse = {
+    course: pending.course,
+    row: pending.row,
+    acceptedAt: Date.now(),
+  };
   const others = (await getAcceptedCoursesItem().getValue()).filter(
     ({ course }) =>
       course.department !== pending.course.department ||

@@ -24,9 +24,11 @@ export type ExtensionMessage =
   // UI -> background: plan this one course on UT, rerun the open audit's
   // degree with it, and diff the result against that audit.
   | { type: "PREVIEW_COURSE"; course: PlannerSyncTarget; auditId: string }
-  // UI -> background: keep the last previewed course and rerun the open
-  // audit's degree with it.
+  // UI -> background: keep the last previewed course and show its audit,
+  // `auditId` is the audit the preview was made on.
   | { type: "ACCEPT_PREVIEW"; auditId: string }
+  // Background -> UT tab: the tab half of ACCEPT_PREVIEW.
+  | { type: "PROMOTE_PREVIEW"; auditId: string; replaces?: string }
   // UI -> background: tidy up and read the UT planner, with which rows the
   // user already added to their plan.
   | { type: "CHECK_PLANNER" }
@@ -146,6 +148,9 @@ interface MessageResponses {
   READ_PLANNER:
     | { ok: true; rows: PlannedCourseRow[] }
     | { ok: false; error: string };
+  PROMOTE_PREVIEW:
+    | { ok: true; cardId: string; history: AuditHistoryEntry[] }
+    | { ok: false; error: string };
   UPDATE_PLANNER:
     | { success: true; auditId: string | null }
     | { success: false; error: string };
@@ -176,6 +181,7 @@ type ResponseRequest = Extract<
       | "ACCEPT_PREVIEW"
       | "CHECK_PLANNER"
       | "READ_PLANNER"
+      | "PROMOTE_PREVIEW"
       | "UPDATE_PLANNER"
       | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"

@@ -39,7 +39,7 @@ RUN_NEW_AUDIT ─────▶ runNewAudit()          queueRun: aborts a previ
                          ├ getCachedLoginState() false? → openLoginTab, fail
                          ├ getAuditPageTab()   existing UT tab, or open one hidden
                          ├ RUN_AUDIT ──────────────────────────▶ runAudit(runId, custom)
-                         │                                        ├ dropPendingPreview()   last preview's course off the planner
+                         │                                        ├ dropPendingPreview()   last preview's course and audit, unless added
                          │                                        ├ fetchAuditHistoryRows() ∥ fetchRunForm()
                          │                                        │   known = every row's key
                          │                                        ├ submitForm()   POST, redirect:"manual", incl_planned_crswk=Y
@@ -72,8 +72,8 @@ every course the user added from a preview.
 Only a preview is cancelled. A new request while a preview runs sends it
 `CANCEL_RUN`; it throws `CANCELLED` at its next check, and the new one starts.
 If it had not POSTed yet, nothing reaches UT. Once it has, it waits for its
-audit and deletes it first. A real run is never cancelled; a new request waits
-for it.
+audit and records it as the pending preview, so the next run drops it. A real
+run is never cancelled; a new request waits for it.
 
 | Error              | Where                  | Meaning                                               |
 | ------------------ | ---------------------- | ----------------------------------------------------- |
@@ -81,7 +81,8 @@ for it.
 | `RUN_FAILED`       | `submitForm`           | UT answered 200: re-rendered the form, queued nothing |
 | `RUN_NOT_ACCEPTED` | `waitForNewAudit`      | POST redirected but no new row within 10 s            |
 | `CANCELLED`        | `runAudit`             | A newer request replaced this preview                 |
-| `DELETE_FAILED`    | `deleteAuditRow`       | A preview's audit is still on UT after its delete     |
+| `DELETE_FAILED`    | `deleteAuditRow`       | An audit is still on UT after its delete              |
+| `NO_PREVIEW`       | `acceptPreview`        | Add to plan, but the preview was already dropped      |
 | `RUN_TIMEOUT`      | `waitForNewAudit` / bg | Link never appeared in 90 s (120 s backstop in bg)    |
 | `SCRAPE_FAILED`    | `fetchAuditResults`    | Results page didn't parse                             |
 
@@ -89,6 +90,8 @@ for it.
 
 Clicking a course in the Add-courses panel asks UT what it would fulfill. It is
 the same run as above with one extra step at the start and one at the end.
+The preview's audit stays on UT, hidden from the app, so Add to plan can show
+it without running again.
 
 ```text
 side panel (course-preview-list.tsx)     background                     UT tab
@@ -99,14 +102,18 @@ click ──PREVIEW_COURSE {course, auditId}──▶ previewCourse()
                                            │                              ├ planPreview(course)   add it next to the planned
                                            │                              │   courses, pendingPreview = { course, row }
                                            │                              ├ same run, degree_plan + catalog swapped in
-                                           │                              └ deleteAuditRow(auditId)   gone before a sync lists it
+                                           │                              └ pendingPreview.auditId, auditData_<auditId>
+                                           │                                  saveAuditHistory leaves it out
                                            ├ diffAudits(main, preview)
                                            └ findMissingPlannedCourses() both ways
 ◀──────────────── { diff, degree, missingPlanned, removedPlanned }
 
-"Add to plan" ──ACCEPT_PREVIEW {auditId}──▶ acceptPreview()
+"Add to plan" ──ACCEPT_PREVIEW {auditId}──▶ acceptPreview()   one queue turn:
+                                    ├ PROMOTE_PREVIEW ──────────────▶ promotePreview(previewId, replaces)
+                                    │                                 ├ read history, findCardId
+                                    │                                 └ delete the old plan audit
                                     ├ acceptPendingPreview()   pendingPreview → acceptedCourses
-                                    └ runNewAudit({ degree })  the course stays planned, so it is in this audit
+                                    └ saveAuditHistory, auditData_<cardId>, planAudits
 ◀──────────────── { auditId }        the panel switches the dashboard to it
 ```
 
@@ -125,10 +132,10 @@ never written. Clicking another course cancels the run in flight.
 Add to plan and the planner prompt's Remove keep one audit per degree: the
 audit made by the previous Add or Remove of that degree (`planAudits`) is
 deleted on UT once the new one is in, unless the user renamed or pinned it or
-the new run folded into its card.
+the new audit folded into its card.
 
-The course stays on UT's planner until the next run of any kind, which takes it
-back off unless it was accepted. A course that was already planned is never
+The course and the preview's audit stay on UT until the next run of any kind,
+which takes both back off unless the preview was added. A course that was already planned is never
 taken off. The other planned courses stay on the planner, so the preview diffs
 like for like against a main audit that includes them.
 

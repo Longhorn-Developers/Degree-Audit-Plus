@@ -1,5 +1,6 @@
 import {
   hasAuditResult,
+  type AuditDegree,
   type AuditHistoryEntry,
   type CachedAuditData,
 } from "@/domain/audit";
@@ -11,8 +12,10 @@ import {
 } from "@/domain/course";
 import {
   acceptPendingPreview,
+  deleteAuditData,
   getAuditData,
   getAuditHistory,
+  getPendingPreview,
   getPlanAudit,
   hasUserEdits,
   saveAuditData,
@@ -259,17 +262,26 @@ async function runNewAudit(
 // Add to plan and Remove rerun a degree. Each degree keeps only the latest of
 // these: the one before is deleted on UT, unless the user renamed or pinned it.
 async function rerunForPlan(request: AuditRunRequest): Promise<string> {
-  const degree = request.degree
-    ? `${request.degree.degreePlan}|${request.degree.catalogYear}`
-    : "default";
-  const previous = await getPlanAudit(degree);
-  const keepPrevious = !previous || (await hasUserEdits(previous));
+  const degree = getDegreeKey(request.degree);
   const { auditId, cardId } = await runNewAudit({
     ...request,
-    replaces: keepPrevious ? undefined : previous,
+    replaces: await findReplacedPlanAudit(degree),
   });
   await savePlanAudit(degree, auditId);
   return cardId;
+}
+
+function getDegreeKey(degree: AuditDegree | undefined): string {
+  return degree ? `${degree.degreePlan}|${degree.catalogYear}` : "default";
+}
+
+// the degree's previous plan audit, unless the user renamed or pinned it
+async function findReplacedPlanAudit(
+  degree: string,
+): Promise<string | undefined> {
+  const previous = await getPlanAudit(degree);
+  if (!previous || (await hasUserEdits(previous))) return undefined;
+  return previous;
 }
 
 // Plans one course on UT, reruns the open audit's degree with it, and diffs
@@ -318,11 +330,43 @@ async function findAuditCard(
   return history?.audits.find((card) => card.auditId === auditId);
 }
 
+// Shows the preview's own audit as the new one for that degree, no new run.
 async function acceptPreview(mainAuditId: string): Promise<string> {
-  const accepted = await acceptPendingPreview();
-  if (!accepted) throw new Error("NO_PREVIEW");
+  const pending = await getPendingPreview();
+  const previewId = pending?.auditId;
+  const audit = previewId ? await getAuditData(previewId) : null;
+  if (!previewId || !audit) throw new Error("NO_PREVIEW");
   const card = await findAuditCard(mainAuditId);
-  return rerunForPlan({ degree: card?.degree });
+  const degree = getDegreeKey(card?.degree);
+  const replaces = await findReplacedPlanAudit(degree);
+
+  // in one turn of the queue, so the next run can't drop the preview first
+  const { cardId, history } = await queue(async () => {
+    await failIfLoggedOut();
+    const { tabId, created } = await getAuditPageTab();
+    try {
+      const result = await sendTabMessageWhenReady(tabId, {
+        type: "PROMOTE_PREVIEW",
+        auditId: previewId,
+        replaces,
+      });
+      if (!result) throw new Error("No response from audit page");
+      if (!result.ok) throw new Error(result.error);
+      await acceptPendingPreview();
+      return result;
+    } finally {
+      if (created) await browser.tabs.remove(tabId).catch(() => undefined);
+    }
+  });
+
+  // a preview that folds into an older card shows on that card
+  if (cardId !== previewId) {
+    await saveAuditData(cardId, audit);
+    await deleteAuditData([previewId]);
+  }
+  await saveAuditHistory(history.filter(hasAuditResult));
+  await savePlanAudit(degree, previewId);
+  return cardId;
 }
 
 // It runs on its own when the dashboard opens, so it never opens a login tab.

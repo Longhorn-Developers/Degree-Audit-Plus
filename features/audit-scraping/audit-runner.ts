@@ -1,7 +1,11 @@
 // Runs and deletes audits inside a UT tab. A run submits the form, waits for
 // our row in the history table, and scrapes the result. It lives in the tab
 // because the tab has the UT cookies, passes CSRF, and has a DOMParser.
-import type { AuditDegree, CustomAuditRunRequest } from "@/domain/audit";
+import type {
+  AuditDegree,
+  AuditHistoryEntry,
+  CustomAuditRunRequest,
+} from "@/domain/audit";
 import {
   PlannerError,
   type PlannedCourseRow,
@@ -12,14 +16,11 @@ import {
 import {
   deleteAuditData,
   getPendingPreview,
+  saveAuditData,
   savePendingPreview,
 } from "@/features/audit/audit-storage";
 import { fetchUtPage, isLoginPage } from "@/features/session/session";
-import type {
-  AuditRunOutcome,
-  AuditRunRequest,
-  FetchAuditResult,
-} from "@/lib/browser/messages";
+import type { AuditRunOutcome, AuditRunRequest } from "@/lib/browser/messages";
 import {
   findCardId,
   findDedupedAuditIds,
@@ -66,10 +67,10 @@ export function cancelRun(runId: string): void {
   cancelledRuns.add(runId);
 }
 
-// The whole run. With `preview`, the audit is deleted on UT once scraped so it
-// never shows up in the history. Throws AUTH_REQUIRED, RUN_FAILED,
-// RUN_NOT_ACCEPTED, RUN_TIMEOUT, SCRAPE_FAILED, DELETE_FAILED, CANCELLED or a
-// planner code.
+// The whole run. A `preview` run's audit stays on UT, hidden from the app as
+// the pending preview, so Add to plan can show it without running again; the
+// next run drops it. Throws AUTH_REQUIRED, RUN_FAILED, RUN_NOT_ACCEPTED,
+// RUN_TIMEOUT, SCRAPE_FAILED, DELETE_FAILED, CANCELLED or a planner code.
 export async function runAudit(
   runId: string,
   { custom, degree, preview, remove = [], replaces }: AuditRunRequest = {},
@@ -77,14 +78,16 @@ export async function runAudit(
 ): Promise<AuditRunOutcome> {
   const { steps, mark } = stopwatch();
   try {
-    await dropPendingPreview();
+    const afterDrop = await dropPendingPreview();
+    mark("drop last preview");
     for (const key of remove) await deleteRowIfThere(key);
     if (preview) await planPreview(preview);
     mark("planner");
 
-    // Both are read-only, so overlap them.
+    // Both are read-only, so overlap them. Dropping a preview audit already
+    // got the history back.
     const [before, form] = await Promise.all([
-      fetchAuditHistoryRows(),
+      afterDrop ?? fetchAuditHistoryRows(),
       fetchRunForm(custom),
     ]);
     mark("read history + form");
@@ -92,40 +95,26 @@ export async function runAudit(
     assertNotCancelled(runId);
     await submitForm(form, !custom, degree);
     mark("submit");
-    // a preview sees its audit through even when cancelled, so it can delete it
-    const { auditId, rows } = await waitForNewAudit(
+    // a preview sees its audit through even when cancelled, so the next run
+    // knows which audit to drop
+    const { auditId, rows, page } = await waitForNewAudit(
       before,
       preview ? null : runId,
       timing,
     );
+    if (preview) await savePreviewAuditId(auditId);
     mark("UT generates audit");
 
-    let result: FetchAuditResult;
-    try {
-      assertNotCancelled(runId);
-      result = await fetchAuditResults(auditId);
-    } finally {
-      if (preview) await deleteAuditRow(auditId);
-    }
+    assertNotCancelled(runId);
+    const result = await fetchAuditResults(auditId);
     if ("error" in result) throw new Error(result.error);
+    // kept under its own id, out of the history, until it's added to the plan
+    if (preview) await saveAuditData(auditId, result.audit);
     mark("scrape");
 
     const cardId = findCardId(rows, auditId);
-    let history = rows;
-    // a run that folds into the replaced audit's card keeps that card
-    if (
-      replaces &&
-      replaces !== cardId &&
-      rows.some((row) => row.auditId === replaces)
-    ) {
-      try {
-        history = await deleteAuditRow(replaces);
-        await deleteAuditData([replaces]);
-      } catch (error) {
-        // the run itself worked, a leftover audit is only clutter
-        console.error(`Failed to delete replaced audit ${replaces}:`, error);
-      }
-    }
+    const history = await deleteReplacedAudit(rows, page, replaces, cardId);
+    if (history !== rows) mark("delete old plan audit");
 
     console.log(
       `Audit ${auditId} done · ${result.audit.requirements.length} requirements, ` +
@@ -148,6 +137,48 @@ export async function runAudit(
 
 // ------------------------------------------------------------------- steps
 
+// Add to plan: the pending preview's audit becomes a card. Nothing runs
+// again; this only reads UT's history and drops the old plan audit.
+export async function promotePreview(
+  auditId: string,
+  replaces?: string,
+): Promise<{ cardId: string; history: AuditHistoryEntry[] }> {
+  const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+  const rows = parseAuditHistoryRows(page);
+  if (!rows.some((row) => row.auditId === auditId)) {
+    throw new Error("NO_PREVIEW");
+  }
+  const cardId = findCardId(rows, auditId);
+  const history = await deleteReplacedAudit(rows, page, replaces, cardId);
+  return { cardId, history: toAuditHistoryEntries(history) };
+}
+
+// Deletes the degree's previous plan audit once a new one is in, and returns
+// the history after. A new audit that folds into that audit's card keeps it.
+async function deleteReplacedAudit(
+  rows: AuditHistoryRow[],
+  page: Document,
+  replaces: string | undefined,
+  cardId: string,
+): Promise<AuditHistoryRow[]> {
+  if (
+    !replaces ||
+    replaces === cardId ||
+    !rows.some((row) => row.auditId === replaces)
+  ) {
+    return rows;
+  }
+  try {
+    const history = await deleteAuditRow(replaces, page);
+    await deleteAuditData([replaces]);
+    return history;
+  } catch (error) {
+    // the new audit is in, a leftover one is only clutter
+    console.error(`Failed to delete replaced audit ${replaces}:`, error);
+    return rows;
+  }
+}
+
 async function planPreview(course: PlannerSyncTarget): Promise<void> {
   const resolution = await resolveCourse(course);
   const link =
@@ -158,18 +189,34 @@ async function planPreview(course: PlannerSyncTarget): Promise<void> {
 
   try {
     const row = await addCourse(link);
-    await savePendingPreview({ course, row: row.key });
+    await savePendingPreview({ course, row: row.key, auditId: null });
   } catch (error) {
     if (!hasPlannerCode(error, "DUPLICATE_ROW")) throw error;
-    await savePendingPreview({ course, row: null });
+    await savePendingPreview({ course, row: null, auditId: null });
   }
 }
 
-async function dropPendingPreview(): Promise<void> {
+async function savePreviewAuditId(auditId: string): Promise<void> {
   const pending = await getPendingPreview();
-  if (!pending) return;
+  if (pending) await savePendingPreview({ ...pending, auditId });
+}
+
+// Undoes the last preview that wasn't added to the plan: its planner course
+// and its audit. Returns UT's history after, if it had to read it.
+async function dropPendingPreview(): Promise<AuditHistoryRow[] | null> {
+  const pending = await getPendingPreview();
+  if (!pending) return null;
   if (pending.row) await deleteRowIfThere(pending.row);
+  let rows: AuditHistoryRow[] | null = null;
+  if (pending.auditId) {
+    const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+    rows = findDeleteForm(page, pending.auditId)
+      ? await deleteAuditRow(pending.auditId, page)
+      : parseAuditHistoryRows(page);
+    await deleteAuditData([pending.auditId]);
+  }
   await savePendingPreview(null);
+  return rows;
 }
 
 export async function readPlanner(): Promise<PlannedCourseRow[]> {
@@ -259,7 +306,7 @@ async function waitForNewAudit(
   before: AuditHistoryRow[],
   runId: string | null,
   timing: typeof DEFAULT_TIMING,
-): Promise<{ auditId: string; rows: AuditHistoryRow[] }> {
+): Promise<{ auditId: string; rows: AuditHistoryRow[]; page: Document }> {
   const startedAt = Date.now();
   let ourKey: string | undefined;
 
@@ -268,10 +315,11 @@ async function waitForNewAudit(
     (ourKey === undefined ? timing.acceptWindowMs : timing.runWindowMs)
   ) {
     if (runId) assertNotCancelled(runId);
-    const rows = await fetchAuditHistoryRows();
+    const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
+    const rows = parseAuditHistoryRows(page);
     ourKey ??= findNewRowKey(before, rows);
     const ours = rows.find((row) => row.key === ourKey);
-    if (ours?.auditId) return { auditId: ours.auditId, rows };
+    if (ours?.auditId) return { auditId: ours.auditId, rows, page };
     await sleep(timing.pollIntervalMs);
   }
   throw new Error(ourKey === undefined ? "RUN_NOT_ACCEPTED" : "RUN_TIMEOUT");
@@ -299,20 +347,29 @@ export async function deleteAudit(auditId: string): Promise<void> {
 }
 
 // Deletes just this one history row on UT, none of the reruns on its card.
-async function deleteAuditRow(auditId: string): Promise<AuditHistoryRow[]> {
-  const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
-  await postDeleteForm(page, auditId);
-  const { page: updatedPage } = await fetchUtPage(AUDIT_HISTORY_URL);
-  if (findDeleteForm(updatedPage, auditId)) throw new Error("DELETE_FAILED");
-  return parseAuditHistoryRows(updatedPage);
+// `page` is a history page that still has the row.
+async function deleteAuditRow(
+  auditId: string,
+  page: Document,
+): Promise<AuditHistoryRow[]> {
+  const response = await postDeleteForm(page, auditId);
+  const isHistory =
+    new URL(response.url).pathname === "/apps/degree/audits/requests/history/";
+  if (!isHistory || findDeleteForm(response.page, auditId)) {
+    throw new Error("DELETE_FAILED");
+  }
+  return parseAuditHistoryRows(response.page);
 }
 
-async function postDeleteForm(page: Document, auditId: string): Promise<void> {
+async function postDeleteForm(
+  page: Document,
+  auditId: string,
+): Promise<{ page: Document; url: string }> {
   const form = findDeleteForm(page, auditId);
   if (!form) throw new Error("DELETE_FORM_NOT_FOUND");
   // a parsed page has no URL of its own, so resolve against the one fetched
   const action = new URL(form.getAttribute("action") ?? "", AUDIT_HISTORY_URL);
-  await fetchUtPage(action.href, { method: "POST", body: getFormBody(form) });
+  return fetchUtPage(action.href, { method: "POST", body: getFormBody(form) });
 }
 
 // UT's delete form for one history row, or null once the row is gone.
