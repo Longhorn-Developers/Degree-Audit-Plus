@@ -180,6 +180,17 @@ export interface PlannedCourseRow {
   expired: boolean;
 }
 
+export function isRowFor(
+  key: PlannerRowKey,
+  course: PlannerCourseRequest,
+): boolean {
+  const courseId = courseCodeToPlannerCourseId(
+    course.department,
+    course.number,
+  );
+  return key.courseId === courseId && key.ccyys === course.ccyys;
+}
+
 // ut's course_type for a regular ut austin course
 export const REGULAR_COURSE_TYPE = "1";
 

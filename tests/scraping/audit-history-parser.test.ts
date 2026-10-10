@@ -1,8 +1,11 @@
 import { expect, test } from "bun:test";
 import { JSDOM } from "jsdom";
 import {
+  findCardId,
   findDedupedAuditIds,
+  findNewRowKey,
   parseAuditHistory,
+  type AuditHistoryRow,
 } from "../../features/audit-scraping/audit-history-parser";
 
 async function loadHistoryDocument(): Promise<Document> {
@@ -76,4 +79,56 @@ test("finds every rerun folded into a card", async () => {
 test("finds nothing for an audit no longer on the page", async () => {
   const document = await loadHistoryDocument();
   expect(findDedupedAuditIds(document, "999")).toEqual([]);
+});
+
+test("reads the degree plan and catalog year off each row's Rerun link", () => {
+  const row = (id: string, program: string, rerun: string) =>
+    `<tr><td>${rerun}</td>${"<td></td>".repeat(2)}<td>${program}</td>` +
+    `<td></td><td></td><td><a>${id}</a></td><td>50%</td></tr>`;
+  const link = (plan: string, secondary = "") =>
+    `<a href="/apps/degree/audits/requests/student_individual/?form-0-begin_ccyy=2026` +
+    `&amp;form-0-degree_plan=${plan}&amp;form-0-secondary_deg_pln=${secondary}&amp;rerun=">Rerun</a>`;
+  const html =
+    "<table><tbody>" +
+    row("3", "Major: Computer Science", link("ESC SS CS")) +
+    row("2", "Major: Design", link("FADES", "MINOR")) +
+    row("1", "Major: Biology", "") +
+    "</tbody></table>";
+  const audits = parseAuditHistory(new JSDOM(html).window.document);
+
+  expect(audits.map((audit) => [audit.auditId, audit.degree])).toEqual([
+    ["3", { degreePlan: "ESC SS CS", catalogYear: "2026" }],
+    ["2", undefined],
+    ["1", undefined],
+  ]);
+});
+
+test("finds a new run even when it repeats an earlier row's key", () => {
+  const row = (key: string, auditId: string | null) =>
+    ({ key, auditId }) as AuditHistoryRow;
+  const before = [row("CS 4:34 PM", "2"), row("AADS 4:30 PM", "1")];
+
+  // same degree, same minute: only the count tells them apart
+  const after = [row("CS 4:34 PM", null), ...before];
+  expect(findNewRowKey(before, after)).toBe("CS 4:34 PM");
+  expect(findNewRowKey(before, before)).toBeUndefined();
+});
+
+test("a rerun that folds into an older card gets that card's id", () => {
+  const row = (auditId: string, major: string, percentage: number) =>
+    ({
+      key: auditId,
+      auditId,
+      major,
+      credential: null,
+      percentage,
+    }) as AuditHistoryRow;
+  const rows = [
+    row("3", "Computer Science", 45),
+    row("2", "Computer Science", 47),
+    row("1", "Computer Science", 45),
+  ];
+
+  expect(findCardId(rows, "3")).toBe("1");
+  expect(findCardId(rows, "2")).toBe("2");
 });

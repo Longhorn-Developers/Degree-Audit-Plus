@@ -115,14 +115,14 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
         className={`relative rounded-[8px] px-4 py-[12px] w-full transition-all duration-200 cursor-pointer ${
           isSelected
             ? "bg-dap-orange border border-dap-orange"
-            : "bg-background border border-dap-border"
+            : "bg-surface border border-dap-border"
         }`}
         onClick={() => {
           setMenuOpen(false);
           onToggle?.();
         }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-6">
           {/* Title */}
           {isEditing ? (
             <input

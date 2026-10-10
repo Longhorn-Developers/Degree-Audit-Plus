@@ -38,13 +38,13 @@ exports[`degree audit scraper creates stable cached audit data from an audit pag
     {
       "rules": [
         {
-          "appliedHours": 2,
+          "appliedHours": 1,
           "courses": [
             "course-1",
             "course-3",
           ],
           "progressUnit": "courses",
-          "remainingHours": 1,
+          "remainingHours": 2,
           "requiredHours": 3,
           "status": "In Progress",
           "text": "Complete three core courses",
@@ -622,14 +622,14 @@ OR
           "text": "SYSTEMS: C S 429 or 429H and 439 or 439H",
         },
         {
-          "appliedHours": 9,
+          "appliedHours": 3,
           "courses": [
             "course-25",
             "course-29",
             "course-27",
           ],
           "progressUnit": "hours",
-          "remainingHours": 15,
+          "remainingHours": 21,
           "requiredHours": 24,
           "status": "In Progress",
           "text": "Twenty four additional hours of approved upper-division coursework in computer science. Transfer work must be approved by an adviser.",
@@ -703,7 +703,7 @@ OR
     {
       "rules": [
         {
-          "appliedHours": 26,
+          "appliedHours": 20,
           "courses": [
             "course-14",
             "course-15",
@@ -721,7 +721,7 @@ OR
           "text": "The University requires that at least 9 semester hours of advanced coursework in the major be completed in residence. Additional hours in the professional or major sequence in many cases are required by individual natural science degree programs.",
         },
         {
-          "appliedHours": 60,
+          "appliedHours": 54,
           "courses": [
             "course-1",
             "course-2",
@@ -744,13 +744,13 @@ OR
             "course-27",
           ],
           "progressUnit": "hours",
-          "remainingHours": 0,
+          "remainingHours": 6,
           "requiredHours": 60,
           "status": "Completed",
           "text": "60 semester hours in residence are required.",
         },
         {
-          "appliedHours": 32,
+          "appliedHours": 26,
           "courses": [
             "course-14",
             "course-15",
@@ -764,13 +764,13 @@ OR
             "course-27",
           ],
           "progressUnit": "hours",
-          "remainingHours": 10,
+          "remainingHours": 16,
           "requiredHours": 42,
           "status": "In Progress",
           "text": "At least 42 hours of upper-division coursework is required.",
         },
         {
-          "appliedHours": 20,
+          "appliedHours": 14,
           "courses": [
             "course-14",
             "course-19",
@@ -780,13 +780,13 @@ OR
             "course-27",
           ],
           "progressUnit": "hours",
-          "remainingHours": 1,
+          "remainingHours": 7,
           "requiredHours": 21,
           "status": "In Progress",
           "text": "At least 21 hours of upper-division coursework in COMPUTER SCIENCES must be taken in residence.",
         },
         {
-          "appliedHours": 82,
+          "appliedHours": 76,
           "courses": [
             "course-1",
             "course-2",
@@ -816,7 +816,7 @@ OR
             "course-27",
           ],
           "progressUnit": "hours",
-          "remainingHours": 38,
+          "remainingHours": 44,
           "requiredHours": 120,
           "status": "In Progress",
           "text": "120 hours are required for the Bachelor of Science in Computer Science, Option: Computer Sciences.",

@@ -1,7 +1,11 @@
 import { expect, test } from "bun:test";
 import type { CachedAuditData, RequirementRule } from "../../domain/audit";
-import type { Course, CourseId } from "../../domain/course";
-import { diffAudits } from "../../features/audit/audit-calculations";
+import type { Course, CourseCode, CourseId } from "../../domain/course";
+import {
+  diffAudits,
+  findMissingPlannedCourses,
+  hasPlannedCourse,
+} from "../../features/audit/audit-calculations";
 
 function rule(text: string, applied: number, courses: string[] = []) {
   return {
@@ -25,13 +29,13 @@ function audit(
   };
 }
 
-test("reports only the rules that moved, and the new percentage", () => {
-  const diff = diffAudits(
+test("reports only the rules that moved", () => {
+  const rules = diffAudits(
     audit(rule("U.S. History", 0)),
     audit(rule("U.S. History", 3)),
   );
 
-  expect(diff.rules).toEqual([
+  expect(rules).toEqual([
     {
       requirement: "CORE",
       rule: "U.S. History",
@@ -41,22 +45,76 @@ test("reports only the rules that moved, and the new percentage", () => {
       appliedAfter: 3,
     },
   ]);
-  expect(diff.progress).toEqual({ before: 25, after: 50 });
 });
 
-test("counts a planned course UT attached but did not apply", () => {
-  const diff = diffAudits(
+test("counts planned courses on top of applied hours", () => {
+  const rules = diffAudits(
     audit(rule("U.S. History", 0)),
     audit(rule("U.S. History", 0, ["c1"]), {
       c1: { status: "Planned", hours: 3 },
     }),
   );
 
-  expect(diff.rules[0]).toMatchObject({ appliedBefore: 0, appliedAfter: 3 });
-  expect(diff.progress).toEqual({ before: 25, after: 50 });
+  expect(rules[0]).toMatchObject({ appliedBefore: 0, appliedAfter: 3 });
 });
 
 test("an audit that changed nothing has no rule changes", () => {
   const same = audit(rule("U.S. History", 3));
-  expect(diffAudits(same, same).rules).toEqual([]);
+  expect(diffAudits(same, same)).toEqual([]);
+});
+
+test("a rule only the new audit has counts up from 0", () => {
+  const before = audit(rule("U.S. History", 0));
+  const after = audit(rule("U.S. History", 0));
+  after.requirements.push({ title: "Minor", rules: [rule("Electives", 3)] });
+
+  expect(diffAudits(before, after)).toEqual([
+    {
+      requirement: "Minor",
+      rule: "Electives",
+      unit: "hours",
+      required: 6,
+      appliedBefore: 0,
+      appliedAfter: 3,
+    },
+  ]);
+});
+
+test("finds planned courses the old audit doesn't have, except the previewed one", () => {
+  const before = audit(rule("U.S. History", 0, ["c1"]), {
+    c1: { code: "HIS 315K", status: "Planned", hours: 3 },
+  });
+  const after = audit(rule("U.S. History", 0, ["c1", "c2", "c3"]), {
+    c1: { code: "HIS 315K", status: "Planned", hours: 3 },
+    c2: { code: "C S 312" as CourseCode, status: "Planned", hours: 3 },
+    c3: { code: "BSN 302", status: "Planned", hours: 3 },
+  });
+
+  expect(findMissingPlannedCourses(before, after, "BSN  302")).toEqual([
+    "C S 312" as CourseCode,
+  ]);
+});
+
+test("swapping the audits finds planned courses the planner no longer has", () => {
+  const stale = audit(rule("U.S. History", 0, ["c1"]), {
+    c1: { code: "ADV 305", status: "Planned", hours: 3 },
+  });
+  const preview = audit(rule("U.S. History", 0, ["c2"]), {
+    c2: { code: "BSN 302", status: "Planned", hours: 3 },
+  });
+
+  expect(findMissingPlannedCourses(preview, stale, "BSN 302")).toEqual([
+    "ADV 305",
+  ]);
+});
+
+test("only planned courses in the audit count as planned", () => {
+  const main = audit(rule("U.S. History", 3, ["c1", "c2"]), {
+    c1: { code: "C S 331" as CourseCode, status: "Planned", hours: 3 },
+    c2: { code: "HIS 315K" as CourseCode, status: "Completed", hours: 3 },
+  });
+
+  expect(hasPlannedCourse(main, ["C S  331"])).toBe(true);
+  expect(hasPlannedCourse(main, ["HIS 315K"])).toBe(false);
+  expect(hasPlannedCourse(main, ["ADV 305"])).toBe(false);
 });

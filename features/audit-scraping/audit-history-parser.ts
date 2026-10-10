@@ -1,4 +1,4 @@
-import type { AuditHistoryEntry } from "@/domain/audit";
+import type { AuditDegree, AuditHistoryEntry } from "@/domain/audit";
 import { parseMajor } from "./parse-major";
 
 // One history row. `key` identifies it before the result link exists;
@@ -9,6 +9,7 @@ export interface AuditHistoryRow {
   major: string;
   credential: string | null;
   percentage: number;
+  degree: AuditDegree | null;
 }
 
 // Every row in page order without bs. UT drops the table when the student has
@@ -31,9 +32,29 @@ export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
       major: parseMajor(programText),
       credential: parseCredential(programText),
       percentage: parsePercentage(cells[7].textContent ?? ""),
+      degree: parseRerunDegree(cells[0]),
     });
   }
   return rows;
+}
+
+// The key of a row that showed up between two reads of the history. Keys only
+// carry the minute, so the same degree run twice in one minute repeats a key;
+// counting them catches the second run too.
+export function findNewRowKey(
+  before: AuditHistoryRow[],
+  after: AuditHistoryRow[],
+): string | undefined {
+  const counts = new Map<string, number>();
+  for (const row of before) {
+    counts.set(row.key, (counts.get(row.key) ?? 0) + 1);
+  }
+  for (const row of after) {
+    const left = counts.get(row.key) ?? 0;
+    if (left === 0) return row.key;
+    counts.set(row.key, left - 1);
+  }
+  return undefined;
 }
 
 // The list the UI shows: one card per major+credential+percentage. UT lists
@@ -42,14 +63,7 @@ export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
 export function toAuditHistoryEntries(
   rows: AuditHistoryRow[],
 ): AuditHistoryEntry[] {
-  const cards: AuditHistoryRow[] = [];
-  const seen = new Set<string>();
-  for (const row of [...rows].reverse()) {
-    const key = cardKey(row);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    cards.unshift(row);
-  }
+  const cards = [...findCardRows(rows).values()];
 
   // only finished audits are numbered so a pending run can't shift titles
   let finished = 0;
@@ -60,6 +74,7 @@ export function toAuditHistoryEntries(
     percentage: row.percentage,
     // "" keeps hasAuditResult reading a linkless row as "still generating"
     auditId: row.auditId ?? "",
+    ...(row.degree ? { degree: row.degree } : {}),
   }));
 }
 
@@ -81,9 +96,40 @@ export function findDedupedAuditIds(
     .map((row) => row.auditId as string);
 }
 
+// The id of the card a run folds into.
+export function findCardId(rows: AuditHistoryRow[], auditId: string): string {
+  const target = rows.find((row) => row.auditId === auditId);
+  if (!target) return auditId;
+  return findCardRows(rows).get(cardKey(target))?.auditId || auditId;
+}
+
+// The row each card shows, by card key, in page order. Each card keeps its
+// oldest run, so a rerun never changes its id or position.
+function findCardRows(rows: AuditHistoryRow[]): Map<string, AuditHistoryRow> {
+  const cards = new Map<string, AuditHistoryRow>();
+  for (const row of [...rows].reverse()) {
+    if (!cards.has(cardKey(row))) cards.set(cardKey(row), row);
+  }
+  return new Map([...cards].reverse());
+}
+
 // Rows with the same major, credential and percentage fold into one card.
 function cardKey(row: AuditHistoryRow): string {
   return `${row.major}-${row.credential ?? "none"}-${row.percentage}`;
+}
+
+// The Rerun link carries the degree plan and catalog year UT ran the audit
+// with. Slotting, SSI and 12th Class Day audits have no link. Audits with a
+// second plan (minor, certificate) are left out until we know how UT takes it.
+function parseRerunDegree(cell: Element): AuditDegree | null {
+  const href = cell.querySelector("a")?.getAttribute("href");
+  if (!href) return null;
+  const params = new URL(href, "https://utdirect.utexas.edu").searchParams;
+  const degreePlan = params.get("form-0-degree_plan");
+  const catalogYear = params.get("form-0-begin_ccyy");
+  if (!degreePlan || !catalogYear) return null;
+  if (params.get("form-0-secondary_deg_pln")?.trim()) return null;
+  return { degreePlan, catalogYear };
 }
 
 function parseCredential(programText: string): string | null {

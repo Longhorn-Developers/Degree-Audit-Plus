@@ -37,6 +37,8 @@ mock.module("../../features/audit-scraping/audit-history-sync", () => ({
 // no test file runs the real runner, so this mock can't leak into one
 mock.module("../../features/audit-scraping/audit-runner", () => ({
   runAudit: async () => {},
+  readPlanner: async () => [],
+  promotePreview: async () => ({ cardId: "", history: [] }),
   cancelRun: () => {},
   deleteAudit: async (auditId: string) => {
     deletedAuditIds.push(auditId);
