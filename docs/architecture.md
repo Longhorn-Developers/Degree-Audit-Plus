@@ -34,7 +34,7 @@ scripts/catalog/            # Developer-only catalog refresh and validation
 
 ## Dependency direction
 
-This graph is lint-enforced: `eslint.config.ts` restricts each area's
+This graph is lint-enforced: `oxlint.config.ts` restricts each area's
 `@/`-alias imports to exactly the edges below (`bun run lint`). An import that
 crosses the graph fails CI rather than silently rotting the architecture.
 
