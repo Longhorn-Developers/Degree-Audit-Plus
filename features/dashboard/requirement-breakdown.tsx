@@ -16,6 +16,7 @@ import EyeIcon from "@/assets/svgs/Eye.svg";
 import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
+  getRulePlannedProgress,
   isCoreSection,
   isCreditSection,
 } from "@/features/audit/audit-calculations";
@@ -177,12 +178,15 @@ const RequirementRow = ({
   requirement: RequirementRule;
   requirementTitle: string;
 }) => {
-  const { getCourseById } = useAuditContext();
+  const { getCourseById, courseMap } = useAuditContext();
   const { openModal } = useCourseModalContext();
 
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
   );
+  // planned courses count as done, same as UT
+  const applied =
+    requirement.appliedHours + getRulePlannedProgress(requirement, courseMap);
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(false);
   const showActionButton = isCoreOrCreditSection(requirementTitle);
@@ -195,7 +199,7 @@ const RequirementRow = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <RequirementStatusIcon
-          current={requirement.appliedHours}
+          current={applied}
           total={requirement.requiredHours}
         />
         <VStack gap={0} className="flex-1 text-left">
@@ -208,7 +212,7 @@ const RequirementRow = ({
         </VStack>
         <HStack y="middle" gap={3} className="self-center">
           <RequirementBadge
-            current={requirement.appliedHours}
+            current={applied}
             total={requirement.requiredHours}
             unit={requirement.progressUnit ?? "hours"}
           />
