@@ -54,7 +54,7 @@ jobs:
   create-artifact:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - name: Checkout repository
@@ -66,13 +66,27 @@ jobs:
           bun install
           bun run build
           cd .output/chrome-mv3
-          zip -r ../extension.zip .
+          zip -r ../degree-audit-plus.zip .
+      # archive: false uploads the zip as-is, so people unzip once instead of twice.
       - name: Upload artifact
         id: upload
         uses: actions/upload-artifact@v7
         with:
-          name: extension-${{ github.sha }}
-          path: .output/extension.zip
+          path: .output/degree-audit-plus.zip
+          archive: false
+      # On main, refresh the rolling "latest" release: one permanent public download link.
+      - name: Publish latest release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: |
+            Newest build of main (commit ${{ github.sha }}).
+
+            **Install:** download `degree-audit-plus.zip` below, unzip it, open `chrome://extensions`, turn on Developer mode, click **Load unpacked**, pick the unzipped folder.
+            **Update:** download again, replace the folder contents, and hit the reload icon on the extension card.
+        run: |
+          gh release create latest --title "Latest build" --notes "$NOTES" || gh release edit latest --notes "$NOTES"
+          gh release upload latest .output/degree-audit-plus.zip --clobber
       # Post (or refresh) one download-link comment per PR. Skipped for fork PRs (read-only token).
       - name: Comment download link on PR
         if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
@@ -84,7 +98,7 @@ jobs:
             const marker = '<!-- extension-build -->';
             const body = `${marker}
             ### Extension build ready
-            [Download extension.zip](${process.env.URL}) (commit ${context.sha.slice(0, 7)})
+            [Download degree-audit-plus.zip](${process.env.URL}) (commit ${context.sha.slice(0, 7)})
 
             **Install:** unzip, open \`chrome://extensions\`, turn on Developer mode, click **Load unpacked**, pick the folder.
             **Update:** replace the folder contents and hit the reload icon on the extension card.`;
