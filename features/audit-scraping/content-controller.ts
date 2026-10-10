@@ -10,7 +10,7 @@ import {
   startAuditHistorySync,
   watchForAuditRunClicks,
 } from "./audit-history-sync";
-import { cancelRun, deleteAudit, runAudit } from "./audit-runner";
+import { cancelRun, deleteAudit, readPlanner, runAudit } from "./audit-runner";
 import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
@@ -78,6 +78,19 @@ export function startAuditContentController(document: Document): void {
       if (message.type === "DELETE_AUDIT") {
         void toActionResult(deleteAudit(message.auditId)).then((result) =>
           sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
+
+      if (message.type === "READ_PLANNER") {
+        void readPlanner().then(
+          (rows) =>
+            sendMessageResponse(message, sendResponse, { ok: true, rows }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
         );
         return true;
       }

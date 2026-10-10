@@ -1,16 +1,31 @@
 import {
   hasAuditResult,
+  type AuditHistoryEntry,
   type CachedAuditData,
-  type CustomAuditRunRequest,
 } from "@/domain/audit";
-import type { PlannerSyncTarget } from "@/domain/course";
 import {
+  isRowFor,
+  plannerCourseIdToCode,
+  type PlannerRowKey,
+  type PlannerSyncTarget,
+} from "@/domain/course";
+import {
+  acceptPendingPreview,
   getAuditData,
+  getAuditHistory,
+  getPlanAudit,
+  hasUserEdits,
   saveAuditData,
   saveAuditHistory,
-  savePreviewAudit,
+  savePlanAudit,
+  syncAcceptedCourses,
+  updateAcceptedCourses,
 } from "@/features/audit/audit-storage";
-import { diffAudits } from "@/features/audit/audit-calculations";
+import {
+  diffAudits,
+  findMissingPlannedCourses,
+  hasPlannedCourse,
+} from "@/features/audit/audit-calculations";
 import {
   sendMessageResponse,
   sendRuntimeMessage,
@@ -20,6 +35,7 @@ import {
   type AuditRunRequest,
   type CoursePreview,
   type ExtensionMessage,
+  type PlannerCourse,
 } from "@/lib/browser/messages";
 import {
   getCachedLoginState,
@@ -228,50 +244,172 @@ export function registerAuditScrapingHandlers(): void {
 const NEW_AUDIT_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
-// Runs an audit and makes it the newest one in the app.
-async function runNewAudit(custom?: CustomAuditRunRequest): Promise<string> {
-  const { auditId, audit, history } = await runLatest({ custom });
+// Runs an audit and returns the card to show it on. A rerun that folds into an
+// older card is saved under that card's id, so the card shows the new results.
+async function runNewAudit(
+  request: AuditRunRequest = {},
+): Promise<{ auditId: string; cardId: string }> {
+  const { auditId, cardId, audit, history } = await queueRun(request);
   // only finished audits are stored, so other runs still pending stay hidden
   await saveAuditHistory(history.filter(hasAuditResult));
-  await saveAuditData(auditId, audit);
-  return auditId;
+  await saveAuditData(cardId, audit);
+  return { auditId, cardId };
 }
 
-// Plans one course on UT, runs an audit with it, and diffs that against the
-// main audit. The main audit is never touched; the preview is kept on its own.
+// Add to plan and Remove rerun a degree. Each degree keeps only the latest of
+// these: the one before is deleted on UT, unless the user renamed or pinned it.
+async function rerunForPlan(request: AuditRunRequest): Promise<string> {
+  const degree = request.degree
+    ? `${request.degree.degreePlan}|${request.degree.catalogYear}`
+    : "default";
+  const previous = await getPlanAudit(degree);
+  const keepPrevious = !previous || (await hasUserEdits(previous));
+  const { auditId, cardId } = await runNewAudit({
+    ...request,
+    replaces: keepPrevious ? undefined : previous,
+  });
+  await savePlanAudit(degree, auditId);
+  return cardId;
+}
+
+// Plans one course on UT, reruns the open audit's degree with it, and diffs
+// that against the open audit.
 async function previewCourse(
   course: PlannerSyncTarget,
   mainAuditId: string,
 ): Promise<CoursePreview> {
   const startedAt = Date.now();
   const name = `${course.department} ${course.number}`;
+  const card = await findAuditCard(mainAuditId);
+  if (!card?.degree) throw new Error("NOT_PREVIEWABLE");
   const main = await getAuditData(mainAuditId);
   if (!main) throw new Error("MAIN_AUDIT_NOT_FOUND");
 
   console.log(`Preview ${name}: planning it and running an audit`);
-  const { auditId, audit, steps } = await runLatest({ preview: course });
+  const { auditId, audit, percentage, steps } = await queueRun({
+    preview: course,
+    degree: card.degree,
+  });
 
-  const diff = diffAudits(main, audit);
-  await savePreviewAudit({ auditId, audit, diff });
+  // UT's percentages, same as the dashboard shows
+  const diff = {
+    progress: { before: card.percentage ?? 0, after: percentage },
+    rules: diffAudits(main, audit),
+  };
+  const missingPlanned = findMissingPlannedCourses(main, audit, name);
+  const removedPlanned = findMissingPlannedCourses(audit, main, name);
 
   // total minus the tab's steps = waiting for the tab and the message trip
   steps.total = Date.now() - startedAt;
   console.log(`Preview ${name}: audit ${auditId}`, diff, steps);
-  return { auditId, diff, steps };
+  return {
+    diff,
+    degree: card.majors?.join("; ") ?? "",
+    missingPlanned,
+    removedPlanned,
+    steps,
+  };
 }
 
-// Latest request wins: a new request cancels the run in flight and starts once
-// it has settled, so two runs never share the UT tab.
-let current: AbortController | undefined;
+async function findAuditCard(
+  auditId: string,
+): Promise<AuditHistoryEntry | undefined> {
+  const history = await getAuditHistory();
+  return history?.audits.find((card) => card.auditId === auditId);
+}
+
+async function acceptPreview(mainAuditId: string): Promise<string> {
+  const accepted = await acceptPendingPreview();
+  if (!accepted) throw new Error("NO_PREVIEW");
+  const card = await findAuditCard(mainAuditId);
+  return rerunForPlan({ degree: card?.degree });
+}
+
+// It runs on its own when the dashboard opens, so it never opens a login tab.
+async function checkPlanner(): Promise<PlannerCourse[]> {
+  const rows = await queue(async () => {
+    if ((await getCachedLoginState()) === false) {
+      throw new Error("AUTH_REQUIRED");
+    }
+    const { tabId, created } = await getAuditPageTab();
+    try {
+      const result = await sendTabMessageWhenReady(tabId, {
+        type: "READ_PLANNER",
+      });
+      if (!result) throw new Error("No response from audit page");
+      if (!result.ok) throw new Error(result.error);
+      return result.rows;
+    } finally {
+      if (created) await browser.tabs.remove(tabId).catch(() => undefined);
+    }
+  });
+
+  const accepted = await syncAcceptedCourses(rows);
+  return rows.map((row) => ({
+    row,
+    accepted: accepted.some((course) => isRowFor(row.key, course.course)),
+  }));
+}
+
+async function updatePlanner(
+  keep: PlannerRowKey[],
+  remove: PlannerRowKey[],
+  mainAuditId: string,
+): Promise<string | null> {
+  // the kept list only changes once UT has the change too
+  if (remove.length === 0) {
+    await updateAcceptedCourses(keep, remove);
+    return null;
+  }
+
+  // the open audit doesn't count these, so rerunning it would change nothing
+  const main = await getAuditData(mainAuditId);
+  const codes = remove.map((key) => plannerCourseIdToCode(key.courseId));
+  if (!main || !hasPlannedCourse(main, codes)) {
+    await queue(() => deletePlannerRows(remove));
+    await updateAcceptedCourses(keep, remove);
+    return null;
+  }
+
+  const card = await findAuditCard(mainAuditId);
+  const auditId = await rerunForPlan({ remove, degree: card?.degree });
+  await updateAcceptedCourses(keep, remove);
+  return auditId;
+}
+
+async function deletePlannerRows(keys: PlannerRowKey[]): Promise<void> {
+  await failIfLoggedOut();
+  const { tabId, created } = await getAuditPageTab();
+  try {
+    for (const key of keys) {
+      const result = await sendTabMessageWhenReady(tabId, {
+        type: "PLANNER_DELETE",
+        key,
+      });
+      if (!result) throw new Error("No response from audit page");
+      if (!result.ok && result.code !== "ROW_NOT_FOUND") {
+        throw new Error(result.code);
+      }
+    }
+  } finally {
+    if (created) await browser.tabs.remove(tabId).catch(() => undefined);
+  }
+}
+
+// Requests run one at a time so two runs never share the UT tab. Any newer
+// request cancels a preview in flight; a real run always finishes.
+let preview: AbortController | undefined;
 let last: Promise<unknown> = Promise.resolve();
 
-function runLatest(request: AuditRunRequest): Promise<AuditRunOutcome> {
-  current?.abort();
+function queueRun(request: AuditRunRequest): Promise<AuditRunOutcome> {
+  preview?.abort();
   const controller = new AbortController();
-  current = controller;
-  const turn = last
-    .catch(() => undefined)
-    .then(() => runInUtTab(controller.signal, request));
+  preview = request.preview ? controller : undefined;
+  return queue(() => runInUtTab(controller.signal, request));
+}
+
+function queue<T>(work: () => Promise<T>): Promise<T> {
+  const turn = last.catch(() => undefined).then(work);
   last = turn;
   return turn;
 }
@@ -381,7 +519,46 @@ function registerAuditRunHandlers(): void {
       }
 
       if (message.type === "RUN_NEW_AUDIT") {
-        void runNewAudit(message.custom).then(
+        void runNewAudit({ custom: message.custom }).then(
+          ({ cardId: auditId }) =>
+            sendMessageResponse(message, sendResponse, {
+              success: true,
+              auditId,
+            }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, failure(error)),
+        );
+        return true;
+      }
+
+      if (message.type === "ACCEPT_PREVIEW") {
+        void acceptPreview(message.auditId).then(
+          (auditId) =>
+            sendMessageResponse(message, sendResponse, {
+              success: true,
+              auditId,
+            }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, failure(error)),
+        );
+        return true;
+      }
+
+      if (message.type === "CHECK_PLANNER") {
+        void checkPlanner().then(
+          (courses) =>
+            sendMessageResponse(message, sendResponse, {
+              success: true,
+              courses,
+            }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, failure(error)),
+        );
+        return true;
+      }
+
+      if (message.type === "UPDATE_PLANNER") {
+        void updatePlanner(message.keep, message.remove, message.auditId).then(
           (auditId) =>
             sendMessageResponse(message, sendResponse, {
               success: true,
@@ -394,7 +571,7 @@ function registerAuditRunHandlers(): void {
       }
 
       if (message.type === "PREVIEW_COURSE") {
-        void previewCourse(message.course, message.mainAuditId).then(
+        void previewCourse(message.course, message.auditId).then(
           (preview) =>
             sendMessageResponse(message, sendResponse, {
               success: true,

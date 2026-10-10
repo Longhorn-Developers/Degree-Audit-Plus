@@ -3,16 +3,22 @@ import {
   type AuditHistoryEntry,
   type CachedAuditData,
   type CachedCompositeAudit,
+  type AcceptedCourse,
   type CompositeAuditData,
-  type PreviewAudit,
+  type PendingPreview,
   getAuditDisplayName,
 } from "@/domain/audit";
+import {
+  isRowFor,
+  splitPlannerCourseId,
+  type PlannedCourseRow,
+  type PlannerRowKey,
+} from "@/domain/course";
 import { browser } from "wxt/browser";
 import { storage } from "wxt/utils/storage";
 
 const AUDIT_DATA_PREFIX = "auditData_";
 const COMPOSITES_KEY = "compositeAudits";
-const PREVIEW_KEY = "curr_preview";
 
 const createAuditHistoryItem = () =>
   storage.defineItem<AuditHistoryData>("local:auditHistory");
@@ -64,6 +70,36 @@ let auditPrefsItem: ReturnType<typeof createAuditPrefsItem> | undefined;
 
 function getAuditPrefsItem() {
   return (auditPrefsItem ??= createAuditPrefsItem());
+}
+
+export async function hasUserEdits(auditId: string): Promise<boolean> {
+  const prefs = (await getAuditPrefsItem().getValue())[auditId];
+  return prefs?.title !== undefined || Boolean(prefs?.pinned);
+}
+
+// The audit each degree's last Add to plan or Remove made, by degree.
+const createPlanAuditsItem = () =>
+  storage.defineItem<Record<string, string>>("local:planAudits", {
+    defaultValue: {},
+  });
+let planAuditsItem: ReturnType<typeof createPlanAuditsItem> | undefined;
+
+function getPlanAuditsItem() {
+  return (planAuditsItem ??= createPlanAuditsItem());
+}
+
+export async function getPlanAudit(
+  degree: string,
+): Promise<string | undefined> {
+  return (await getPlanAuditsItem().getValue())[degree];
+}
+
+export async function savePlanAudit(
+  degree: string,
+  auditId: string,
+): Promise<void> {
+  const planAudits = await getPlanAuditsItem().getValue();
+  await getPlanAuditsItem().setValue({ ...planAudits, [degree]: auditId });
 }
 
 // Saves UT's history with the user's renames and pins layered on top.
@@ -128,6 +164,88 @@ async function editAudit(
   return updatedHistory;
 }
 
+// The UT tab writes it while planning the course, so a cancelled run still
+// leaves a record.
+const createPendingPreviewItem = () =>
+  storage.defineItem<PendingPreview | null>("local:pendingPreview", {
+    defaultValue: null,
+  });
+let pendingPreviewItem: ReturnType<typeof createPendingPreviewItem> | undefined;
+
+function getPendingPreviewItem() {
+  return (pendingPreviewItem ??= createPendingPreviewItem());
+}
+
+export function getPendingPreview(): Promise<PendingPreview | null> {
+  return getPendingPreviewItem().getValue();
+}
+
+export function savePendingPreview(
+  preview: PendingPreview | null,
+): Promise<void> {
+  return getPendingPreviewItem().setValue(preview);
+}
+
+// The courses the user added to their plan, kept apart from auditData_ since
+// a re-scrape rewrites that.
+const createAcceptedCoursesItem = () =>
+  storage.defineItem<AcceptedCourse[]>("local:acceptedCourses", {
+    defaultValue: [],
+  });
+let acceptedCoursesItem:
+  | ReturnType<typeof createAcceptedCoursesItem>
+  | undefined;
+
+function getAcceptedCoursesItem() {
+  return (acceptedCoursesItem ??= createAcceptedCoursesItem());
+}
+
+export async function acceptPendingPreview(): Promise<AcceptedCourse | null> {
+  const pending = await getPendingPreview();
+  if (!pending) return null;
+
+  const accepted: AcceptedCourse = { ...pending, acceptedAt: Date.now() };
+  const others = (await getAcceptedCoursesItem().getValue()).filter(
+    ({ course }) =>
+      course.department !== pending.course.department ||
+      course.number !== pending.course.number ||
+      course.ccyys !== pending.course.ccyys,
+  );
+  await getAcceptedCoursesItem().setValue([...others, accepted]);
+  await savePendingPreview(null);
+  return accepted;
+}
+
+export async function syncAcceptedCourses(
+  rows: PlannedCourseRow[],
+): Promise<AcceptedCourse[]> {
+  const kept: AcceptedCourse[] = [];
+  for (const accepted of await getAcceptedCoursesItem().getValue()) {
+    const row = rows.find((row) => isRowFor(row.key, accepted.course));
+    if (row) kept.push({ ...accepted, row: row.key });
+  }
+  await getAcceptedCoursesItem().setValue(kept);
+  return kept;
+}
+
+export async function updateAcceptedCourses(
+  keep: PlannerRowKey[],
+  remove: PlannerRowKey[],
+): Promise<void> {
+  const accepted = (await getAcceptedCoursesItem().getValue()).filter(
+    (course) => !remove.some((key) => isRowFor(key, course.course)),
+  );
+  for (const key of keep) {
+    if (accepted.some((course) => isRowFor(key, course.course))) continue;
+    accepted.push({
+      course: { ...splitPlannerCourseId(key.courseId), ccyys: key.ccyys },
+      row: key,
+      acceptedAt: Date.now(),
+    });
+  }
+  await getAcceptedCoursesItem().setValue(accepted);
+}
+
 export function saveAuditData(
   auditId: string,
   data: CachedAuditData,
@@ -135,11 +253,6 @@ export function saveAuditData(
   return browser.storage.local.set({
     [`${AUDIT_DATA_PREFIX}${auditId}`]: data,
   });
-}
-
-// Only one preview exists at a time; a new one replaces it.
-export function savePreviewAudit(preview: PreviewAudit): Promise<void> {
-  return browser.storage.local.set({ [PREVIEW_KEY]: preview });
 }
 
 export async function getAuditData(

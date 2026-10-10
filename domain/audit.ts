@@ -1,5 +1,12 @@
 // Contains small helper functions and types for the audit feature.
-import type { Course, CourseCode, CourseId, Status } from "./course";
+import type {
+  Course,
+  CourseCode,
+  CourseId,
+  PlannerRowKey,
+  PlannerSyncTarget,
+  Status,
+} from "./course";
 import type { RequirementProgressUnit } from "./progress";
 
 export interface RequirementRule {
@@ -34,11 +41,15 @@ export interface AuditDiff {
   rules: RuleChange[];
 }
 
-// The one preview kept in storage at a time.
-export interface PreviewAudit {
-  auditId: string;
-  audit: CachedAuditData;
-  diff: AuditDiff;
+// The course the last preview put on UT's planner. `row` is null when the
+// course was already planned, so dropping the preview leaves it alone.
+export interface PendingPreview {
+  course: PlannerSyncTarget;
+  row: PlannerRowKey | null;
+}
+
+export interface AcceptedCourse extends PendingPreview {
+  acceptedAt: number;
 }
 
 export interface CachedAuditData {
@@ -67,6 +78,12 @@ export interface DuplicateCourseRequirementFlag {
   auditNames: string[];
 }
 
+// What UT needs to run an audit's degree again, read off its Rerun link.
+export interface AuditDegree {
+  degreePlan: string;
+  catalogYear: string;
+}
+
 export interface AuditHistoryEntry {
   title?: string;
   majors?: string[];
@@ -74,6 +91,8 @@ export interface AuditHistoryEntry {
   percentage?: number;
   auditId?: string;
   pinned?: boolean;
+  // missing when the app can't rerun it, see parseRerunDegree
+  degree?: AuditDegree;
 }
 
 export interface AuditHistoryData {

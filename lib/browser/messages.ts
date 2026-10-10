@@ -1,10 +1,12 @@
 import type {
+  AuditDegree,
   AuditHistoryEntry,
   CachedAuditData,
   CustomAuditRunRequest,
 } from "@/domain/audit";
 import type { AuditDiff } from "@/domain/audit";
 import type {
+  CourseCode,
   PlannedCourseRow,
   PlannerAddLink,
   PlannerCourseRequest,
@@ -19,9 +21,25 @@ export type ExtensionMessage =
   | { type: "OPEN_DEGREE_AUDIT"; auditId?: string }
   // UI -> background: orchestrates an audit submission.
   | { type: "RUN_NEW_AUDIT"; custom?: CustomAuditRunRequest }
-  // UI -> background: plan this one course on UT, run an audit with it, and
-  // diff the result against the audit the user has open.
-  | { type: "PREVIEW_COURSE"; course: PlannerSyncTarget; mainAuditId: string }
+  // UI -> background: plan this one course on UT, rerun the open audit's
+  // degree with it, and diff the result against that audit.
+  | { type: "PREVIEW_COURSE"; course: PlannerSyncTarget; auditId: string }
+  // UI -> background: keep the last previewed course and rerun the open
+  // audit's degree with it.
+  | { type: "ACCEPT_PREVIEW"; auditId: string }
+  // UI -> background: tidy up and read the UT planner, with which rows the
+  // user already added to their plan.
+  | { type: "CHECK_PLANNER" }
+  // Background -> UT tab: the tab half of CHECK_PLANNER.
+  | { type: "READ_PLANNER" }
+  // UI -> background: the planner prompt's answer. Removing a course the open
+  // audit counts reruns it.
+  | {
+      type: "UPDATE_PLANNER";
+      keep: PlannerRowKey[];
+      remove: PlannerRowKey[];
+      auditId: string;
+    }
   // UI -> background -> UT tab: the background opens a UT tab and forwards it
   // unchanged; the tab deletes on UT (only it passes UT's CSRF).
   | { type: "DELETE_AUDIT"; auditId: string }
@@ -67,27 +85,43 @@ export type FetchAuditResult =
   | { audit: CachedAuditData }
   | { error: "AUTH_REQUIRED" | "SCRAPE_FAILED" };
 
-// What to run: the default degree, a custom one, or the default degree with
-// `preview` as the only planned course.
+// What to run: the default degree, a custom one, or `degree` (an earlier
+// audit's), with `preview` added to the planned courses.
 export interface AuditRunRequest {
   custom?: CustomAuditRunRequest;
+  degree?: AuditDegree;
   preview?: PlannerSyncTarget;
+  remove?: PlannerRowKey[];
+  // an earlier audit to delete on UT once this one is in
+  replaces?: string;
+}
+
+export interface PlannerCourse {
+  row: PlannedCourseRow;
+  accepted: boolean;
 }
 
 // Everything the tab learned from one run.
 export interface AuditRunOutcome {
   auditId: string;
+  // the card the run folds into, which keeps its oldest run's id
+  cardId: string;
+  // UT's percentage for this run, the one the dashboard shows
+  percentage: number;
   audit: CachedAuditData;
   history: AuditHistoryEntry[];
   // ms per step, in the order they ran
   steps: Record<string, number>;
 }
 
-// The reply to PREVIEW_COURSE: the preview audit, what it changed, and how
-// long each step took.
+// The reply to PREVIEW_COURSE: what the course changed against the open audit
+// (of `degree`), planned courses that audit is missing or still has but the
+// planner doesn't, and how long each step took.
 export interface CoursePreview {
-  auditId: string;
   diff: AuditDiff;
+  degree: string;
+  missingPlanned: CourseCode[];
+  removedPlanned: CourseCode[];
   steps: Record<string, number>;
 }
 
@@ -102,6 +136,18 @@ interface MessageResponses {
     | { success: false; error: string };
   PREVIEW_COURSE:
     | ({ success: true } & CoursePreview)
+    | { success: false; error: string };
+  ACCEPT_PREVIEW:
+    | { success: true; auditId: string }
+    | { success: false; error: string };
+  CHECK_PLANNER:
+    | { success: true; courses: PlannerCourse[] }
+    | { success: false; error: string };
+  READ_PLANNER:
+    | { ok: true; rows: PlannedCourseRow[] }
+    | { ok: false; error: string };
+  UPDATE_PLANNER:
+    | { success: true; auditId: string | null }
     | { success: false; error: string };
   DELETE_AUDIT: ActionResult;
   GET_SYNC_STATUS: { isSyncing: boolean };
@@ -127,6 +173,10 @@ type ResponseRequest = Extract<
       | "OPEN_DEGREE_AUDIT"
       | "RUN_NEW_AUDIT"
       | "PREVIEW_COURSE"
+      | "ACCEPT_PREVIEW"
+      | "CHECK_PLANNER"
+      | "READ_PLANNER"
+      | "UPDATE_PLANNER"
       | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"
