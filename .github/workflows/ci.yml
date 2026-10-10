@@ -54,7 +54,7 @@ jobs:
   create-artifact:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -72,16 +72,40 @@ jobs:
         with:
           path: .output/degree-audit-plus.zip
           archive: false
-      # On main, refresh the rolling "latest" release: one permanent public download link.
-      - name: Publish latest release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          NOTES: |
-            Newest build of main (commit ${{ github.sha }}).
 
-            **Install:** download `degree-audit-plus.zip` below, unzip it, open `chrome://extensions`, turn on Developer mode, click **Load unpacked**, pick the unzipped folder.
-            **Update:** download again, replace the folder contents, and hit the reload icon on the extension card.
+  # On main, publish the build to the rolling "latest" release: one permanent public download link.
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, check, lint, create-artifact]
+    runs-on: ubuntu-latest
+    # One publish at a time, so two runs can't interleave their tag move and upload.
+    concurrency: release-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      NOTES: |
+        Newest build of main (commit ${{ github.sha }}).
+
+        **Install:** download `degree-audit-plus.zip` below, unzip it, open `chrome://extensions`, turn on Developer mode, click **Load unpacked**, pick the unzipped folder.
+        **Update:** download again, replace the folder contents, and hit the reload icon on the extension card.
+    steps:
+      - name: Publish latest release
         run: |
-          gh release create latest --title "Latest build" --notes "$NOTES" || gh release edit latest --notes "$NOTES"
-          gh release upload latest .output/degree-audit-plus.zip --clobber
+          # Skip if a newer commit is already published (this run finished late).
+          if [[ "$(gh api "repos/$GH_REPO/compare/latest...$GITHUB_SHA" -q .status)" == behind ]]; then
+            echo "latest is already newer than $GITHUB_SHA, skipping"; exit 0
+          fi
+          # Fetch the zip that create-artifact built in this run.
+          id=$(gh api "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts" -q '.artifacts[0].id')
+          gh api "repos/$GH_REPO/actions/artifacts/$id/zip" > degree-audit-plus.zip
+          # Move the tag to this commit so it matches the zip, or create the release on the first run.
+          if gh release view latest >/dev/null 2>&1; then
+            gh api --silent -X PATCH "repos/$GH_REPO/git/refs/tags/latest" -f sha="$GITHUB_SHA" -F force=true
+            gh release edit latest --notes "$NOTES"
+          else
+            gh release create latest --target "$GITHUB_SHA" --title "Latest build" --notes "$NOTES"
+          fi
+          gh release upload latest degree-audit-plus.zip --clobber

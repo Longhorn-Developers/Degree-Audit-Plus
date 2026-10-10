@@ -26,7 +26,9 @@ jobs:
             const head = `${run.head_repository.owner.login}:${run.head_branch}`;
             const { data: prs } = await github.rest.pulls.list({ owner, repo, state: 'open', head });
             const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: run.id });
-            if (!prs.length || !artifacts.length) return console.log(`skip: ${prs.length} PRs for ${head}, ${artifacts.length} artifacts`);
+            // Only the run for the PR's current commit may comment, so a late older run can't overwrite it
+            const pr = prs.find(p => p.head.sha === run.head_sha);
+            if (!pr || !artifacts.length) return console.log(`skip: no open PR at ${run.head_sha} for ${head}, ${artifacts.length} artifacts`);
 
             const marker = '<!-- extension-build -->';
             const body = `${marker}
@@ -35,7 +37,7 @@ jobs:
 
             **Install:** unzip, open \`chrome://extensions\`, turn on Developer mode, click **Load unpacked**, pick the folder.
             **Update:** replace the folder contents and hit the reload icon on the extension card.`;
-            const issue_number = prs[0].number;
+            const issue_number = pr.number;
             const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
             const existing = comments.find(c => c.body.includes(marker));
             if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
