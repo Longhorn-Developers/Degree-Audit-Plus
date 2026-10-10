@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import CoursePreviewList from "./course-preview-list";
+import PlannedCoursesModal from "./planned-courses-modal";
 import { useCourseModalContext } from "./course-modal-provider";
 
 interface CourseSearchData {
@@ -121,7 +122,10 @@ function CourseSearchContent({
   return (
     <div>
       <div className="mb-6">
-        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-semibold text-xl tracking-wide">Add Courses</p>
+          <PlannedCoursesModal />
+        </div>
         <CoursePreviewList courses={displayedRecommendedCourses} />
       </div>
 
@@ -218,18 +222,22 @@ export function CourseSearchPanel() {
   const [showResults, setShowResults] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
 
-  return showResults ? (
-    <CourseSearchResults
-      courses={courses}
-      onBack={() => setShowResults(false)}
-    />
-  ) : (
-    <CourseSearchContent
-      onSearchSubmit={async (formData) => {
-        const results = await searchCatalogCourses(formData);
-        setCourses(results);
-        setShowResults(true);
-      }}
-    />
+  return (
+    <div>
+      {showResults ? (
+        <CourseSearchResults
+          courses={courses}
+          onBack={() => setShowResults(false)}
+        />
+      ) : (
+        <CourseSearchContent
+          onSearchSubmit={async (formData) => {
+            const results = await searchCatalogCourses(formData);
+            setCourses(results);
+            setShowResults(true);
+          }}
+        />
+      )}
+    </div>
   );
 }
