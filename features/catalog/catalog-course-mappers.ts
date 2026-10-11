@@ -8,7 +8,7 @@ import {
 export function mapCatalogCourseToPreview(course: CatalogCourse) {
   return {
     code: `${course.department} ${course.number}`,
-    name: course.fullName,
+    name: course.courseName,
   };
 }
 
@@ -22,6 +22,31 @@ export function dedupeCatalogCoursesByCode(
     seen.add(code);
     return true;
   });
+}
+
+export function dedupeCatalogCoursesByCodeAndTitle(
+  courses: CatalogCourse[],
+): CatalogCourse[] {
+  const coursesById = new Map<string, CatalogCourse>();
+  for (const course of courses) {
+    const courseId = `${course.department} ${course.number} ${course.courseName}`;
+    const existing = coursesById.get(courseId);
+    if (!existing) {
+      coursesById.set(courseId, {
+        ...course,
+        instructors: [...course.instructors],
+      });
+      continue;
+    }
+
+    for (const instructor of course.instructors) {
+      const isListed = existing.instructors.some(
+        ({ fullName }) => fullName === instructor.fullName,
+      );
+      if (!isListed) existing.instructors.push(instructor);
+    }
+  }
+  return [...coursesById.values()];
 }
 
 export function catalogCourseToPlannedCourse(
