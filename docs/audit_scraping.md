@@ -75,16 +75,16 @@ If it had not POSTed yet, nothing reaches UT. Once it has, it waits for its
 audit and records it as the pending preview, so the next run drops it. A real
 run is never cancelled; a new request waits for it.
 
-| Error              | Where                  | Meaning                                               |
-| ------------------ | ---------------------- | ----------------------------------------------------- |
-| `AUTH_REQUIRED`    | gate, or any UT fetch  | Session gone; a login tab opens                       |
-| `RUN_FAILED`       | `submitForm`           | UT answered 200: re-rendered the form, queued nothing |
-| `RUN_NOT_ACCEPTED` | `waitForNewAudit`      | POST redirected but no new row within 10 s            |
-| `CANCELLED`        | `runAudit`             | A newer request replaced this preview                 |
-| `DELETE_FAILED`    | `deleteAuditRow`       | An audit is still on UT after its delete              |
-| `NO_PREVIEW`       | `acceptPreview`        | Add to plan, but the preview was already dropped      |
-| `RUN_TIMEOUT`      | `waitForNewAudit` / bg | Link never appeared in 90 s (120 s backstop in bg)    |
-| `SCRAPE_FAILED`    | `fetchAuditResults`    | Results page didn't parse                             |
+| Error              | Where                 | Meaning                                                     |
+| ------------------ | --------------------- | ----------------------------------------------------------- |
+| `AUTH_REQUIRED`    | gate, or any UT fetch | Session gone; a login tab opens                             |
+| `RUN_FAILED`       | `submitForm`          | UT answered 200: re-rendered the form, queued nothing       |
+| `RUN_NOT_ACCEPTED` | `waitForNewAudit`     | POST redirected but no new row within 10 s                  |
+| `CANCELLED`        | `runAudit`            | A newer request replaced this preview                       |
+| `DELETE_FAILED`    | `deleteAuditRow`      | An audit is still on UT after its delete                    |
+| `NO_PREVIEW`       | `acceptPreview`       | Add to plan, but the preview was already dropped            |
+| `RUN_TIMEOUT`      | `waitForNewAudit`     | Link never appeared in 30 s; UT left the row at "Submitted" |
+| `SCRAPE_FAILED`    | `fetchAuditResults`   | Results page didn't parse                                   |
 
 ## Previewing a course
 
@@ -135,7 +135,12 @@ deleted on UT once the new one is in, unless the user renamed or pinned it or
 the new audit folded into its card.
 
 The course and the preview's audit stay on UT until the next run of any kind,
-which takes both back off unless the preview was added. A course that was already planned is never
+which takes both back off unless the preview was added. A preview records its
+audit id as soon as UT lists the row, before the audit is done. If UT hasn't
+finished it by the time it's dropped (UT stalls with rows stuck at
+"Submitted"), there is no delete button yet, so the id moves to
+`leftoverPreviewAudits`: hidden from the history like the pending preview, and
+deleted by a later run once UT finishes it. A course that was already planned is never
 taken off. The other planned courses stay on the planner, so the preview diffs
 like for like against a main audit that includes them.
 

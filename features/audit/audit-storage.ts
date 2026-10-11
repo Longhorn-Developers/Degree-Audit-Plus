@@ -108,13 +108,16 @@ export async function saveAuditHistory(
   audits: AuditHistoryEntry[],
   error?: string,
 ): Promise<void> {
-  const [prefs, pending] = await Promise.all([
+  const [prefs, pending, leftovers] = await Promise.all([
     getAuditPrefsItem().getValue(),
     getPendingPreview(),
+    getLeftoverPreviewAudits(),
   ]);
+  const hidden = new Set(leftovers);
+  if (pending?.auditId) hidden.add(pending.auditId);
   const data: AuditHistoryData = {
     audits: audits
-      .filter((audit) => !pending?.auditId || audit.auditId !== pending.auditId)
+      .filter((audit) => !hidden.has(audit.auditId ?? ""))
       .map((audit) => ({
         ...audit,
         ...prefs[audit.auditId ?? ""],
@@ -190,6 +193,28 @@ export function savePendingPreview(
   preview: PendingPreview | null,
 ): Promise<void> {
   return getPendingPreviewItem().setValue(preview);
+}
+
+// Preview audits UT hadn't finished when they were dropped, so they couldn't
+// be deleted yet. They stay hidden and the next run tries again.
+const createLeftoverPreviewsItem = () =>
+  storage.defineItem<string[]>("local:leftoverPreviewAudits", {
+    defaultValue: [],
+  });
+let leftoverPreviewsItem:
+  | ReturnType<typeof createLeftoverPreviewsItem>
+  | undefined;
+
+function getLeftoverPreviewsItem() {
+  return (leftoverPreviewsItem ??= createLeftoverPreviewsItem());
+}
+
+export function getLeftoverPreviewAudits(): Promise<string[]> {
+  return getLeftoverPreviewsItem().getValue();
+}
+
+export function saveLeftoverPreviewAudits(auditIds: string[]): Promise<void> {
+  return getLeftoverPreviewsItem().setValue(auditIds);
 }
 
 // The courses the user added to their plan, kept apart from auditData_ since

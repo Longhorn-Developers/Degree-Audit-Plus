@@ -15,8 +15,10 @@ import {
 } from "@/domain/course";
 import {
   deleteAuditData,
+  getLeftoverPreviewAudits,
   getPendingPreview,
   saveAuditData,
+  saveLeftoverPreviewAudits,
   savePendingPreview,
 } from "@/features/audit/audit-storage";
 import { fetchUtPage, isLoginPage } from "@/features/session/session";
@@ -48,11 +50,12 @@ const RUN_PAGE_URL =
   "https://utdirect.utexas.edu/apps/degree/audits/submissions/student_individual/";
 
 // How long UT gets to show our row after the POST (spike: ~140 ms) and to
-// finish generating it (spike: 2–11 s). Tests shrink these.
+// finish generating it (spike: 2–11 s; past 30 s UT has stalled, its rows sit
+// at "Submitted"). Tests shrink these.
 export const DEFAULT_TIMING = {
   pollIntervalMs: 150,
   acceptWindowMs: 10_000,
-  runWindowMs: 90_000,
+  runWindowMs: 30_000,
 };
 
 interface RunForm {
@@ -78,16 +81,15 @@ export async function runAudit(
 ): Promise<AuditRunOutcome> {
   const { steps, mark } = stopwatch();
   try {
-    const afterDrop = await dropPendingPreview();
+    await dropPendingPreview();
     mark("drop last preview");
     for (const key of remove) await deleteRowIfThere(key);
     if (preview) await planPreview(preview);
     mark("planner");
 
-    // Both are read-only, so overlap them. Dropping a preview audit already
-    // got the history back.
+    // Both are read-only, so overlap them.
     const [before, form] = await Promise.all([
-      afterDrop ?? fetchAuditHistoryRows(),
+      fetchAuditHistoryRows(),
       fetchRunForm(custom),
     ]);
     mark("read history + form");
@@ -95,14 +97,14 @@ export async function runAudit(
     assertNotCancelled(runId);
     await submitForm(form, !custom, degree);
     mark("submit");
-    // a preview sees its audit through even when cancelled, so the next run
-    // knows which audit to drop
+    // a preview sees its audit through even when cancelled, and records its id
+    // as soon as UT shows one, so the next run knows which audit to drop
     const { auditId, rows, page } = await waitForNewAudit(
       before,
       preview ? null : runId,
       timing,
+      preview ? savePreviewAuditId : undefined,
     );
-    if (preview) await savePreviewAuditId(auditId);
     mark("UT generates audit");
 
     assertNotCancelled(runId);
@@ -202,21 +204,33 @@ async function savePreviewAuditId(auditId: string): Promise<void> {
 }
 
 // Undoes the last preview that wasn't added to the plan: its planner course
-// and its audit. Returns UT's history after, if it had to read it.
-async function dropPendingPreview(): Promise<AuditHistoryRow[] | null> {
+// and its audit. An audit UT hasn't finished can't be deleted yet, so it's
+// kept as a leftover and tried again next time.
+async function dropPendingPreview(): Promise<void> {
   const pending = await getPendingPreview();
-  if (!pending) return null;
-  if (pending.row) await deleteRowIfThere(pending.row);
-  let rows: AuditHistoryRow[] | null = null;
-  if (pending.auditId) {
+  if (pending?.row) await deleteRowIfThere(pending.row);
+
+  const auditIds = [...(await getLeftoverPreviewAudits())];
+  if (pending?.auditId) auditIds.push(pending.auditId);
+  if (auditIds.length > 0) {
     const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
-    rows = findDeleteForm(page, pending.auditId)
-      ? await deleteAuditRow(pending.auditId, page)
-      : parseAuditHistoryRows(page);
-    await deleteAuditData([pending.auditId]);
+    const rows = parseAuditHistoryRows(page);
+    const leftovers: string[] = [];
+    for (const id of auditIds) {
+      if (findDeleteForm(page, id)) {
+        await deleteAuditRow(id, page);
+        await deleteAuditData([id]);
+      } else if (rows.some((row) => row.requestId === id)) {
+        leftovers.push(id);
+      } else {
+        // already gone from UT
+        await deleteAuditData([id]);
+      }
+    }
+    await saveLeftoverPreviewAudits(leftovers);
   }
-  await savePendingPreview(null);
-  return rows;
+
+  if (pending) await savePendingPreview(null);
 }
 
 export async function readPlanner(): Promise<PlannedCourseRow[]> {
@@ -306,9 +320,11 @@ async function waitForNewAudit(
   before: AuditHistoryRow[],
   runId: string | null,
   timing: typeof DEFAULT_TIMING,
+  onRequestId?: (id: string) => Promise<void>,
 ): Promise<{ auditId: string; rows: AuditHistoryRow[]; page: Document }> {
   const startedAt = Date.now();
   let ourKey: string | undefined;
+  let reportedId: string | null = null;
 
   while (
     Date.now() - startedAt <
@@ -319,6 +335,10 @@ async function waitForNewAudit(
     const rows = parseAuditHistoryRows(page);
     ourKey ??= findNewRowKey(before, rows);
     const ours = rows.find((row) => row.key === ourKey);
+    if (onRequestId && ours?.requestId && ours.requestId !== reportedId) {
+      reportedId = ours.requestId;
+      await onRequestId(reportedId);
+    }
     if (ours?.auditId) return { auditId: ours.auditId, rows, page };
     await sleep(timing.pollIntervalMs);
   }

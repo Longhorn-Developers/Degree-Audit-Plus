@@ -10,6 +10,8 @@ export interface AuditHistoryRow {
   credential: string | null;
   percentage: number;
   degree: AuditDegree | null;
+  // the Audit ID as text, there from the moment UT queues it, before the link
+  requestId: string | null;
 }
 
 // Every row in page order without bs. UT drops the table when the student has
@@ -33,6 +35,7 @@ export function parseAuditHistoryRows(document: Document): AuditHistoryRow[] {
       credential: parseCredential(programText),
       percentage: parsePercentage(cells[7].textContent ?? ""),
       degree: parseRerunDegree(cells[0]),
+      requestId: cellText(cells[6]).match(/\d+/)?.[0] ?? null,
     });
   }
   return rows;

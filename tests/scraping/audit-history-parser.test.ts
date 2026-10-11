@@ -5,6 +5,7 @@ import {
   findDedupedAuditIds,
   findNewRowKey,
   parseAuditHistory,
+  parseAuditHistoryRows,
   type AuditHistoryRow,
 } from "../../features/audit-scraping/audit-history-parser";
 
@@ -48,6 +49,19 @@ test("a pending run gets no number so finished titles never shift", () => {
     ["2", "Degree Audit 1"],
     ["1", "Degree Audit 2"],
   ]);
+});
+
+test("reads the audit id of a run UT hasn't finished", () => {
+  // a stalled run shows its id as plain text, the link comes when it's done
+  const html =
+    "<table><tbody><tr>" +
+    "<td></td>".repeat(3) +
+    "<td>Major: Computer Science</td><td></td><td>Submitted (66957)</td>" +
+    "<td>100018699608</td><td></td></tr></tbody></table>";
+  const [row] = parseAuditHistoryRows(new JSDOM(html).window.document);
+
+  expect(row.auditId).toBeNull();
+  expect(row.requestId).toBe("100018699608");
 });
 
 test("finds every rerun folded into a card", async () => {
