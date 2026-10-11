@@ -8,7 +8,7 @@ import {
 export function mapCatalogCourseToPreview(course: CatalogCourse) {
   return {
     code: `${course.department} ${course.number}`,
-    name: course.fullName,
+    name: course.courseName,
   };
 }
 
@@ -20,6 +20,19 @@ export function dedupeCatalogCoursesByCode(
     const code = `${course.department} ${course.number}`.trim();
     if (seen.has(code)) return false;
     seen.add(code);
+    return true;
+  });
+}
+
+export function dedupeCatalogCoursesByCodeAndTitle(
+  courses: CatalogCourse[],
+): CatalogCourse[] {
+  const seenCourses = new Set<string>();
+  return courses.filter((course) => {
+    const courseId =
+      `${course.department} ${course.number} ${course.courseName}`.trim();
+    if (seenCourses.has(courseId)) return false;
+    seenCourses.add(courseId);
     return true;
   });
 }
