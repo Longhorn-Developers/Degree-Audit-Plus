@@ -3,7 +3,7 @@ import Modal from "@/components/ui/modal";
 import type { PlannerRowKey } from "@/domain/course";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { sendRuntimeMessage, type PlannerCourse } from "@/lib/browser/messages";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getErrorMessage } from "./error-messages";
 
 type Choice = "keep" | "remove";
@@ -19,6 +19,7 @@ export default function PlannedCoursesModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const saving = useRef(false);
 
   const loadPlanner = async (fromLink: boolean) => {
     if (fromLink) {
@@ -52,6 +53,9 @@ export default function PlannedCoursesModal() {
   }, []);
 
   const save = async () => {
+    // a ref, not isSaving, so a double click in the same frame is still caught
+    if (saving.current) return;
+    saving.current = true;
     const keep: PlannerRowKey[] = [];
     const remove: PlannerRowKey[] = [];
     for (const { row } of courses) {
@@ -73,6 +77,7 @@ export default function PlannedCoursesModal() {
       success: false as const,
       error: String(error),
     }));
+    saving.current = false;
     setIsSaving(false);
     if (!response?.success) {
       setError(getErrorMessage(response?.error));

@@ -37,8 +37,14 @@ export default function CoursePreviewList({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [preview, setPreview] = useState<Preview>({ status: "idle" });
   const latest = useRef(0);
+  // refs, not state, so a double click in the same frame is still caught
+  const shownCourse = useRef<number | null>(null);
+  const isAdding = useRef(false);
 
   const previewCourse = async (course: CatalogCourse) => {
+    // the course already loading or shown, clicking another one still switches
+    if (shownCourse.current === course.uniqueId) return;
+    shownCourse.current = course.uniqueId;
     const request = ++latest.current;
     const auditId = currentAuditId;
     const name = `${course.department} ${course.number}`;
@@ -69,6 +75,7 @@ export default function CoursePreviewList({
 
     // A newer click owns the panel now.
     if (request !== latest.current) return;
+    if (!response?.success) shownCourse.current = null;
     setPreview(
       response?.success
         ? { status: "done", result: response, auditId }
@@ -77,6 +84,8 @@ export default function CoursePreviewList({
   };
 
   const acceptPreview = async (result: CoursePreview, auditId: string) => {
+    if (isAdding.current) return;
+    isAdding.current = true;
     const request = latest.current;
     setPreview({ status: "adding", result, auditId });
 
@@ -88,9 +97,11 @@ export default function CoursePreviewList({
       success: false as const,
       error: String(error),
     }));
+    isAdding.current = false;
     if (response?.success) setCurrentAuditId(response.auditId);
 
     if (request !== latest.current) return;
+    shownCourse.current = null;
     setPreview(
       response?.success
         ? { status: "added" }
@@ -106,6 +117,9 @@ export default function CoursePreviewList({
             key={course.uniqueId}
             course={mapCatalogCourseToPreview(course)}
             type="add"
+            loading={
+              preview.status === "loading" && course.uniqueId === selectedId
+            }
             onClick={() => void previewCourse(course)}
             className={cn(
               "w-full",
