@@ -4,6 +4,7 @@ import type { CatalogCourse } from "@/domain/catalog";
 import {
   dedupeCatalogCoursesByCode,
   mapCatalogCourseToPreview,
+  matchesCatalogQuery,
 } from "@/features/catalog/catalog-course-mappers";
 import { searchCatalogCourses } from "@/features/catalog/catalog-db";
 import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
@@ -211,8 +212,11 @@ function CourseSearchResults({
   isGeneric: boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const filteredCourses = isGeneric ? courses.filter(course => course.courseName.toLowerCase().includes(searchQuery.toLowerCase())) : courses;
+  const filteredCourses = isGeneric
+    ? courses.filter((course) => matchesCatalogQuery(course, normalizedQuery))
+    : courses;
 
   const handleSearchChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -230,7 +234,7 @@ function CourseSearchResults({
         Search Results
       </button>
       <div>
-        {isGeneric &&
+        {isGeneric && (
           <input
             type="text"
             name="searchQuery"
@@ -239,7 +243,7 @@ function CourseSearchResults({
             placeholder="Search for a specific course"
             className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
-        }
+        )}
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           {filteredCourses.map((course) => (
             <CourseCard
