@@ -56,7 +56,9 @@ export const GPATotalsCard = ({
   return (
     <div className="w-full p-6 rounded-lg border border-gray-200 bg-background">
       <HStack x="between" y="middle" fill>
-        <h3 className="text-xl font-bold text-text">GPA Totals</h3>
+        <h3 className="text-[20.25px] font-semibold leading-normal text-text">
+          GPA Totals
+        </h3>
         <InfoIcon />
       </HStack>
 
@@ -107,7 +109,9 @@ export const CreditHourTotalsCard = ({
 }: CreditHourTotalsProps) => {
   return (
     <div className="w-full p-6 rounded-lg border border-gray-200 bg-background">
-      <h3 className="text-xl font-bold text-text">Credit Hour Totals</h3>
+      <h3 className="text-[20.25px] font-semibold leading-normal text-text">
+        Credit Hour Totals
+      </h3>
       {degreeName && (
         <p className="mt-1 text-sm font-semibold text-[#10B981]">
           {degreeName}
