@@ -3,6 +3,7 @@ import type { CatalogCourse } from "@/domain/catalog";
 import type { CoreArea } from "@/domain/course";
 import {
   dedupeCatalogCoursesByCode,
+  dedupeCatalogCoursesByCodeAndTitle,
   matchesCatalogQuery,
 } from "./catalog-course-mappers";
 import { DEPARTMENT_MAP } from "./department-map";
@@ -81,5 +82,6 @@ export function searchCatalogCourses(filters: {
 
       return matchesQuery && matchesDepartment && matchesDivision;
     })
-    .toArray();
+    .toArray()
+    .then(dedupeCatalogCoursesByCodeAndTitle);
 }
