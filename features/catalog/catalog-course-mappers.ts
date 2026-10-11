@@ -27,14 +27,26 @@ export function dedupeCatalogCoursesByCode(
 export function dedupeCatalogCoursesByCodeAndTitle(
   courses: CatalogCourse[],
 ): CatalogCourse[] {
-  const seenCourses = new Set<string>();
-  return courses.filter((course) => {
-    const courseId =
-      `${course.department} ${course.number} ${course.courseName}`.trim();
-    if (seenCourses.has(courseId)) return false;
-    seenCourses.add(courseId);
-    return true;
-  });
+  const coursesById = new Map<string, CatalogCourse>();
+  for (const course of courses) {
+    const courseId = `${course.department} ${course.number} ${course.courseName}`;
+    const existing = coursesById.get(courseId);
+    if (!existing) {
+      coursesById.set(courseId, {
+        ...course,
+        instructors: [...course.instructors],
+      });
+      continue;
+    }
+
+    for (const instructor of course.instructors) {
+      const isListed = existing.instructors.some(
+        ({ fullName }) => fullName === instructor.fullName,
+      );
+      if (!isListed) existing.instructors.push(instructor);
+    }
+  }
+  return [...coursesById.values()];
 }
 
 export function catalogCourseToPlannedCourse(
