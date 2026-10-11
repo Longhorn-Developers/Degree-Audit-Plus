@@ -212,7 +212,7 @@ function CourseSearchResults({
       </button>
       <CoursePreviewList
         courses={courses}
-        className="max-h-[60vh] overflow-y-auto pr-1"
+        className="max-h-[60vh] overflow-y-auto -mr-3 pr-5"
       />
     </div>
   );
