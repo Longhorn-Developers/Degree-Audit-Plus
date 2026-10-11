@@ -204,10 +204,22 @@ function CourseSearchContent({
 function CourseSearchResults({
   courses,
   onBack,
+  isGeneric,
 }: {
   courses: CatalogCourse[];
   onBack: () => void;
+  isGeneric: boolean;
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredCourses = isGeneric ? courses.filter(course => course.courseName.toLowerCase().includes(searchQuery.toLowerCase())) : courses;
+
+  const handleSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    setSearchQuery(event.target.value);
+  };
+
   return (
     <div>
       <button
@@ -217,15 +229,27 @@ function CourseSearchResults({
         <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
-      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-        {courses.map((course) => (
-          <CourseCard
-            key={course.uniqueId}
-            course={mapCatalogCourseToPreview(course)}
-            className="w-full"
-            type="add"
+      <div>
+        {isGeneric &&
+          <input
+            type="text"
+            name="searchQuery"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Search for a specific course"
+            className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
-        ))}
+        }
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {filteredCourses.map((course) => (
+            <CourseCard
+              key={course.uniqueId}
+              course={mapCatalogCourseToPreview(course)}
+              className="w-full"
+              type="add"
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -233,17 +257,20 @@ function CourseSearchResults({
 
 export function CourseSearchPanel() {
   const [showResults, setShowResults] = useState(false);
+  const [isGeneric, setIsGeneric] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
 
   return showResults ? (
     <CourseSearchResults
       courses={courses}
+      isGeneric={isGeneric}
       onBack={() => setShowResults(false)}
     />
   ) : (
     <CourseSearchContent
       onSearchSubmit={async (formData) => {
         const results = await searchCatalogCourses(formData);
+        setIsGeneric(formData.searchQuery.trim().length === 0);
         setCourses(results);
         setShowResults(true);
       }}
