@@ -115,7 +115,7 @@ function PreviewResult({ preview }: { preview: Preview }) {
 
   const { rules, progress } = preview.diff;
   return (
-    <div className="mt-4 space-y-1 rounded-md border border-dap-plan-green bg-green-50 px-4 py-3 text-sm text-text">
+    <div className={"mt-4 space-y-1 rounded-md border border-dap-plan-green bg-green-50 px-4 py-3 text-sm text-black"}>
       {rules.length === 0 ? (
         <p>Does not count toward any requirement.</p>
       ) : (
