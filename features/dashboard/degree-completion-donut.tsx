@@ -39,9 +39,10 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
     });
   });
 
-  const overallPercentage = currentAudit.percentage != undefined
-    ? capPercentage(currentAudit.percentage)
-    : toPercent(progresses.total.current, progresses.total.total);
+  const overallPercentage =
+    currentAudit.percentage !== undefined
+      ? capPercentage(currentAudit.percentage)
+      : toPercent(progresses.total.current, progresses.total.total);
 
   return (
     <MultiDonutGraph
