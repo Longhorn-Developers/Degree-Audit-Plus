@@ -1,4 +1,5 @@
 import type { AuditHistoryEntry } from "@/domain/audit";
+import { capPercentage } from "@/lib/utils";
 
 export default function PopupAuditCard({
   title = "Degree Audit 1",
@@ -12,7 +13,7 @@ export default function PopupAuditCard({
         </div>
         <div className="flex items-center justify-center rounded-md bg-dap-orange px-3 py-2">
           <span className="text-base font-bold leading-tight text-white">
-            {percentage}%
+            {capPercentage(percentage)}%
           </span>
         </div>
       </div>
