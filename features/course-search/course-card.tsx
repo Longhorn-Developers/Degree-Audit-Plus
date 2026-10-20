@@ -37,7 +37,7 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
       </div>
       {type === "add" ? (
         <div className="flex items-center justify-center px-3">
-          <PlusCircleIcon size={24} className="text-gray-700" />
+          <PlusCircleIcon size={24} className="text-700" />
         </div>
       ) : null}
     </div>
