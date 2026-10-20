@@ -69,3 +69,13 @@ export function getColorByCourseCode(code: CourseCode) {
     .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return CATEGORY_COLORS[departmentSum % CATEGORY_COLORS.length];
 }
+
+export function toPercent(current: number, total: number) {
+  if (total <= 0) return 0;
+
+  return capPercentage(Math.round((current / total) * 100));
+}
+
+export function capPercentage(percentage: number | undefined) {
+  return Math.min(percentage || 0, 100);
+}
