@@ -44,9 +44,28 @@ export async function searchCores(
 }
 
 function getDepartmentCodesByName(departmentName: string): string[] {
-  return Object.entries(DEPARTMENT_MAP)
+  const mappedCodes = Object.entries(DEPARTMENT_MAP)
     .filter(([, name]) => name === departmentName)
     .map(([code]) => code);
+
+  // A catalog refresh can introduce a code before the display-name map is
+  // updated. Keep that code searchable instead of accidentally matching every
+  // department.
+  return mappedCodes.length > 0 ? mappedCodes : [departmentName];
+}
+
+// Use the IndexedDB catalog as the source of truth for the search picker so
+// users only choose departments that have locally available courses.
+export async function getCatalogDepartmentNames(): Promise<string[]> {
+  const departmentCodes = await db.courses.orderBy("department").uniqueKeys();
+
+  return [
+    ...new Set(
+      departmentCodes.map(
+        (code) => DEPARTMENT_MAP[String(code)] ?? String(code),
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 // Searches catalog courses by text, department, and lower/upper division filters.
