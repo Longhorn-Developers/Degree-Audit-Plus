@@ -4,28 +4,58 @@ import type { CatalogCourse } from "@/domain/catalog";
 import {
   dedupeCatalogCoursesByCode,
   mapCatalogCourseToPreview,
-  matchesCatalogQuery,
 } from "@/features/catalog/catalog-course-mappers";
-import { searchCatalogCourses } from "@/features/catalog/catalog-db";
-import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
+import {
+  getCatalogDepartmentNames,
+  searchCatalogCourses,
+} from "@/features/catalog/catalog-db";
 import { cn } from "@/lib/utils";
 import {
   CaretLeftIcon,
   ChalkboardTeacherIcon,
   CircleNotchIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CourseCard from "./course-card";
 import { useCourseModalContext } from "./course-modal-provider";
 
 interface CourseSearchData {
-  searchQuery: string;
   department: string;
-  lowerDivision: boolean;
-  upperDivision: boolean;
+  courseLevel: CourseLevel;
 }
 
-const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
+type CourseLevel =
+  | "undergraduate"
+  | "lowerDivision"
+  | "upperDivision"
+  | "graduate";
+
+const COURSE_LEVEL_OPTIONS: Array<{
+  value: CourseLevel;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "undergraduate",
+    label: "All undergraduate courses",
+    description: "301–379",
+  },
+  {
+    value: "lowerDivision",
+    label: "Only lower-division courses",
+    description: "301–319",
+  },
+  {
+    value: "upperDivision",
+    label: "Only upper-division courses",
+    description: "320–379",
+  },
+  {
+    value: "graduate",
+    label: "All graduate courses",
+    description: "380 and above",
+  },
+];
 
 function waitForNextPaint(): Promise<void> {
   return new Promise((resolve) => {
@@ -36,40 +66,138 @@ function waitForNextPaint(): Promise<void> {
 interface CourseSearchContentProps {
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
   isLoading?: boolean;
+  departments: string[];
+  isLoadingDepartments: boolean;
 }
 
-type DivisionField = "lowerDivision" | "upperDivision";
-
-function DivisionToggle({
+function CourseLevelOption({
   checked,
   disabled,
   label,
-  onToggle,
+  description,
+  onSelect,
 }: {
   checked: boolean;
   disabled: boolean;
   label: string;
-  onToggle: () => void;
+  description: string;
+  onSelect: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <label
+      className={cn(
+        "flex items-start gap-3 rounded-lg px-3 py-2 transition-colors",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "cursor-pointer hover:bg-hover-bg",
+      )}
+    >
+      <input
+        className="mt-1 h-4 w-4 accent-dap-orange"
+        checked={checked}
+        disabled={disabled}
+        name="courseLevel"
+        onChange={onSelect}
+        type="radio"
+      />
+      <span className="flex flex-col">
+        <span className="text-sm font-semibold text-text">{label}</span>
+        <span className="text-xs text-gray-500">{description}</span>
+      </span>
+    </label>
+  );
+}
+
+function SearchResultsToolbar({
+  courses,
+  onBack,
+}: {
+  courses: CatalogCourse[];
+  onBack: () => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"code" | "title">("code");
+
+  const visibleCourses = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchingCourses = normalizedQuery
+      ? courses.filter((course) => {
+          const instructorNames = course.instructors
+            .map((instructor) => instructor.fullName)
+            .join(" ");
+          return [
+            course.fullName,
+            course.courseName,
+            course.department,
+            course.number,
+            instructorNames,
+          ].some((value) => value.toLowerCase().includes(normalizedQuery));
+        })
+      : courses;
+
+    return [...matchingCourses].sort((left, right) => {
+      if (sortBy === "title") {
+        return left.courseName.localeCompare(right.courseName);
+      }
+      return left.fullName.localeCompare(right.fullName, undefined, {
+        numeric: true,
+      });
+    });
+  }, [courses, searchQuery, sortBy]);
+
+  return (
+    <div>
       <button
         type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        className={cn(
-          "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-          checked ? "bg-dap-plan-green-dark" : "bg-gray-200",
-        )}
+        onClick={onBack}
+        className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
       >
-        <div
-          className={cn(
-            "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-background",
-            checked ? "translate-x-[24px]" : "translate-x-1",
-          )}
-        />
+        <CaretLeftIcon size={16} weight="bold" />
+        Search results
       </button>
-      <span className="text-base text-text">{label}</span>
+      <div className="mb-4 space-y-3">
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter results by course number, title, or instructor"
+          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all"
+        />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500" aria-live="polite">
+            {visibleCourses.length}{" "}
+            {visibleCourses.length === 1 ? "course" : "courses"}
+          </p>
+          <select
+            aria-label="Sort results"
+            value={sortBy}
+            onChange={(event) =>
+              setSortBy(event.target.value as "code" | "title")
+            }
+            className="border border-dap-border rounded-md bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          >
+            <option value="code">Sort: course number</option>
+            <option value="title">Sort: course title</option>
+          </select>
+        </div>
+      </div>
+      {visibleCourses.length === 0 ? (
+        <p className="rounded-lg border border-dap-border px-4 py-5 text-sm text-gray-500">
+          No courses match this filter. Try a different course number, title, or
+          instructor.
+        </p>
+      ) : (
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {visibleCourses.map((course) => (
+            <CourseCard
+              key={course.uniqueId}
+              course={mapCatalogCourseToPreview(course)}
+              className="w-full"
+              type="add"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -77,34 +205,21 @@ function DivisionToggle({
 function CourseSearchContent({
   onSearchSubmit,
   isLoading = false,
+  departments,
+  isLoadingDepartments,
 }: CourseSearchContentProps) {
   const { recommendedCourses } = useCourseModalContext();
   const displayedRecommendedCourses =
     dedupeCatalogCoursesByCode(recommendedCourses);
   const [formData, setFormData] = useState<CourseSearchData>({
-    searchQuery: "",
     department: "",
-    lowerDivision: true,
-    upperDivision: true,
+    courseLevel: "undergraduate",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSearching = isLoading || isSubmitting;
-
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = event.target;
-    setFormData((previous) => ({ ...previous, [name]: value }));
-  };
-
-  const handleToggle = (field: DivisionField) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: !previous[field],
-    }));
-  };
+  const hasDepartment = formData.department.length > 0;
 
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -120,7 +235,7 @@ function CourseSearchContent({
   };
 
   const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
+    !hasDepartment || isSearching || isLoadingDepartments;
 
   return (
     <div>
@@ -138,23 +253,18 @@ function CourseSearchContent({
       </div>
 
       <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          name="searchQuery"
-          value={formData.searchQuery}
-          onChange={handleInputChange}
-          placeholder="Search for a specific course"
-          disabled={isSearching}
-          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-
-        <div className="flex items-center gap-3 my-4" />
-
-        <div className="mb-4">
+        <div className="mb-5">
+          <label className="block text-sm font-semibold text-text mb-2">
+            Area of study
+          </label>
           <SelectDropdown
             icon={<ChalkboardTeacherIcon size={28} />}
-            placeholder="Department"
-            options={DEPARTMENTS}
+            placeholder={
+              isLoadingDepartments
+                ? "Loading local catalog..."
+                : "Select an area of study"
+            }
+            options={departments}
             value={formData.department}
             onChange={(value) =>
               setFormData((previous) => ({
@@ -162,23 +272,36 @@ function CourseSearchContent({
                 department: value,
               }))
             }
-            disabled={isSearching}
+            disabled={isSearching || isLoadingDepartments}
           />
         </div>
 
-        <div className="space-y-3 mb-6">
-          <DivisionToggle
-            checked={formData.lowerDivision}
-            disabled={isSearching}
-            label="Lower Division Courses"
-            onToggle={() => handleToggle("lowerDivision")}
-          />
-          <DivisionToggle
-            checked={formData.upperDivision}
-            disabled={isSearching}
-            label="Upper Division Courses"
-            onToggle={() => handleToggle("upperDivision")}
-          />
+        <div
+          className={cn(
+            "transition-opacity duration-200",
+            !hasDepartment && "opacity-50",
+          )}
+        >
+          <p className="block text-sm font-semibold text-text mb-2">
+            Choose course level
+          </p>
+          <div className="space-y-1 mb-6">
+            {COURSE_LEVEL_OPTIONS.map((option) => (
+              <CourseLevelOption
+                key={option.value}
+                checked={formData.courseLevel === option.value}
+                disabled={isSearching || !hasDepartment}
+                label={option.label}
+                description={option.description}
+                onSelect={() =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    courseLevel: option.value,
+                  }))
+                }
+              />
+            ))}
+          </div>
         </div>
 
         <Button
@@ -194,7 +317,7 @@ function CourseSearchContent({
               <span>Searching...</span>
             </div>
           ) : (
-            "Search"
+            "Search courses"
           )}
         </Button>
       </form>
@@ -202,82 +325,45 @@ function CourseSearchContent({
   );
 }
 
-function CourseSearchResults({
-  courses,
-  onBack,
-  isGeneric,
-}: {
-  courses: CatalogCourse[];
-  onBack: () => void;
-  isGeneric: boolean;
-}) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredCourses = isGeneric
-    ? courses.filter((course) => matchesCatalogQuery(course, normalizedQuery))
-    : courses;
-
-  const handleSearchChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setSearchQuery(event.target.value);
-  };
-
-  return (
-    <div>
-      <button
-        onClick={onBack}
-        className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
-      >
-        <CaretLeftIcon size={16} weight="bold" />
-        Search Results
-      </button>
-      <div>
-        {isGeneric && (
-          <input
-            type="text"
-            name="searchQuery"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search for a specific course"
-            className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        )}
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.uniqueId}
-              course={mapCatalogCourseToPreview(course)}
-              className="w-full"
-              type="add"
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function CourseSearchPanel() {
   const [showResults, setShowResults] = useState(false);
-  const [isGeneric, setIsGeneric] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    void getCatalogDepartmentNames()
+      .then((catalogDepartments) => {
+        if (active) setDepartments(catalogDepartments);
+      })
+      .catch((error: unknown) => {
+        console.error("[Course search] Failed to read local catalog:", error);
+      })
+      .finally(() => {
+        if (active) setIsLoadingDepartments(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return showResults ? (
-    <CourseSearchResults
+    <SearchResultsToolbar
       courses={courses}
-      isGeneric={isGeneric}
       onBack={() => setShowResults(false)}
     />
   ) : (
     <CourseSearchContent
       onSearchSubmit={async (formData) => {
         const results = await searchCatalogCourses(formData);
-        setIsGeneric(formData.searchQuery.trim().length === 0);
         setCourses(results);
         setShowResults(true);
       }}
+      departments={departments}
+      isLoadingDepartments={isLoadingDepartments}
     />
   );
 }

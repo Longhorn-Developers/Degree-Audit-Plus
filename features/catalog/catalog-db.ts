@@ -4,7 +4,6 @@ import type { CoreArea } from "@/domain/course";
 import {
   dedupeCatalogCoursesByCode,
   dedupeCatalogCoursesByCodeAndTitle,
-  matchesCatalogQuery,
 } from "./catalog-course-mappers";
 import { DEPARTMENT_MAP } from "./department-map";
 
@@ -44,20 +43,35 @@ export async function searchCores(
 }
 
 function getDepartmentCodesByName(departmentName: string): string[] {
-  return Object.entries(DEPARTMENT_MAP)
+  const mappedCodes = Object.entries(DEPARTMENT_MAP)
     .filter(([, name]) => name === departmentName)
     .map(([code]) => code);
+
+  // A catalog refresh can introduce a code before the display-name map is
+  // updated. Keep that code searchable instead of accidentally matching every
+  // department.
+  return mappedCodes.length > 0 ? mappedCodes : [departmentName];
+}
+
+// Use the IndexedDB catalog as the source of truth for the search picker so
+// users only choose departments that have locally available courses.
+export async function getCatalogDepartmentNames(): Promise<string[]> {
+  const departmentCodes = await db.courses.orderBy("department").uniqueKeys();
+
+  return [
+    ...new Set(
+      departmentCodes.map(
+        (code) => DEPARTMENT_MAP[String(code)] ?? String(code),
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
 }
 
 // Searches catalog courses by text, department, and lower/upper division filters.
 export function searchCatalogCourses(filters: {
-  searchQuery: string;
   department: string;
-  lowerDivision: boolean;
-  upperDivision: boolean;
+  courseLevel: "undergraduate" | "lowerDivision" | "upperDivision" | "graduate";
 }): Promise<CatalogCourse[]> {
-  // Normalize the search inputs once before filtering the collection.
-  const normalizedQuery = filters.searchQuery.trim().toLowerCase();
   const departmentCodes = filters.department
     ? getDepartmentCodesByName(filters.department)
     : [];
@@ -65,21 +79,27 @@ export function searchCatalogCourses(filters: {
   return db.courses
     .toCollection()
     .filter((course) => {
-      // Match the search text against code, title, short name, and instructors.
-      const matchesQuery = matchesCatalogQuery(course, normalizedQuery);
-
       // Match the selected department name against the stored department codes.
       const matchesDepartment =
         departmentCodes.length === 0 ||
         departmentCodes.includes(course.department);
 
-      // Split lower vs upper division by the last two digits of the course number (01-19 is lower).
-      const courseLevel = Number(course.number.match(/\d(\d\d)/)?.[1]);
-      const matchesDivision =
-        filters.lowerDivision === filters.upperDivision ||
-        (filters.lowerDivision ? courseLevel < 20 : courseLevel >= 20);
+      // IDA Planner groups course levels by catalog number: 301-379 are
+      // undergraduate (301-319 lower, 320-379 upper), while 380+ are graduate.
+      const catalogNumber = Number(course.number.match(/\d{3}/)?.[0]);
+      const matchesCourseLevel =
+        (filters.courseLevel === "undergraduate" &&
+          catalogNumber >= 301 &&
+          catalogNumber <= 379) ||
+        (filters.courseLevel === "lowerDivision" &&
+          catalogNumber >= 301 &&
+          catalogNumber <= 319) ||
+        (filters.courseLevel === "upperDivision" &&
+          catalogNumber >= 320 &&
+          catalogNumber <= 379) ||
+        (filters.courseLevel === "graduate" && catalogNumber >= 380);
 
-      return matchesQuery && matchesDepartment && matchesDivision;
+      return matchesDepartment && matchesCourseLevel;
     })
     .toArray()
     .then(dedupeCatalogCoursesByCodeAndTitle);
