@@ -3,7 +3,7 @@ import { HStack, VStack } from "@/components/ui/stack";
 import type { RequirementRule } from "@/domain/audit";
 import type { Course, PlannableStatus } from "@/domain/course";
 import { Progress, RequirementProgressUnit } from "@/domain/progress";
-import { CATEGORY_COLORS, cn } from "@/lib/utils";
+import { CATEGORY_COLORS, cn, toPercent } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -270,7 +270,7 @@ const ProgressBar = ({
   colorIndex?: number;
 }) => {
   const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
-  const percentage = Math.min((current / total) * 100, 100);
+  const percentage = toPercent(current, total);
 
   const trackColor = color.rgb.replace("rgb", "rgba").replace(")", ", 0.2)");
 

@@ -48,7 +48,7 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
           {loading ? (
             <CircleNotchIcon size={24} className="text-text animate-spin" />
           ) : (
-            <PlusCircleIcon size={24} className="text-gray-700" />
+            <PlusCircleIcon size={24} className="text-700" />
           )}
         </div>
       ) : null}
