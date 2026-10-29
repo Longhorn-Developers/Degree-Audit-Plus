@@ -118,7 +118,7 @@ const SemesterDropdowns = () => {
             />
           ))}
         <Button
-          className="w-full self-start bg-dap-plan-green text-white font-bold"
+          className="w-full self-start gap-3 rounded-md bg-dap-plan-green text-lg font-bold"
           onClick={() => {
             setExtraEmptySemesters((prev) => [
               ...prev,
@@ -130,7 +130,7 @@ const SemesterDropdowns = () => {
             ]);
           }}
         >
-          <PlusIcon />
+          <PlusIcon size={22} />
           Add Future Semester
         </Button>
       </Grid>
