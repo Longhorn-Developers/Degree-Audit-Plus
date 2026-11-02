@@ -4,7 +4,7 @@ import { semesterToCcyys } from "@/domain/course";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { mapCatalogCourseToPreview } from "@/features/catalog/catalog-course-mappers";
 import { sendRuntimeMessage } from "@/lib/browser/messages";
-import { cn } from "@/lib/utils";
+import { capPercentage, cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import CourseCard from "./course-card";
 
@@ -114,6 +114,9 @@ function PreviewResult({ preview }: { preview: Preview }) {
   }
 
   const { rules, progress } = preview.diff;
+  const beforeFormattedPercentage = capPercentage(progress.before);
+  const afterFormattedPercentage = capPercentage(progress.after);
+
   return (
     <div className="mt-4 space-y-1 rounded-md border border-dap-plan-green bg-green-50 px-4 py-3 text-sm text-black">
       {rules.length === 0 ? (
@@ -130,8 +133,9 @@ function PreviewResult({ preview }: { preview: Preview }) {
         ))
       )}
       <p>
-        New progress: <span className="font-semibold">{progress.after}%</span>{" "}
-        (was {progress.before}%)
+        New progress:{" "}
+        <span className="font-semibold">{afterFormattedPercentage}%</span> (was{" "}
+        {beforeFormattedPercentage}%)
       </p>
     </div>
   );
