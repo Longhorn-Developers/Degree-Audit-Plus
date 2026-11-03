@@ -8,7 +8,7 @@ import {
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { mapCatalogCourseToPreview } from "@/features/catalog/catalog-course-mappers";
 import { sendRuntimeMessage, type CoursePreview } from "@/lib/browser/messages";
-import { cn } from "@/lib/utils";
+import { capPercentage, cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import CourseCard from "./course-card";
 import { getErrorMessage } from "./error-messages";
@@ -178,6 +178,9 @@ function PreviewResult({
   const { diff, degree, missingPlanned, removedPlanned } = preview.result;
   const { rules, progress } = diff;
   const adding = preview.status === "adding";
+  const beforeFormattedPercentage = capPercentage(progress.before);
+  const afterFormattedPercentage = capPercentage(progress.after);
+
   return (
     <div className="mt-4 space-y-1 rounded-md border border-dap-plan-green bg-dap-plan-green/10 px-4 py-3 text-sm text-text">
       <p className="text-xs">Compared with your {degree} audit</p>
@@ -200,8 +203,9 @@ function PreviewResult({
         })
       )}
       <p>
-        New progress: <span className="font-semibold">{progress.after}%</span>{" "}
-        (was {progress.before}%)
+        New progress:{" "}
+        <span className="font-semibold">{afterFormattedPercentage}%</span> (was{" "}
+        {beforeFormattedPercentage}%)
       </p>
       {missingPlanned.length > 0 && (
         <p className="text-xs">
