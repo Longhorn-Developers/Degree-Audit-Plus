@@ -49,7 +49,7 @@ const Navbar = () => {
         <h1 className="text-2xl font-bold leading-tight truncate">{title}</h1>
         {majors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-dap-orange">
+            <span className="shrink-0 text-base font-semibold leading-[22px] text-dap-orange">
               MAJOR
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">
@@ -69,7 +69,7 @@ const Navbar = () => {
 
         {minors.length > 0 && (
           <HStack gap={2} y="middle" className="flex-wrap">
-            <span className="shrink-0 text-[13px] font-bold uppercase tracking-[0.04em] text-dap-orange">
+            <span className="shrink-0 text-base font-semibold leading-[22px] text-dap-orange">
               MINOR/CERT
             </span>
             <HStack gap={2} y="middle" className="flex-wrap">

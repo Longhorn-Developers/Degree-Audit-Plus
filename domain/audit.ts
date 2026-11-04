@@ -1,5 +1,12 @@
 // Contains small helper functions and types for the audit feature.
-import type { Course, CourseCode, CourseId, Status } from "./course";
+import type {
+  Course,
+  CourseCode,
+  CourseId,
+  PlannerRowKey,
+  PlannerSyncTarget,
+  Status,
+} from "./course";
 import type { RequirementProgressUnit } from "./progress";
 
 export interface RequirementRule {
@@ -34,11 +41,20 @@ export interface AuditDiff {
   rules: RuleChange[];
 }
 
-// The one preview kept in storage at a time.
-export interface PreviewAudit {
-  auditId: string;
-  audit: CachedAuditData;
-  diff: AuditDiff;
+// The last preview: the course it put on UT's planner and the audit it ran.
+// `row` is null when the course was already planned, so dropping the preview
+// leaves it alone. `auditId` is null until UT has the audit. The audit stays
+// on UT, hidden from the app, until it's added to the plan or dropped.
+export interface PendingPreview {
+  course: PlannerSyncTarget;
+  row: PlannerRowKey | null;
+  auditId: string | null;
+}
+
+export interface AcceptedCourse {
+  course: PlannerSyncTarget;
+  row: PlannerRowKey | null;
+  acceptedAt: number;
 }
 
 export interface CachedAuditData {
@@ -67,6 +83,12 @@ export interface DuplicateCourseRequirementFlag {
   auditNames: string[];
 }
 
+// What UT needs to run an audit's degree again, read off its Rerun link.
+export interface AuditDegree {
+  degreePlan: string;
+  catalogYear: string;
+}
+
 export interface AuditHistoryEntry {
   title?: string;
   majors?: string[];
@@ -74,6 +96,8 @@ export interface AuditHistoryEntry {
   percentage?: number;
   auditId?: string;
   pinned?: boolean;
+  // missing when the app can't rerun it, see parseRerunDegree
+  degree?: AuditDegree;
 }
 
 export interface AuditHistoryData {

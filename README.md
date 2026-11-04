@@ -159,11 +159,12 @@ git push -u origin feat/short-description
 Open a pull request against `main`. A good PR includes:
 
 - A short summary of the problem and solution
-- Tests and commands run
-- Screenshots for visual changes
+- Tests and commands run (feel free to also include temporary tests)
+- Screenshots / Videos for visual changes
 - Known limitations or follow-up work
 
 Keep pull requests small enough to review. CI checks formatting, types, lint rules, tests, and the production build before merge.
+Please do not use AI to write a PR summary. AI development is encouraged but writing should be human.
 
 ## License and Team
 

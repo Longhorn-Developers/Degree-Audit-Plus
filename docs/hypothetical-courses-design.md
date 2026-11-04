@@ -208,6 +208,29 @@ service worker.
 > request throws `TypeError` from the worker because the SSO host sits outside
 > `host_permissions` — indistinguishable from a network outage.
 
+### Running any degree with the default form (verified 2026-10-06)
+
+The default-degree form (`test_profile_button`, the `run-icon` form) runs
+whatever degree its hidden fields name, not only the student's declared one:
+
+- `degree_plan` — UT's plan code, e.g. `ESC SS CS`, `LAAFRDS  CH` (spaces are
+  part of the code).
+- `catalog` — a term code (ccyys), not a year. UT uses the catalog that term
+  falls in: `20262` gave the 2024-2026 catalog, `20269` gave 2026-2028. The app
+  sends `<catalog first year>9`.
+- `incl_planned_crswk=Y` works on these runs too.
+
+Both values come off each history row's Rerun link
+(`requests/student_individual/?form-0-degree_plan=…&form-0-begin_ccyy=…`),
+and the same fields sit in a hidden `rerun` form on the results page. Following
+the Rerun link itself only opens the run page; it queues nothing, and the
+custom form there comes back with its catalog/college/plan selects empty.
+
+Not verified: audits with a second plan (`form-0-secondary_deg_pln`, minor or
+certificate) — the default form has a `minor` field (`"[]"`) whose format is
+unknown, so the app does not preview those yet. Slotting, SSI and 12th Class
+Day audits have no Rerun link ("cannot be rerun from the web").
+
 ## Main-view flow (requirement view)
 
 Preview lifecycle for a selected course:
