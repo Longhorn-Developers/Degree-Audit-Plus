@@ -248,7 +248,8 @@ function CourseSearchResults({
           <div className="min-h-[180px] rounded-md border border-dashed border-dap-border bg-background px-6 py-8 flex flex-col items-center justify-center text-center">
             <p className="text-lg font-semibold text-text">No courses found</p>
             <p className="mt-2 text-sm text-muted">
-              Check the spelling (e.g. C S 313).
+              Try a different course code or title, or change the department and
+              division filters.
             </p>
           </div>
         )}
