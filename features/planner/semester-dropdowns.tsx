@@ -59,8 +59,6 @@ const SemesterDropdowns = () => {
       dragSemester !== overId
     ) {
       setDragSemester(overId as StringSemester);
-    } else if (!event.over) {
-      setDragSemester(courseMap[activeId]?.semester ?? null);
     }
   }
 

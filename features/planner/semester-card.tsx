@@ -6,24 +6,29 @@ import { HStack, VStack } from "@/components/ui/stack";
 import { getCurrentSemester, sortSemesters } from "@/domain/course";
 import type { Course, StringSemester } from "@/domain/course";
 import { cn } from "@/lib/utils";
-import { useDroppable } from "@dnd-kit/core";
-import { forwardRef } from "react";
+import { useDndMonitor, useDroppable } from "@dnd-kit/core";
+import { forwardRef, useState } from "react";
 import PlannerCourseCard from "./planner-course-card";
 import { compareCourseCodes } from "@/domain/course";
 
 interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
+
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const SemesterCardVisual = forwardRef<
   HTMLDivElement,
   SemesterCardProps & React.HTMLAttributes<HTMLDivElement>
->(({ semester, courses, className, ...props }, ref) => {
+>(({ semester, courses, className, isOpen, onOpenChange, ...props }, ref) => {
   return (
     <Dropdown
       {...props}
       ref={ref}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
       className={cn(
         "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-surface",
         className,
@@ -76,14 +81,24 @@ const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
 
 const DroppableSemesterCard = ({ semester, courses }: SemesterCardProps) => {
   const { isOver, setNodeRef: droppableRef } = useDroppable({ id: semester });
+  const [isOpen, setIsOpen] = useState(false);
+
+  useDndMonitor({
+    onDragEnd: ({ over }) => {
+      if (over?.id === semester) setIsOpen(true);
+    },
+  });
 
   return (
-    <SemesterCardVisual
-      ref={droppableRef}
-      semester={semester}
-      courses={courses}
-      className={cn(isOver ? "opacity-35" : "opacity-100")}
-    />
+    <div ref={droppableRef} className="h-full">
+      <SemesterCardVisual
+        semester={semester}
+        courses={courses}
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        className={cn(isOver ? "opacity-35" : "opacity-100")}
+      />
+    </div>
   );
 };
 

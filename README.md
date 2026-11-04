@@ -52,7 +52,7 @@ components/               Shared UI primitives and application components
 tests/                    Parser, catalog, audit, and controller coverage
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) for the full dependency graph and runtime flows. ESLint enforces the documented feature boundaries.
+See [`docs/architecture.md`](docs/architecture.md) for the full dependency graph and runtime flows. Oxlint enforces the documented feature boundaries.
 
 ## Local development
 
@@ -86,9 +86,9 @@ For Firefox, use `bun run dev:firefox` and load the generated Firefox output.
 | `bun run build`            | Create a production Chrome build              |
 | `bun run build:firefox`    | Create a production Firefox build             |
 | `bun run compile`          | Type-check the project                        |
-| `bun run lint`             | Run ESLint, including architecture boundaries |
+| `bun run lint`             | Run Oxlint, including architecture boundaries |
 | `bun test`                 | Run the test suite                            |
-| `bun run format:check`     | Check Prettier formatting                     |
+| `bun run format:check`     | Check Oxfmt formatting                        |
 | `bun run catalog:validate` | Validate the bundled catalog data             |
 
 To refresh the catalog during development:

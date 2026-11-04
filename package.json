@@ -9,12 +9,12 @@
     "dev:firefox": "bun run wxt -b firefox",
     "build": "bun run wxt build",
     "build:firefox": "bun run wxt build -b firefox",
-    "format": "bun run prettier . --write",
-    "format:check": "bun run prettier . --check",
+    "format": "bun run oxfmt",
+    "format:check": "bun run oxfmt --check",
     "zip": "bun run wxt zip",
     "zip:firefox": "bun run wxt zip -b firefox",
     "compile": "bun run tsc --noEmit",
-    "lint": "bun run eslint .",
+    "lint": "bun run oxlint",
     "catalog:refresh": "bun run scripts/catalog/refresh-catalog.ts",
     "catalog:validate": "bun run scripts/catalog/validate-catalog.ts",
     "catalog:departments": "bun run scripts/catalog/generate-department-map.ts",
@@ -43,7 +43,6 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/bun": "^1.3.14",
     "@types/chrome": "^0.1.36",
@@ -52,16 +51,12 @@
     "@types/react-dom": "^19.1.9",
     "@wxt-dev/module-react": "^1.1.3",
     "autoprefixer": "^10.4.21",
-    "eslint": "^10.0.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.3.0",
     "jsdom": "^27.4.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
     "postcss": "^8.5.6",
-    "prettier": "3.8.1",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.55.0",
     "wxt": "^0.20.6"
   }
 }
