@@ -13,7 +13,7 @@ import {
   ChalkboardTeacherIcon,
   CircleNotchIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
 import PlannedCoursesModal from "./planned-courses-modal";
 import { useCourseModalContext } from "./course-modal-provider";
@@ -27,27 +27,43 @@ interface CourseSearchData {
 
 const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
 
-function waitForNextPaint(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+const EMPTY_FORM: CourseSearchData = {
+  searchQuery: "",
+  department: "",
+  lowerDivision: true,
+  upperDivision: true,
+};
+
+// session storage so a refresh keeps the last search but a new tab starts empty
+function useSessionState<T>(key: string, initial: T): [T, (value: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    const saved = sessionStorage.getItem(key);
+    if (saved === null) return initial;
+    return JSON.parse(saved) as T;
   });
+
+  const setAndSave = (next: T) => {
+    setValue(next);
+    sessionStorage.setItem(key, JSON.stringify(next));
+  };
+
+  return [value, setAndSave];
 }
 
 interface CourseSearchContentProps {
-  onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
-  isLoading?: boolean;
+  formData: CourseSearchData;
+  setFormData: (formData: CourseSearchData) => void;
+  onSearchSubmit: (formData: CourseSearchData) => void;
 }
 
 type DivisionField = "lowerDivision" | "upperDivision";
 
 function DivisionToggle({
   checked,
-  disabled,
   label,
   onToggle,
 }: {
   checked: boolean;
-  disabled: boolean;
   label: string;
   onToggle: () => void;
 }) {
@@ -56,7 +72,6 @@ function DivisionToggle({
       <button
         type="button"
         onClick={onToggle}
-        disabled={disabled}
         className={cn(
           "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
           checked ? "bg-dap-plan-green-dark" : "bg-gray-200",
@@ -75,52 +90,30 @@ function DivisionToggle({
 }
 
 function CourseSearchContent({
+  formData,
+  setFormData,
   onSearchSubmit,
-  isLoading = false,
 }: CourseSearchContentProps) {
   const { recommendedCourses } = useCourseModalContext();
   const displayedRecommendedCourses =
     dedupeCatalogCoursesByCode(recommendedCourses);
-  const [formData, setFormData] = useState<CourseSearchData>({
-    searchQuery: "",
-    department: "",
-    lowerDivision: true,
-    upperDivision: true,
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isSearching = isLoading || isSubmitting;
-
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target;
-    setFormData((previous) => ({ ...previous, [name]: value }));
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleToggle = (field: DivisionField) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: !previous[field],
-    }));
+    setFormData({ ...formData, [field]: !formData[field] });
   };
 
-  const handleSearch = async (event: React.FormEvent) => {
+  const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!onSearchSubmit) return;
-
-    try {
-      setIsSubmitting(true);
-      await waitForNextPaint();
-      await onSearchSubmit(formData);
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSearchSubmit(formData);
   };
 
-  const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
+  const isSearchDisabled = !formData.lowerDivision && !formData.upperDivision;
 
   return (
     <div>
@@ -139,7 +132,6 @@ function CourseSearchContent({
           value={formData.searchQuery}
           onChange={handleInputChange}
           placeholder="Search for a specific course"
-          disabled={isSearching}
           className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
@@ -152,25 +144,19 @@ function CourseSearchContent({
             options={DEPARTMENTS}
             value={formData.department}
             onChange={(value) =>
-              setFormData((previous) => ({
-                ...previous,
-                department: value,
-              }))
+              setFormData({ ...formData, department: value })
             }
-            disabled={isSearching}
           />
         </div>
 
         <div className="space-y-3 mb-6">
           <DivisionToggle
             checked={formData.lowerDivision}
-            disabled={isSearching}
             label="Lower Division Courses"
             onToggle={() => handleToggle("lowerDivision")}
           />
           <DivisionToggle
             checked={formData.upperDivision}
-            disabled={isSearching}
             label="Upper Division Courses"
             onToggle={() => handleToggle("upperDivision")}
           />
@@ -183,14 +169,7 @@ function CourseSearchContent({
           disabled={isSearchDisabled}
           className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
         >
-          {isSearching ? (
-            <div className="flex items-center gap-2">
-              <CircleNotchIcon className="h-5 w-5 animate-spin" />
-              <span>Searching...</span>
-            </div>
-          ) : (
-            "Search"
-          )}
+          Search
         </Button>
       </form>
     </div>
@@ -201,12 +180,15 @@ function CourseSearchResults({
   courses,
   onBack,
   isGeneric,
+  searchQuery,
+  setSearchQuery,
 }: {
   courses: CatalogCourse[];
   onBack: () => void;
   isGeneric: boolean;
+  searchQuery: string;
+  setSearchQuery: (searchQuery: string) => void;
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredCourses = isGeneric
@@ -249,28 +231,61 @@ function CourseSearchResults({
 }
 
 export function CourseSearchPanel() {
-  const [showResults, setShowResults] = useState(false);
-  const [isGeneric, setIsGeneric] = useState(false);
-  const [courses, setCourses] = useState<CatalogCourse[]>([]);
+  const [formData, setFormData] = useSessionState(
+    "courseSearchForm",
+    EMPTY_FORM,
+  );
+  const [resultsQuery, setResultsQuery] = useSessionState(
+    "courseSearchFilter",
+    "",
+  );
+  // the search that is showing results, null when the form is showing
+  const [submittedSearch, setSubmittedSearch] =
+    useSessionState<CourseSearchData | null>("courseSearchSubmitted", null);
+  const [courses, setCourses] = useState<CatalogCourse[] | null>(null);
+
+  useEffect(() => {
+    if (!submittedSearch) return;
+    let isCurrent = true;
+    void searchCatalogCourses(submittedSearch).then((results) => {
+      if (isCurrent) setCourses(results);
+    });
+    return () => {
+      isCurrent = false;
+    };
+  }, [submittedSearch]);
+
+  if (!submittedSearch) {
+    return (
+      <CourseSearchContent
+        formData={formData}
+        setFormData={setFormData}
+        onSearchSubmit={(search) => {
+          setCourses(null);
+          setResultsQuery("");
+          setSubmittedSearch(search);
+        }}
+      />
+    );
+  }
+
+  if (!courses) {
+    return (
+      <div className="flex justify-center py-8">
+        <CircleNotchIcon className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  const isGeneric = submittedSearch.searchQuery.trim().length === 0;
 
   return (
-    <div>
-      {showResults ? (
-        <CourseSearchResults
-          courses={courses}
-          isGeneric={isGeneric}
-          onBack={() => setShowResults(false)}
-        />
-      ) : (
-        <CourseSearchContent
-          onSearchSubmit={async (formData) => {
-            const results = await searchCatalogCourses(formData);
-            setIsGeneric(formData.searchQuery.trim().length === 0);
-            setCourses(results);
-            setShowResults(true);
-          }}
-        />
-      )}
-    </div>
+    <CourseSearchResults
+      courses={courses}
+      isGeneric={isGeneric}
+      searchQuery={resultsQuery}
+      setSearchQuery={setResultsQuery}
+      onBack={() => setSubmittedSearch(null)}
+    />
   );
 }
