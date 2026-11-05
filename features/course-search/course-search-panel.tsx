@@ -221,10 +221,20 @@ function CourseSearchResults({
             className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
         )}
-        <CoursePreviewList
-          courses={filteredCourses}
-          className="max-h-[60vh] overflow-y-auto -mr-3 pr-5"
-        />
+        {filteredCourses.length > 0 ? (
+          <CoursePreviewList
+            courses={filteredCourses}
+            className="max-h-[60vh] overflow-y-auto -mr-3 pr-5"
+          />
+        ) : (
+          <div className="min-h-[180px] rounded-md border border-dashed border-dap-border bg-background px-6 py-8 flex flex-col items-center justify-center text-center">
+            <p className="text-lg font-semibold text-text">No courses found</p>
+            <p className="mt-2 text-sm text-muted">
+              Try a different course code or title, or change the department and
+              division filters.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
