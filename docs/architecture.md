@@ -283,8 +283,7 @@ persistence behind its storage interface, and keep temporary interaction state
 local to the UI. A new cross-feature module is justified only when it represents
 a real user workflow, as Course Search does between Audit and Catalog.
 
-
-## Visual Diagram 
+## Visual Diagram
 
 ```text
 +============================================================================================+

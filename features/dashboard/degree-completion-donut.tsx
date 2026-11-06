@@ -1,6 +1,6 @@
 import { HStack, VStack } from "@/components/ui/stack";
 import MultiDonutGraph, { Bar, GraphStyleProps } from "./graph";
-import { CATEGORY_COLORS } from "@/lib/utils";
+import { capPercentage, CATEGORY_COLORS, toPercent } from "@/lib/utils";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { groupAuditSections } from "./section-groups";
 
@@ -40,9 +40,10 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
   });
 
   const overallPercentage =
-    (currentAudit?.percentage ??
-      Math.round((progresses.total.current / progresses.total.total) * 100)) ||
-    0;
+    currentAudit.percentage !== undefined
+      ? capPercentage(currentAudit.percentage)
+      : toPercent(progresses.total.current, progresses.total.total);
+
   return (
     <MultiDonutGraph
       {...styleProps}
@@ -65,12 +66,7 @@ const DegreeCompletionDonut = (styleProps: GraphStyleProps) => {
             className="whitespace-nowrap text-xl font-bold"
           >
             <p>{bar.title}</p>
-            <p>
-              {Math.round(
-                (bar.percentage.current / bar.percentage.total) * 100,
-              )}
-              %
-            </p>
+            <p>{toPercent(bar.percentage.current, bar.percentage.total)}%</p>
           </HStack>
           <div className="text-sm">
             ({bar.percentage.current}/{bar.percentage.total}) courses completed
