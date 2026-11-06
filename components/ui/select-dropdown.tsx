@@ -25,9 +25,13 @@ export default function SelectDropdown({
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const matches = options.filter((option) =>
-    option.toLowerCase().includes(query.trim().toLowerCase()),
-  );
+  // Untouched text (still the current value) shows the full list.
+  const matches =
+    query === value
+      ? options
+      : options.filter((option) =>
+          option.toLowerCase().includes(query.trim().toLowerCase()),
+        );
 
   const close = () => {
     setIsOpen(false);
@@ -54,9 +58,18 @@ export default function SelectDropdown({
         <input
           type="text"
           value={isOpen ? query : value}
-          placeholder={value || placeholder}
+          placeholder={placeholder}
           disabled={disabled}
-          onFocus={() => setIsOpen(true)}
+          onFocus={(event) => {
+            setQuery(value);
+            setIsOpen(true);
+            event.target.select();
+          }}
+          onClick={() => {
+            if (isOpen) return;
+            setQuery(value);
+            setIsOpen(true);
+          }}
           onChange={(event) => {
             setIsOpen(true);
             setQuery(event.target.value);
@@ -67,7 +80,8 @@ export default function SelectDropdown({
             if (event.key !== "Enter") return;
             // Keep Enter from submitting the form around us.
             event.preventDefault();
-            if (matches[0]) select(matches[0]);
+            if (query === value) close();
+            else if (matches[0]) select(matches[0]);
           }}
           className={cn(
             "w-full px-3 py-2 pr-10 border border-dap-border rounded-lg text-base bg-background text-text placeholder:text-gray-500 transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
