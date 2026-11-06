@@ -26,6 +26,7 @@ interface CourseSearchData {
 }
 
 const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
+const ALL_DEPARTMENTS = "All Departments";
 
 const EMPTY_FORM: CourseSearchData = {
   searchQuery: "",
@@ -141,10 +142,13 @@ function CourseSearchContent({
           <SelectDropdown
             icon={<ChalkboardTeacherIcon size={28} />}
             placeholder="Department"
-            options={DEPARTMENTS}
-            value={formData.department}
+            options={[ALL_DEPARTMENTS, ...DEPARTMENTS]}
+            value={formData.department || ALL_DEPARTMENTS}
             onChange={(value) =>
-              setFormData({ ...formData, department: value })
+              setFormData({
+                ...formData,
+                department: value === ALL_DEPARTMENTS ? "" : value,
+              })
             }
           />
         </div>

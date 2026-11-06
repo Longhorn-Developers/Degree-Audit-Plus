@@ -25,9 +25,13 @@ export default function SelectDropdown({
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const matches = options.filter((option) =>
-    option.toLowerCase().includes(query.trim().toLowerCase()),
-  );
+  // Untouched text (still the current value) shows the full list.
+  const matches =
+    query === value
+      ? options
+      : options.filter((option) =>
+          option.toLowerCase().includes(query.trim().toLowerCase()),
+        );
 
   const close = () => {
     setIsOpen(false);
@@ -54,9 +58,13 @@ export default function SelectDropdown({
         <input
           type="text"
           value={isOpen ? query : value}
-          placeholder={value || placeholder}
+          placeholder={placeholder}
           disabled={disabled}
-          onFocus={() => setIsOpen(true)}
+          onFocus={(event) => {
+            setQuery(value);
+            setIsOpen(true);
+            event.target.select();
+          }}
           onChange={(event) => {
             setIsOpen(true);
             setQuery(event.target.value);
