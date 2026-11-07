@@ -249,7 +249,7 @@ const RequirementRow = ({
                   className="w-5 h-5"
                   aria-hidden="true"
                 />
-                See Fufilling Courses
+                See Fulfilling Courses
               </Button>
             </div>
           )}
