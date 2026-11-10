@@ -16,7 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
 import PlannedCoursesModal from "./planned-courses-modal";
-import { useCourseModalContext } from "./course-modal-provider";
+import { useCoreCourseSuggestions } from "./use-recommended-courses";
 
 interface CourseSearchData {
   searchQuery: string;
@@ -95,9 +95,9 @@ function CourseSearchContent({
   setFormData,
   onSearchSubmit,
 }: CourseSearchContentProps) {
-  const { recommendedCourses } = useCourseModalContext();
+  const { courses: coreSuggestions } = useCoreCourseSuggestions();
   const displayedRecommendedCourses =
-    dedupeCatalogCoursesByCode(recommendedCourses);
+    dedupeCatalogCoursesByCode(coreSuggestions);
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {

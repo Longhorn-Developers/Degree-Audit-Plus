@@ -4,17 +4,25 @@ import {
 } from "@/features/catalog/catalog-course-mappers";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useCourseModalContext } from "./course-modal-provider";
+import {
+  useCourseModalContext,
+  type RecommendationScope,
+} from "./course-modal-provider";
 import CoursePreviewList from "./course-preview-list";
+import { useFulfillingCourses } from "./use-recommended-courses";
 
-// Lives inside the modal so the search box resets each time the modal opens.
-function FulfillingCoursesContent() {
-  const { recommendedCourses, isLoadingRecommendedCourses: isLoading } =
-    useCourseModalContext();
+function FulfillingCoursesContent({
+  requirementTitle,
+  ruleTitle,
+}: RecommendationScope) {
+  const { courses, isLoading } = useFulfillingCourses(
+    requirementTitle,
+    ruleTitle,
+  );
   const [query, setQuery] = useState("");
 
   const filteredCourses = filterCatalogCourses(
-    dedupeCatalogCoursesByCode(recommendedCourses),
+    dedupeCatalogCoursesByCode(courses),
     query,
   );
   const hasSearchQuery = query.trim().length > 0;
@@ -58,8 +66,8 @@ function FulfillingCoursesContent() {
 }
 
 export default function CourseAddModal() {
-  const { isOpen, closeModal } = useCourseModalContext();
-  if (!isOpen) return null;
+  const { recommendationScope, closeModal } = useCourseModalContext();
+  if (!recommendationScope) return null;
 
   return (
     <div
@@ -74,7 +82,7 @@ export default function CourseAddModal() {
           <h2 className="text-3xl leading-none font-bold text-text mb-8">
             Fulfilling courses
           </h2>
-          <FulfillingCoursesContent />
+          <FulfillingCoursesContent {...recommendationScope} />
         </div>
       </div>
     </div>
