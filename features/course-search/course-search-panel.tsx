@@ -1,10 +1,7 @@
 import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import type { CatalogCourse } from "@/domain/catalog";
-import {
-  dedupeCatalogCoursesByCode,
-  matchesCatalogQuery,
-} from "@/features/catalog/catalog-course-mappers";
+import { matchesCatalogQuery } from "@/features/catalog/catalog-course-mappers";
 import { searchCatalogCourses } from "@/features/catalog/catalog-db";
 import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
 import { cn } from "@/lib/utils";
@@ -16,7 +13,6 @@ import {
 import { useEffect, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
 import PlannedCoursesModal from "./planned-courses-modal";
-import { useCoreCourseSuggestions } from "./use-recommended-courses";
 
 interface CourseSearchData {
   searchQuery: string;
@@ -95,9 +91,6 @@ function CourseSearchContent({
   setFormData,
   onSearchSubmit,
 }: CourseSearchContentProps) {
-  const { courses: coreSuggestions } = useCoreCourseSuggestions();
-  const displayedRecommendedCourses =
-    dedupeCatalogCoursesByCode(coreSuggestions);
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
