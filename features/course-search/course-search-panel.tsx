@@ -123,7 +123,6 @@ function CourseSearchContent({
           <p className="font-semibold text-xl tracking-wide">Add Courses</p>
           <PlannedCoursesModal />
         </div>
-        <CoursePreviewList courses={displayedRecommendedCourses} />
       </div>
 
       <form onSubmit={handleSearch}>
