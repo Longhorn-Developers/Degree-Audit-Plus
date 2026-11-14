@@ -1,20 +1,34 @@
 import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
-import os from "node:os";
 import path from "node:path";
+import { mkdirSync } from "node:fs";
+import { loadDevUtCredentials } from "./scripts/dev-ut-credentials";
 
-const _profilePath = path.join(os.homedir(), ".chrome-extension-dev-profile");
+const chromiumProfile = path.resolve(".wxt/chrome-data");
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
-  // webExt: {
-  //   chromiumProfile: _profilePath,
-  //   keepProfileChanges: true,
-  // },
+  webExt: {
+    chromiumProfile,
+    keepProfileChanges: true,
+  },
 
   // Ensure UTF-8 encoding and strip invalid Unicode for Chrome extension compatibility
   hooks: {
+    ready: (wxt) => {
+      if (wxt.config.command === "serve" && wxt.config.browser !== "firefox") {
+        mkdirSync(chromiumProfile, { recursive: true });
+      }
+    },
+    "entrypoints:found": (wxt, entrypoints) => {
+      if (wxt.config.command !== "serve" || !loadDevUtCredentials()) {
+        const index = entrypoints.findIndex(
+          (entry) => entry.name === "dev-ut-login",
+        );
+        if (index !== -1) entrypoints.splice(index, 1);
+      }
+    },
     "build:done": async (wxt) => {
       const fs = await import("fs");
       const path = await import("path");
@@ -64,9 +78,14 @@ export default defineConfig({
     ],
   },
 
-  vite: () =>
+  vite: ({ command }) =>
     import("@tailwindcss/postcss").then((tailwindcss) =>
       import("autoprefixer").then((autoprefixer) => ({
+        define: {
+          __UT_DEV_LOGIN__: JSON.stringify(
+            command === "serve" ? loadDevUtCredentials() : null,
+          ),
+        },
         css: {
           postcss: {
             plugins: [tailwindcss.default, autoprefixer.default],
