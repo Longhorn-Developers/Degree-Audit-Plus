@@ -9,7 +9,7 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 import { mapCatalogCourseToPreview } from "@/features/catalog/catalog-course-mappers";
 import { sendRuntimeMessage, type CoursePreview } from "@/lib/browser/messages";
 import { capPercentage, cn } from "@/lib/utils";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CourseCard from "./course-card";
 import { getErrorMessage } from "./error-messages";
 
@@ -40,6 +40,19 @@ export default function CoursePreviewList({
   // refs, not state, so a double click in the same frame is still caught
   const shownCourse = useRef<number | null>(null);
   const isAdding = useRef(false);
+  const acceptedAuditId = useRef<string | null>(null);
+
+  // audit changed elsewhere so the preview is stale; skip our own Add to plan
+  useEffect(() => {
+    if (currentAuditId === acceptedAuditId.current) {
+      acceptedAuditId.current = null;
+      return;
+    }
+    latest.current++;
+    shownCourse.current = null;
+    setSelectedId(null);
+    setPreview({ status: "idle" });
+  }, [currentAuditId]);
 
   const previewCourse = async (course: CatalogCourse) => {
     // the course already loading or shown, clicking another one still switches
@@ -98,7 +111,10 @@ export default function CoursePreviewList({
       error: String(error),
     }));
     isAdding.current = false;
-    if (response?.success) setCurrentAuditId(response.auditId);
+    if (response?.success) {
+      acceptedAuditId.current = response.auditId;
+      setCurrentAuditId(response.auditId);
+    }
 
     if (request !== latest.current) return;
     shownCourse.current = null;
