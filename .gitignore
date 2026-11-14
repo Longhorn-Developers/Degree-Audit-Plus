@@ -13,6 +13,9 @@ stats.html
 stats-*.json
 .wxt
 web-ext.config.ts
+.env
+.env.*
+!.env.example
 claude.md
 
 # Bun is the package manager; keep npm's lockfile out
