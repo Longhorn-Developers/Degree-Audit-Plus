@@ -10,7 +10,14 @@ import {
   startAuditHistorySync,
   watchForAuditRunClicks,
 } from "./audit-history-sync";
-import { deleteAudit, runAudit } from "./audit-runner";
+import {
+  cancelRun,
+  deleteAudit,
+  promotePreview,
+  readPlanner,
+  runAudit,
+} from "./audit-runner";
+import { handlePlannerMessage, isPlannerMessage } from "./planner-bridge";
 
 // look at /audits and /submissions/history -> for when to scrape
 const SYNC_PAGE_PATTERNS = [
@@ -45,13 +52,73 @@ export function startAuditContentController(document: Document): void {
         return true;
       }
 
-      // the tab hop of a run or delete forwarded by the background
-      if (message.type === "RUN_NEW_AUDIT" || message.type === "DELETE_AUDIT") {
-        const action =
-          message.type === "RUN_NEW_AUDIT"
-            ? runAudit(message.custom)
-            : deleteAudit(message.auditId);
-        void toActionResult(action).then((result) =>
+      if (message.type === "CANCEL_RUN") {
+        cancelRun(message.runId);
+        return;
+      }
+
+      if (message.type === "RUN_AUDIT") {
+        void runAudit(message.runId, message).then(
+          (outcome) =>
+            sendMessageResponse(message, sendResponse, { ok: true, outcome }),
+          (error: unknown) => {
+            const reason =
+              error instanceof Error ? error.message : String(error);
+            if (reason === "CANCELLED") {
+              console.log(
+                `Audit run ${message.runId} cancelled by a newer request`,
+              );
+            } else {
+              console.error("Failed to run audit:", error);
+            }
+            sendMessageResponse(message, sendResponse, {
+              ok: false,
+              error: reason,
+            });
+          },
+        );
+        return true;
+      }
+
+      // the tab hop of a delete forwarded by the background
+      if (message.type === "DELETE_AUDIT") {
+        void toActionResult(deleteAudit(message.auditId)).then((result) =>
+          sendMessageResponse(message, sendResponse, result),
+        );
+        return true;
+      }
+
+      if (message.type === "READ_PLANNER") {
+        void readPlanner().then(
+          (rows) =>
+            sendMessageResponse(message, sendResponse, { ok: true, rows }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+        );
+        return true;
+      }
+
+      if (message.type === "PROMOTE_PREVIEW") {
+        void promotePreview(message.auditId, message.replaces).then(
+          (promoted) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: true,
+              ...promoted,
+            }),
+          (error: unknown) =>
+            sendMessageResponse(message, sendResponse, {
+              ok: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+        );
+        return true;
+      }
+
+      if (isPlannerMessage(message)) {
+        void handlePlannerMessage(message).then((result) =>
           sendMessageResponse(message, sendResponse, result),
         );
         return true;

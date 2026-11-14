@@ -11,10 +11,13 @@ import {
   MoonIcon,
   PlusIcon,
   SidebarIcon,
+  SpinnerIcon,
   SunIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuditContext } from "@/features/audit/audit-provider";
+import { sendRuntimeMessage } from "@/lib/browser/messages";
+import { useState } from "react";
 
 const Sidebar = () => {
   const { sidebarIsOpen, toggleSidebar, toggleDarkMode, isDarkMode } =
@@ -27,6 +30,22 @@ const Sidebar = () => {
     deleteAudit,
     togglePin,
   } = useAuditContext();
+  const [runningAudit, setRunningAudit] = useState(false);
+
+  // Same as the popup's Run New Audit: the background owns the auth checks and
+  // saves the result to history, which the sidebar already watches.
+  const handleRunNewAudit = async () => {
+    setRunningAudit(true);
+    try {
+      const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
+      if (response?.success) setCurrentAuditId(response.auditId);
+      else console.error("Failed to run audit:", response?.error);
+    } catch (error) {
+      console.error("Failed to run audit:", error);
+    } finally {
+      setRunningAudit(false);
+    }
+  };
 
   // history only holds finished audits; the filter narrows auditId to string
   const audits = history.audits.filter(hasAuditResult);
@@ -86,8 +105,18 @@ const Sidebar = () => {
           <span className="text-[19px] font-bold tracking-[-0.19px]">
             MY AUDITS
           </span>
-          <button className="p-1 hover:bg-black/5 rounded">
-            <PlusIcon size={24} className="text-text" />
+          <button
+            className="p-1 hover:bg-black/5 rounded disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => void handleRunNewAudit()}
+            disabled={runningAudit} // avoid spams
+            aria-label={runningAudit ? "Running audit" : "Run new audit"}
+            title={runningAudit ? "Running audit..." : "Run new audit"}
+          >
+            {runningAudit ? (
+              <SpinnerIcon size={24} className="text-text animate-spin-slow" />
+            ) : (
+              <PlusIcon size={24} className="text-text" />
+            )}
           </button>
         </div>
 

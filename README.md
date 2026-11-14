@@ -77,6 +77,16 @@ Then open `chrome://extensions`, enable **Developer mode**, choose **Load unpack
 
 For Firefox, use `bun run dev:firefox` and load the generated Firefox output.
 
+### Optional automatic UT login during development
+
+Copy `.env.example` to `.env.local` and fill in `UT_DEV_EID` and
+`UT_DEV_PASSWORD`, then restart `bun run dev`. The helper reads credentials
+literally from `.env.local` (or `.env`), preserving `$` characters in passwords.
+Use single quotes around passwords containing backslashes or `#` characters.
+When you open UT Direct and reach its UT EID/password form, the development
+extension submits it once per tab. **Complete Duo manually.** If credentials fail,
+correct them and restart development with a new tab; the helper does not retry.
+
 ### Useful commands
 
 | Command                    | Purpose                                       |

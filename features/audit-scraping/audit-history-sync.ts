@@ -10,7 +10,11 @@ import {
   type FetchAuditResult,
 } from "@/lib/browser/messages";
 import { storage } from "wxt/utils/storage";
-import { parseAuditHistory } from "./audit-history-parser";
+import {
+  parseAuditHistoryRows,
+  toAuditHistoryEntries,
+  type AuditHistoryRow,
+} from "./audit-history-parser";
 import { parseAuditPage } from "./audit-page-parser";
 
 export const AUDIT_HISTORY_URL =
@@ -37,9 +41,15 @@ function getPendingRunItem() {
   return (pendingRunItem ??= createPendingRunItem());
 }
 
-export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+// Every row on the history page: one fetch, one parse. The runner polls this;
+// the sync code turns it into the deduped list the UI shows.
+export async function fetchAuditHistoryRows(): Promise<AuditHistoryRow[]> {
   const { page } = await fetchUtPage(AUDIT_HISTORY_URL);
-  return parseAuditHistory(page);
+  return parseAuditHistoryRows(page);
+}
+
+export async function fetchAuditHistory(): Promise<AuditHistoryEntry[]> {
+  return toAuditHistoryEntries(await fetchAuditHistoryRows());
 }
 
 // Fetch and parse one audit's results page. Runs in a content script on a UT
@@ -95,16 +105,15 @@ function pollForRequestedAudit(startedAt: number): Promise<void> {
     const tick = async (): Promise<boolean> => {
       // Another audits page may have picked up the run and finished first.
       if ((await getPendingRunItem().getValue()) === null) return true;
-
-      const audits = await fetchAuditHistory();
-      // Skip storage writes (and their watcher fan-out into live UI) while
-      // UT still serves the same history as the previous tick.
-      const snapshot = JSON.stringify(audits);
+      //TODO: Remove this and rely on cached audit history (which runs after every audit)
+      const rows = await fetchAuditHistoryRows();
+      const snapshot = rows.map((row) => row.auditId ?? row.key).join(",");
       if (snapshot === lastSeen) return false;
 
       lastSeen = snapshot;
       // a duplicate rerun folds into its card with nothing new to scrape, so
       // the run is also done once its pending row has come and gone
+      const audits = toAuditHistoryEntries(rows);
       const pending = audits.some((audit) => !hasAuditResult(audit));
       sawPending ||= pending;
       const dispatched = await processAuditHistory(audits);
