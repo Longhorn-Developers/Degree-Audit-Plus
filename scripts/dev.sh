@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PROFILE=.wxt/chrome-data
+PROFILE="$PWD/.wxt/chrome-data"
 
 # Main flow: stop old run, optionally reset, start fresh
 main() {
@@ -15,8 +15,8 @@ main() {
 # Kill any running wxt dev server and its Chrome, then wait for the profile lock to free
 stop_dev() {
   pkill -f "$PWD/node_modules/.bin/wxt" || true
-  pkill -f "user-data-dir=./$PROFILE" || true
-  while pgrep -f "user-data-dir=./$PROFILE" >/dev/null; do sleep 0.2; done
+  pkill -f "user-data-dir=$PROFILE" || true
+  while pgrep -f "user-data-dir=$PROFILE" >/dev/null; do sleep 0.2; done
 }
 
 # Delete all profile data except cookies + Chrome prefs (keeps extension registered), then drop UT Direct cookies
