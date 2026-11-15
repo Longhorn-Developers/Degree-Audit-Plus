@@ -13,6 +13,7 @@ import {
 } from "@/features/catalog/catalog-db";
 import { cn } from "@/lib/utils";
 import {
+  CaretDownIcon,
   CaretLeftIcon,
   ChalkboardTeacherIcon,
   CircleNotchIcon,
@@ -108,6 +109,37 @@ function CourseLevelOption({
         <span className="text-xs text-gray-500">{description}</span>
       </span>
     </label>
+  );
+}
+
+function PlannerSwitch({
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={onChange}
+      className={cn(
+        "relative h-6 w-10 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-dap-orange disabled:opacity-50",
+        checked ? "bg-dap-plan-green" : "bg-gray-300",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+          checked ? "translate-x-5" : "translate-x-1",
+        )}
+      />
+    </button>
   );
 }
 
@@ -263,6 +295,7 @@ function CourseSearchContent({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPlannedCourses, setShowPlannedCourses] = useState(true);
 
   const isSearching = isLoading || isSubmitting;
   const hasDepartment = formData.department.length > 0;
@@ -285,8 +318,31 @@ function CourseSearchContent({
 
   return (
     <div>
-      <div className="mb-6">
-        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
+      <div className="mb-7">
+        <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-text">
+          Add Planned Courses
+        </h2>
+        <div className="mt-4 flex items-center justify-between text-[18px] text-ut-charcoal">
+          <span>Show Planned Courses</span>
+          <PlannerSwitch
+            checked={showPlannedCourses}
+            disabled={isSearching}
+            onChange={() => setShowPlannedCourses((show) => !show)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-[25px] font-semibold leading-tight tracking-tight text-text">
+          Add UT Courses
+        </h2>
+        <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
+      </div>
+
+      <div className="mt-5">
+        <p className="text-base font-semibold uppercase tracking-tight text-dap-primary">
+          Recommended
+        </p>
         <div className="space-y-2">
           {displayedRecommendedCourses.map((course) => (
             <CourseCard
@@ -298,17 +354,38 @@ function CourseSearchContent({
         </div>
       </div>
 
-      <form onSubmit={handleSearch}>
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-text mb-2">
-            Area of study
-          </label>
+      <form className="mt-7" onSubmit={handleSearch}>
+        <p className="text-base font-semibold uppercase tracking-tight text-dap-primary">
+          Search
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-10">
+          <select
+            aria-label="Semester"
+            defaultValue=""
+            className="h-11 rounded-md border border-dap-border bg-background px-3 text-base text-gray-500 focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          >
+            <option value="">Semester</option>
+            <option>Spring</option>
+            <option>Summer</option>
+            <option>Fall</option>
+          </select>
+          <input
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="4-Digit Year"
+            className="h-11 min-w-0 rounded-md border border-dap-border px-3 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          />
+        </div>
+        <input
+          type="search"
+          placeholder="Search for a specific course"
+          className="mt-4 h-11 w-full rounded-md border border-dap-border px-3 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange"
+        />
+        <div className="mt-6 mb-5">
           <SelectDropdown
             icon={<ChalkboardTeacherIcon size={28} />}
             placeholder={
-              isLoadingDepartments
-                ? "Loading local catalog..."
-                : "Select an area of study"
+              isLoadingDepartments ? "Loading local catalog..." : "Department"
             }
             options={departments}
             value={formData.department}
@@ -328,10 +405,7 @@ function CourseSearchContent({
             !hasDepartment && "opacity-50",
           )}
         >
-          <p className="block text-sm font-semibold text-text mb-2">
-            Choose course level
-          </p>
-          <div className="space-y-1 mb-6">
+          <div className="space-y-2 mb-6">
             {COURSE_LEVEL_OPTIONS.map((option) => (
               <CourseLevelOption
                 key={option.value}
@@ -350,12 +424,17 @@ function CourseSearchContent({
           </div>
         </div>
 
+        <div className="mb-7 flex items-center justify-between text-[25px] font-semibold tracking-tight text-text">
+          <span>Add Transfer Courses</span>
+          <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
+        </div>
+
         <Button
           type="submit"
           color="orange"
           fill="solid"
           disabled={isSearchDisabled}
-          className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+          className="rounded-md px-5 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSearching ? (
             <div className="flex items-center gap-2">
@@ -363,7 +442,7 @@ function CourseSearchContent({
               <span>Searching...</span>
             </div>
           ) : (
-            "Search courses"
+            "Search"
           )}
         </Button>
       </form>
