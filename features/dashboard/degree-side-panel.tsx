@@ -13,10 +13,9 @@ export default function DegreeSidePanel({
 }: DegreeSidePanelProps) {
   return (
     <VStack
-      className="w-[366px] shrink-0 self-start bg-background"
+      className="w-sm shrink-0 self-start bg-background"
       y="stretch"
       x="center"
-      style={{ zoom: 0.5 }}
     >
       <DegreeCompletionDonut size={300} />
       <div className="mt-10 w-full rounded-lg bg-dap-primary p-3 shadow-[0_12px_28px_rgba(51,63,72,0.24)]">
