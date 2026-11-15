@@ -2,30 +2,37 @@ import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import type { CatalogCourse } from "@/domain/catalog";
 import {
+  catalogCourseToPlannedCourse,
   dedupeCatalogCoursesByCode,
   mapCatalogCourseToPreview,
   matchesCatalogQuery,
 } from "@/features/catalog/catalog-course-mappers";
-import { searchCatalogCourses } from "@/features/catalog/catalog-db";
-import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
+import {
+  getCatalogDepartmentNames,
+  searchCatalogCourses,
+} from "@/features/catalog/catalog-db";
 import { cn } from "@/lib/utils";
 import {
+  CaretDownIcon,
   CaretLeftIcon,
   ChalkboardTeacherIcon,
   CircleNotchIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CourseCard from "./course-card";
 import { useCourseModalContext } from "./course-modal-provider";
+import { useAuditContext } from "@/features/audit/audit-provider";
 
 interface CourseSearchData {
-  searchQuery: string;
   department: string;
-  lowerDivision: boolean;
-  upperDivision: boolean;
+  courseLevel: CourseLevel;
 }
 
-const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
+type CourseLevel =
+  | "undergraduate"
+  | "lowerDivision"
+  | "upperDivision"
+  | "graduate";
 
 function waitForNextPaint(): Promise<void> {
   return new Promise((resolve) => {
@@ -36,40 +43,174 @@ function waitForNextPaint(): Promise<void> {
 interface CourseSearchContentProps {
   onSearchSubmit?: (formData: CourseSearchData) => void | Promise<void>;
   isLoading?: boolean;
+  departments: string[];
+  isLoadingDepartments: boolean;
 }
 
-type DivisionField = "lowerDivision" | "upperDivision";
-
-function DivisionToggle({
+function PlannerSwitch({
   checked,
-  disabled,
-  label,
-  onToggle,
+  onChange,
+  disabled = false,
 }: {
   checked: boolean;
-  disabled: boolean;
-  label: string;
-  onToggle: () => void;
+  onChange: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3">
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={onChange}
+      className={cn(
+        "relative h-6 w-10 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-dap-orange disabled:opacity-50",
+        checked ? "bg-dap-plan-green" : "bg-gray-300",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-[left,right]",
+          checked ? "right-1" : "left-1",
+        )}
+      />
+    </button>
+  );
+}
+
+function SearchResultsToolbar({
+  courses,
+  onBack,
+  onAddCourse,
+  isCoursePlanned,
+}: {
+  courses: CatalogCourse[];
+  onBack: () => void;
+  onAddCourse: (course: CatalogCourse) => Promise<boolean>;
+  isCoursePlanned: (course: CatalogCourse) => boolean;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"code" | "title">("code");
+  const [addingCourseId, setAddingCourseId] = useState<number | null>(null);
+  const [addedCourseIds, setAddedCourseIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [addError, setAddError] = useState("");
+
+  const visibleCourses = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchingCourses = courses.filter((course) =>
+      matchesCatalogQuery(course, normalizedQuery),
+    );
+
+    return [...matchingCourses].sort((left, right) => {
+      if (sortBy === "title") {
+        return left.courseName.localeCompare(right.courseName);
+      }
+      return left.fullName.localeCompare(right.fullName, undefined, {
+        numeric: true,
+      });
+    });
+  }, [courses, searchQuery, sortBy]);
+
+  const handleAddCourse = async (course: CatalogCourse) => {
+    setAddingCourseId(course.uniqueId);
+    setAddError("");
+    try {
+      if (!(await onAddCourse(course))) {
+        setAddError(
+          "Could not add this course to your planner. Please try again.",
+        );
+        return;
+      }
+      setAddedCourseIds((previous) => new Set(previous).add(course.uniqueId));
+    } catch (error) {
+      console.error("[Course search] Failed to add course to planner:", error);
+      setAddError(
+        "Could not add this course to your planner. Please try again.",
+      );
+    } finally {
+      setAddingCourseId(null);
+    }
+  };
+
+  return (
+    <div>
       <button
         type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        className={cn(
-          "w-12 h-7 rounded-full transition-colors duration-200 relative disabled:opacity-50 disabled:cursor-not-allowed",
-          checked ? "bg-dap-plan-green-dark" : "bg-gray-200",
-        )}
+        onClick={onBack}
+        className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
       >
-        <div
-          className={cn(
-            "w-5 h-5 rounded-full transform transition-transform duration-200 absolute top-1/2 -translate-y-1/2 bg-background",
-            checked ? "translate-x-[24px]" : "translate-x-1",
-          )}
-        />
+        <CaretLeftIcon size={16} weight="bold" />
+        Search results
       </button>
-      <span className="text-base text-text">{label}</span>
+      <div className="mb-4 space-y-3">
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Filter results by course number, title, or instructor"
+          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all"
+        />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500" aria-live="polite">
+            {visibleCourses.length}{" "}
+            {visibleCourses.length === 1 ? "course" : "courses"}
+          </p>
+          <select
+            aria-label="Sort results"
+            value={sortBy}
+            onChange={(event) =>
+              setSortBy(event.target.value as "code" | "title")
+            }
+            className="border border-dap-border rounded-md bg-background px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          >
+            <option value="code">Sort: course number</option>
+            <option value="title">Sort: course title</option>
+          </select>
+        </div>
+      </div>
+      {visibleCourses.length === 0 ? (
+        <p className="rounded-lg border border-dap-border px-4 py-5 text-sm text-gray-500">
+          No courses match this filter. Try a different course number, title, or
+          instructor.
+        </p>
+      ) : (
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {visibleCourses.map((course) => {
+            const isPlanned =
+              isCoursePlanned(course) || addedCourseIds.has(course.uniqueId);
+            const isAdding = addingCourseId === course.uniqueId;
+
+            return (
+              <button
+                key={course.uniqueId}
+                type="button"
+                disabled={isPlanned || isAdding}
+                onClick={() => void handleAddCourse(course)}
+                aria-label={`Add ${course.department} ${course.number} to planner`}
+                className="block w-full rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-dap-orange disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CourseCard
+                  course={mapCatalogCourseToPreview(course)}
+                  className="w-full"
+                  type="add"
+                />
+                <span className="sr-only">
+                  {isAdding
+                    ? "Adding course"
+                    : isPlanned
+                      ? "Already in planner"
+                      : "Add to planner"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {addError ? (
+        <p className="mt-3 text-sm text-red-700">{addError}</p>
+      ) : null}
     </div>
   );
 }
@@ -77,34 +218,22 @@ function DivisionToggle({
 function CourseSearchContent({
   onSearchSubmit,
   isLoading = false,
+  departments,
+  isLoadingDepartments,
 }: CourseSearchContentProps) {
   const { recommendedCourses } = useCourseModalContext();
   const displayedRecommendedCourses =
     dedupeCatalogCoursesByCode(recommendedCourses);
   const [formData, setFormData] = useState<CourseSearchData>({
-    searchQuery: "",
     department: "",
-    lowerDivision: true,
-    upperDivision: true,
+    courseLevel: "undergraduate",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPlannedCourses, setShowPlannedCourses] = useState(true);
 
   const isSearching = isLoading || isSubmitting;
-
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = event.target;
-    setFormData((previous) => ({ ...previous, [name]: value }));
-  };
-
-  const handleToggle = (field: DivisionField) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: !previous[field],
-    }));
-  };
+  const hasDepartment = formData.department.length > 0;
 
   const handleSearch = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -120,12 +249,35 @@ function CourseSearchContent({
   };
 
   const isSearchDisabled =
-    (!formData.lowerDivision && !formData.upperDivision) || isSearching;
+    !hasDepartment || isSearching || isLoadingDepartments;
 
   return (
     <div>
-      <div className="mb-6">
-        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
+      <div className="mb-7">
+        <h2 className="text-[20px] font-semibold leading-tight text-text">
+          Add Planned Courses
+        </h2>
+        <div className="mt-3 flex items-center justify-between text-[15px] text-ut-charcoal">
+          <span>Show Planned Courses</span>
+          <PlannerSwitch
+            checked={showPlannedCourses}
+            disabled={isSearching}
+            onChange={() => setShowPlannedCourses((show) => !show)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-[19px] font-semibold leading-tight text-text">
+          Add UT Courses
+        </h2>
+        <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
+      </div>
+
+      <div className="mt-5">
+        <p className="text-sm font-semibold uppercase text-dap-primary">
+          Recommended
+        </p>
         <div className="space-y-2">
           {displayedRecommendedCourses.map((course) => (
             <CourseCard
@@ -137,24 +289,40 @@ function CourseSearchContent({
         </div>
       </div>
 
-      <form onSubmit={handleSearch}>
+      <form className="mt-7" onSubmit={handleSearch}>
+        <p className="text-sm font-semibold uppercase text-dap-primary">
+          Search
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-5">
+          <select
+            aria-label="Semester"
+            defaultValue=""
+            className="h-11 rounded-md border border-dap-border bg-background px-3 text-base text-gray-500 focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          >
+            <option value="">Semester</option>
+            <option>Spring</option>
+            <option>Summer</option>
+            <option>Fall</option>
+          </select>
+          <input
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="4-Digit Year"
+            className="h-11 min-w-0 rounded-md border border-dap-border px-3 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange"
+          />
+        </div>
         <input
-          type="text"
-          name="searchQuery"
-          value={formData.searchQuery}
-          onChange={handleInputChange}
+          type="search"
           placeholder="Search for a specific course"
-          disabled={isSearching}
-          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-4 h-11 w-full rounded-md border border-dap-border px-3 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange"
         />
-
-        <div className="flex items-center gap-3 my-4" />
-
-        <div className="mb-4">
+        <div className="mt-6 mb-5">
           <SelectDropdown
             icon={<ChalkboardTeacherIcon size={28} />}
-            placeholder="Department"
-            options={DEPARTMENTS}
+            placeholder={
+              isLoadingDepartments ? "Loading local catalog..." : "Department"
+            }
+            options={departments}
             value={formData.department}
             onChange={(value) =>
               setFormData((previous) => ({
@@ -162,23 +330,48 @@ function CourseSearchContent({
                 department: value,
               }))
             }
-            disabled={isSearching}
+            disabled={isSearching || isLoadingDepartments}
           />
         </div>
 
-        <div className="space-y-3 mb-6">
-          <DivisionToggle
-            checked={formData.lowerDivision}
-            disabled={isSearching}
-            label="Lower Division Courses"
-            onToggle={() => handleToggle("lowerDivision")}
-          />
-          <DivisionToggle
-            checked={formData.upperDivision}
-            disabled={isSearching}
-            label="Upper Division Courses"
-            onToggle={() => handleToggle("upperDivision")}
-          />
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-3 text-[15px] text-ut-charcoal">
+            <PlannerSwitch
+              checked={formData.courseLevel !== "upperDivision"}
+              disabled={isSearching}
+              onChange={() =>
+                setFormData((previous) => ({
+                  ...previous,
+                  courseLevel:
+                    previous.courseLevel === "undergraduate"
+                      ? "upperDivision"
+                      : "undergraduate",
+                }))
+              }
+            />
+            <span>Lower Division Courses</span>
+          </div>
+          <div className="flex items-center gap-3 text-[15px] text-ut-charcoal">
+            <PlannerSwitch
+              checked={formData.courseLevel !== "lowerDivision"}
+              disabled={isSearching}
+              onChange={() =>
+                setFormData((previous) => ({
+                  ...previous,
+                  courseLevel:
+                    previous.courseLevel === "undergraduate"
+                      ? "lowerDivision"
+                      : "undergraduate",
+                }))
+              }
+            />
+            <span>Upper Division Courses</span>
+          </div>
+        </div>
+
+        <div className="mb-7 flex items-center justify-between text-[19px] font-semibold text-text">
+          <span>Add Transfer Courses</span>
+          <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
         </div>
 
         <Button
@@ -186,7 +379,7 @@ function CourseSearchContent({
           color="orange"
           fill="solid"
           disabled={isSearchDisabled}
-          className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+          className="rounded-md px-5 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSearching ? (
             <div className="flex items-center gap-2">
@@ -202,82 +395,60 @@ function CourseSearchContent({
   );
 }
 
-function CourseSearchResults({
-  courses,
-  onBack,
-  isGeneric,
-}: {
-  courses: CatalogCourse[];
-  onBack: () => void;
-  isGeneric: boolean;
-}) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredCourses = isGeneric
-    ? courses.filter((course) => matchesCatalogQuery(course, normalizedQuery))
-    : courses;
-
-  const handleSearchChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setSearchQuery(event.target.value);
-  };
-
-  return (
-    <div>
-      <button
-        onClick={onBack}
-        className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
-      >
-        <CaretLeftIcon size={16} weight="bold" />
-        Search Results
-      </button>
-      <div>
-        {isGeneric && (
-          <input
-            type="text"
-            name="searchQuery"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search for a specific course"
-            className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        )}
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.uniqueId}
-              course={mapCatalogCourseToPreview(course)}
-              className="w-full"
-              type="add"
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function CourseSearchPanel() {
+  const { courseMap, addUnassignedPlannedCourse } = useAuditContext();
   const [showResults, setShowResults] = useState(false);
-  const [isGeneric, setIsGeneric] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    void getCatalogDepartmentNames()
+      .then((catalogDepartments) => {
+        if (active) setDepartments(catalogDepartments);
+      })
+      .catch((error: unknown) => {
+        console.error("[Course search] Failed to read local catalog:", error);
+      })
+      .finally(() => {
+        if (active) setIsLoadingDepartments(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return showResults ? (
-    <CourseSearchResults
+    <SearchResultsToolbar
       courses={courses}
-      isGeneric={isGeneric}
       onBack={() => setShowResults(false)}
+      isCoursePlanned={(course) =>
+        Object.values(courseMap).some(
+          (plannedCourse) =>
+            plannedCourse.status === "Planned" &&
+            plannedCourse.code === `${course.department} ${course.number}`,
+        )
+      }
+      onAddCourse={async (course) =>
+        Boolean(
+          await addUnassignedPlannedCourse(
+            catalogCourseToPlannedCourse(course),
+          ),
+        )
+      }
     />
   ) : (
     <CourseSearchContent
       onSearchSubmit={async (formData) => {
         const results = await searchCatalogCourses(formData);
-        setIsGeneric(formData.searchQuery.trim().length === 0);
         setCourses(results);
         setShowResults(true);
       }}
+      departments={departments}
+      isLoadingDepartments={isLoadingDepartments}
     />
   );
 }

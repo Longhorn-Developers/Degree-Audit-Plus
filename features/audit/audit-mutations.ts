@@ -46,6 +46,25 @@ export function addPlannedCourse(
   };
 }
 
+// Courses found from the planner search do not necessarily satisfy a specific
+// audit rule yet. Keep them in the plan without making an inaccurate
+// requirement association; users can still move them between semesters.
+export function addUnassignedPlannedCourse(
+  audit: CachedAuditData,
+  course: PlannedCourseOutline,
+  createId: () => string = () => crypto.randomUUID(),
+): { audit: CachedAuditData; courseId: CourseId } {
+  const courseId = createId();
+
+  return {
+    courseId,
+    audit: {
+      ...audit,
+      courses: { ...audit.courses, [courseId]: { ...course, id: courseId } },
+    },
+  };
+}
+
 export function removePlannedCourse(
   audit: CachedAuditData,
   courseId: CourseId,
