@@ -26,6 +26,7 @@ import { usePreferences } from "@/features/preferences/preferences-provider";
 import { sendRuntimeMessage, type ActionResult } from "@/lib/browser/messages";
 import {
   addPlannedCourse as addCourse,
+  addUnassignedPlannedCourse as addUnassignedCourse,
   moveCourseToSemester,
   removePlannedCourse as removeCourse,
 } from "./audit-mutations";
@@ -54,6 +55,9 @@ interface AuditContextValue {
     course: PlannedCourseOutline,
     requirementTitle: string,
     ruleTitle: string,
+  ) => Promise<CourseId | null>;
+  addUnassignedPlannedCourse: (
+    course: PlannedCourseOutline,
   ) => Promise<CourseId | null>;
   removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
 }
@@ -211,6 +215,12 @@ export function AuditContextProvider({
           ruleTitle,
         );
         if (!result) return null;
+        await saveAuditData(loadedAudit.auditId, result.audit);
+        return result.courseId;
+      },
+      addUnassignedPlannedCourse: async (course) => {
+        if (!loadedAudit?.data) return null;
+        const result = addUnassignedCourse(loadedAudit.data, course);
         await saveAuditData(loadedAudit.auditId, result.audit);
         return result.courseId;
       },

@@ -2,8 +2,10 @@ import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import type { CatalogCourse } from "@/domain/catalog";
 import {
+  catalogCourseToPlannedCourse,
   dedupeCatalogCoursesByCode,
   mapCatalogCourseToPreview,
+  matchesCatalogQuery,
 } from "@/features/catalog/catalog-course-mappers";
 import {
   getCatalogDepartmentNames,
@@ -18,6 +20,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import CourseCard from "./course-card";
 import { useCourseModalContext } from "./course-modal-provider";
+import { useAuditContext } from "@/features/audit/audit-provider";
 
 interface CourseSearchData {
   department: string;
@@ -111,29 +114,27 @@ function CourseLevelOption({
 function SearchResultsToolbar({
   courses,
   onBack,
+  onAddCourse,
+  isCoursePlanned,
 }: {
   courses: CatalogCourse[];
   onBack: () => void;
+  onAddCourse: (course: CatalogCourse) => Promise<boolean>;
+  isCoursePlanned: (course: CatalogCourse) => boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"code" | "title">("code");
+  const [addingCourseId, setAddingCourseId] = useState<number | null>(null);
+  const [addedCourseIds, setAddedCourseIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [addError, setAddError] = useState("");
 
   const visibleCourses = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const matchingCourses = normalizedQuery
-      ? courses.filter((course) => {
-          const instructorNames = course.instructors
-            .map((instructor) => instructor.fullName)
-            .join(" ");
-          return [
-            course.fullName,
-            course.courseName,
-            course.department,
-            course.number,
-            instructorNames,
-          ].some((value) => value.toLowerCase().includes(normalizedQuery));
-        })
-      : courses;
+    const matchingCourses = courses.filter((course) =>
+      matchesCatalogQuery(course, normalizedQuery),
+    );
 
     return [...matchingCourses].sort((left, right) => {
       if (sortBy === "title") {
@@ -144,6 +145,27 @@ function SearchResultsToolbar({
       });
     });
   }, [courses, searchQuery, sortBy]);
+
+  const handleAddCourse = async (course: CatalogCourse) => {
+    setAddingCourseId(course.uniqueId);
+    setAddError("");
+    try {
+      if (!(await onAddCourse(course))) {
+        setAddError(
+          "Could not add this course to your planner. Please try again.",
+        );
+        return;
+      }
+      setAddedCourseIds((previous) => new Set(previous).add(course.uniqueId));
+    } catch (error) {
+      console.error("[Course search] Failed to add course to planner:", error);
+      setAddError(
+        "Could not add this course to your planner. Please try again.",
+      );
+    } finally {
+      setAddingCourseId(null);
+    }
+  };
 
   return (
     <div>
@@ -188,16 +210,40 @@ function SearchResultsToolbar({
         </p>
       ) : (
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          {visibleCourses.map((course) => (
-            <CourseCard
-              key={course.uniqueId}
-              course={mapCatalogCourseToPreview(course)}
-              className="w-full"
-              type="add"
-            />
-          ))}
+          {visibleCourses.map((course) => {
+            const isPlanned =
+              isCoursePlanned(course) || addedCourseIds.has(course.uniqueId);
+            const isAdding = addingCourseId === course.uniqueId;
+
+            return (
+              <button
+                key={course.uniqueId}
+                type="button"
+                disabled={isPlanned || isAdding}
+                onClick={() => void handleAddCourse(course)}
+                aria-label={`Add ${course.department} ${course.number} to planner`}
+                className="block w-full rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-dap-orange disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CourseCard
+                  course={mapCatalogCourseToPreview(course)}
+                  className="w-full"
+                  type="add"
+                />
+                <span className="sr-only">
+                  {isAdding
+                    ? "Adding course"
+                    : isPlanned
+                      ? "Already in planner"
+                      : "Add to planner"}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
+      {addError ? (
+        <p className="mt-3 text-sm text-red-700">{addError}</p>
+      ) : null}
     </div>
   );
 }
@@ -326,6 +372,7 @@ function CourseSearchContent({
 }
 
 export function CourseSearchPanel() {
+  const { courseMap, addUnassignedPlannedCourse } = useAuditContext();
   const [showResults, setShowResults] = useState(false);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
   const [departments, setDepartments] = useState<string[]>([]);
@@ -354,6 +401,20 @@ export function CourseSearchPanel() {
     <SearchResultsToolbar
       courses={courses}
       onBack={() => setShowResults(false)}
+      isCoursePlanned={(course) =>
+        Object.values(courseMap).some(
+          (plannedCourse) =>
+            plannedCourse.status === "Planned" &&
+            plannedCourse.code === `${course.department} ${course.number}`,
+        )
+      }
+      onAddCourse={async (course) =>
+        Boolean(
+          await addUnassignedPlannedCourse(
+            catalogCourseToPlannedCourse(course),
+          ),
+        )
+      }
     />
   ) : (
     <CourseSearchContent

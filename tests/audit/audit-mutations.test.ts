@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { CachedAuditData } from "../../domain/audit";
 import {
   addPlannedCourse,
+  addUnassignedPlannedCourse,
   moveCourseToSemester,
   removePlannedCourse,
   wipePlannedCourses,
@@ -39,6 +40,21 @@ const plannedCourse = {
 };
 
 describe("audit mutations", () => {
+  test("adds a planner-search course without assigning it to an unrelated rule", () => {
+    const source = createAudit();
+    const result = addUnassignedPlannedCourse(
+      source,
+      plannedCourse,
+      () => "planner-search-1",
+    );
+
+    expect(result.courseId).toBe("planner-search-1");
+    expect(result.audit.courses["planner-search-1"]).toMatchObject(
+      plannedCourse,
+    );
+    expect(result.audit.requirements).toEqual(source.requirements);
+  });
+
   test("adds a planned course without mutating the source audit", () => {
     const source = createAudit();
     const result = addPlannedCourse(
