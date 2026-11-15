@@ -34,33 +34,6 @@ type CourseLevel =
   | "upperDivision"
   | "graduate";
 
-const COURSE_LEVEL_OPTIONS: Array<{
-  value: CourseLevel;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "undergraduate",
-    label: "All undergraduate courses",
-    description: "301–379",
-  },
-  {
-    value: "lowerDivision",
-    label: "Only lower-division courses",
-    description: "301–319",
-  },
-  {
-    value: "upperDivision",
-    label: "Only upper-division courses",
-    description: "320–379",
-  },
-  {
-    value: "graduate",
-    label: "All graduate courses",
-    description: "380 and above",
-  },
-];
-
 function waitForNextPaint(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => resolve());
@@ -72,44 +45,6 @@ interface CourseSearchContentProps {
   isLoading?: boolean;
   departments: string[];
   isLoadingDepartments: boolean;
-}
-
-function CourseLevelOption({
-  checked,
-  disabled,
-  label,
-  description,
-  onSelect,
-}: {
-  checked: boolean;
-  disabled: boolean;
-  label: string;
-  description: string;
-  onSelect: () => void;
-}) {
-  return (
-    <label
-      className={cn(
-        "flex items-start gap-3 rounded-lg px-3 py-2 transition-colors",
-        disabled
-          ? "cursor-not-allowed opacity-50"
-          : "cursor-pointer hover:bg-hover-bg",
-      )}
-    >
-      <input
-        className="mt-1 h-4 w-4 accent-dap-orange"
-        checked={checked}
-        disabled={disabled}
-        name="courseLevel"
-        onChange={onSelect}
-        type="radio"
-      />
-      <span className="flex flex-col">
-        <span className="text-sm font-semibold text-text">{label}</span>
-        <span className="text-xs text-gray-500">{description}</span>
-      </span>
-    </label>
-  );
 }
 
 function PlannerSwitch({
@@ -319,10 +254,10 @@ function CourseSearchContent({
   return (
     <div>
       <div className="mb-7">
-        <h2 className="text-[26px] font-semibold leading-tight tracking-tight text-text">
+        <h2 className="text-[20px] font-semibold leading-tight text-text">
           Add Planned Courses
         </h2>
-        <div className="mt-4 flex items-center justify-between text-[18px] text-ut-charcoal">
+        <div className="mt-3 flex items-center justify-between text-[15px] text-ut-charcoal">
           <span>Show Planned Courses</span>
           <PlannerSwitch
             checked={showPlannedCourses}
@@ -333,14 +268,14 @@ function CourseSearchContent({
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-[25px] font-semibold leading-tight tracking-tight text-text">
+        <h2 className="text-[19px] font-semibold leading-tight text-text">
           Add UT Courses
         </h2>
         <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
       </div>
 
       <div className="mt-5">
-        <p className="text-base font-semibold uppercase tracking-tight text-dap-primary">
+        <p className="text-sm font-semibold uppercase text-dap-primary">
           Recommended
         </p>
         <div className="space-y-2">
@@ -355,10 +290,10 @@ function CourseSearchContent({
       </div>
 
       <form className="mt-7" onSubmit={handleSearch}>
-        <p className="text-base font-semibold uppercase tracking-tight text-dap-primary">
+        <p className="text-sm font-semibold uppercase text-dap-primary">
           Search
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-10">
+        <div className="mt-3 grid grid-cols-2 gap-5">
           <select
             aria-label="Semester"
             defaultValue=""
@@ -399,32 +334,42 @@ function CourseSearchContent({
           />
         </div>
 
-        <div
-          className={cn(
-            "transition-opacity duration-200",
-            !hasDepartment && "opacity-50",
-          )}
-        >
-          <div className="space-y-2 mb-6">
-            {COURSE_LEVEL_OPTIONS.map((option) => (
-              <CourseLevelOption
-                key={option.value}
-                checked={formData.courseLevel === option.value}
-                disabled={isSearching || !hasDepartment}
-                label={option.label}
-                description={option.description}
-                onSelect={() =>
-                  setFormData((previous) => ({
-                    ...previous,
-                    courseLevel: option.value,
-                  }))
-                }
-              />
-            ))}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-3 text-[15px] text-ut-charcoal">
+            <PlannerSwitch
+              checked={formData.courseLevel !== "upperDivision"}
+              disabled={isSearching}
+              onChange={() =>
+                setFormData((previous) => ({
+                  ...previous,
+                  courseLevel:
+                    previous.courseLevel === "undergraduate"
+                      ? "upperDivision"
+                      : "undergraduate",
+                }))
+              }
+            />
+            <span>Lower Division Courses</span>
+          </div>
+          <div className="flex items-center gap-3 text-[15px] text-ut-charcoal">
+            <PlannerSwitch
+              checked={formData.courseLevel !== "lowerDivision"}
+              disabled={isSearching}
+              onChange={() =>
+                setFormData((previous) => ({
+                  ...previous,
+                  courseLevel:
+                    previous.courseLevel === "undergraduate"
+                      ? "lowerDivision"
+                      : "undergraduate",
+                }))
+              }
+            />
+            <span>Upper Division Courses</span>
           </div>
         </div>
 
-        <div className="mb-7 flex items-center justify-between text-[25px] font-semibold tracking-tight text-text">
+        <div className="mb-7 flex items-center justify-between text-[19px] font-semibold text-text">
           <span>Add Transfer Courses</span>
           <CaretDownIcon size={24} weight="fill" className="text-dap-primary" />
         </div>
