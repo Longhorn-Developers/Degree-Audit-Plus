@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
-import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
+import { useCourseSearchContext } from "@/features/course-search/course-search-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
   getRulePlannedProgress,
@@ -179,7 +179,7 @@ const RequirementRow = ({
   requirementTitle: string;
 }) => {
   const { getCourseById, courseMap } = useAuditContext();
-  const { openModal } = useCourseModalContext();
+  const { showFulfillingCourses } = useCourseSearchContext();
 
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
@@ -237,7 +237,7 @@ const RequirementRow = ({
                 fill="solid"
                 className="bg-dap-orange hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
                 onClick={() =>
-                  openModal({
+                  showFulfillingCourses({
                     requirementTitle,
                     ruleTitle: requirement.text,
                   })
