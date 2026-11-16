@@ -172,8 +172,9 @@ Course Search owns the audit-aware user flow:
 
 - `course-recommendations.ts` joins audit requirements to Catalog queries using
   plain function arguments.
-- `course-modal-provider.tsx` owns modal scope, recommendations, and loading
-  state, and receives current sections from Audit.
+- `course-search-provider.tsx` owns the sidebar search state (session-persisted)
+  and `showFulfillingCourses()`, which Dashboard calls to fill the search with
+  the courses that fulfill a requirement.
 - The remaining files render search results and the add-course flow. They call
   Audit Provider intents rather than accessing audit storage.
 
@@ -425,17 +426,17 @@ a real user workflow, as Course Search does between Audit and Catalog.
 |  |  |   immutable mutations followed by persistence                                 |  |  |
 |  |  |                                                                                |  |  |
 |  |  |  +-------------------------------------------------------------------------+  |  |  |
-|  |  |  | [M] CourseModalContextProvider                                           |  |  |  |
+|  |  |  | [M] CourseSearchContextProvider                                          |  |  |  |
 |  |  |  |                                                                         |  |  |  |
-|  |  |  | [I] openModal(), closeModal(), recommendations, scope, loading          |  |  |  |
+|  |  |  | [I] showFulfillingCourses(), search form/results state                  |  |  |  |
 |  |  |  |                                                                         |  |  |  |
-|  |  |  | Implementation hides: recommendation selection and async lifecycle      |  |  |  |
+|  |  |  | Implementation hides: core-area lookup, session persistence             |  |  |  |
 |  |  |  +-------------------------------------------------------------------------+  |  |  |
 |  |  +--------------------------------------------------------------------------------+  |  |
 |  +--------------------------------------------------------------------------------------+  |
 +------------------------------+----------------------------------------+--------------------+
                                |                                        |
-                               | current audit data                     | recommendation scope
+                               | current audit data                     | requirement scope
                                v                                        v
 +============================================================================================+
 | APPLICATION FEATURE MODULES                                                                 |
