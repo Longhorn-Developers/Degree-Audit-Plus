@@ -5,62 +5,100 @@ import {
   useMemo,
   useState,
 } from "react";
+import { getCoreAreaFromRequirementRule } from "./course-recommendations";
+import {
+  type CourseSearchData,
+  EMPTY_FORM,
+  useSessionState,
+} from "./course-search-state";
 
-// Context for sharing audit data betw sidebar and main
 export type RecommendationScope = {
   requirementTitle: string;
   ruleTitle: string;
 };
 
-interface CourseModalContextType {
-  isOpen: boolean;
-  recommendationScope: RecommendationScope | null;
-  openModal: (scope: RecommendationScope) => void;
-  closeModal: () => void;
+interface CourseSearchContextType {
+  formData: CourseSearchData;
+  resultsQuery: string;
+
+  submittedSearch: CourseSearchData | null;
+  setFormData: (formData: CourseSearchData) => void;
+  setResultsQuery: (query: string) => void;
+  setSubmittedSearch: (search: CourseSearchData | null) => void;
+
+  // bumps on each fulfilling-courses request so the panel can scroll and highlight
+  fulfillingRequestId: number;
+  showFulfillingCourses: (scope: RecommendationScope) => void;
 }
 
-const CourseModalContext = createContext<CourseModalContextType | null>(null);
+const CourseSearchContext = createContext<CourseSearchContextType | null>(null);
 
-export const CourseModalContextProvider = ({
+export const CourseSearchContextProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [recommendationScope, setRecommendationScope] =
-    useState<RecommendationScope | null>(null);
+  const [formData, setFormData] = useSessionState(
+    "courseSearchForm",
+    EMPTY_FORM,
+  );
+  const [resultsQuery, setResultsQuery] = useSessionState(
+    "courseSearchFilter",
+    "",
+  );
+  const [submittedSearch, setSubmittedSearch] =
+    useSessionState<CourseSearchData | null>("courseSearchSubmitted", null);
+  const [fulfillingRequestId, setFulfillingRequestId] = useState(0);
 
-  const openModal = useCallback((scope: RecommendationScope) => {
-    setRecommendationScope(scope);
-  }, []);
-  const closeModal = useCallback(() => {
-    setRecommendationScope(null);
-  }, []);
+  const showFulfillingCourses = useCallback(
+    ({ requirementTitle, ruleTitle }: RecommendationScope) => {
+      const core = getCoreAreaFromRequirementRule(requirementTitle, ruleTitle);
+      if (!core) return;
+      setResultsQuery("");
+      setSubmittedSearch({ ...EMPTY_FORM, core });
+      setFulfillingRequestId((id) => id + 1);
+    },
+    [setResultsQuery, setSubmittedSearch],
+  );
 
-  const value = useMemo<CourseModalContextType>(
+  const value = useMemo<CourseSearchContextType>(
     () => ({
-      isOpen: recommendationScope !== null,
-      recommendationScope,
-      openModal,
-      closeModal,
+      formData,
+      resultsQuery,
+      submittedSearch,
+      setFormData,
+      setResultsQuery,
+      setSubmittedSearch,
+      fulfillingRequestId,
+      showFulfillingCourses,
     }),
-    [recommendationScope, openModal, closeModal],
+    [
+      formData,
+      resultsQuery,
+      submittedSearch,
+      setFormData,
+      setResultsQuery,
+      setSubmittedSearch,
+      fulfillingRequestId,
+      showFulfillingCourses,
+    ],
   );
 
   return (
-    <CourseModalContext.Provider value={value}>
+    <CourseSearchContext.Provider value={value}>
       {children}
-    </CourseModalContext.Provider>
+    </CourseSearchContext.Provider>
   );
 };
 
-export function useCourseModalContext(): CourseModalContextType {
-  const context = useContext(CourseModalContext);
+export function useCourseSearchContext(): CourseSearchContextType {
+  const context = useContext(CourseSearchContext);
   if (!context) {
     throw new Error(
-      "useCourseModalContext must be used within a CourseModalProvider",
+      "useCourseSearchContext must be used within a CourseSearchContextProvider",
     );
   }
   return context;
 }
 
-export default CourseModalContextProvider;
+export default CourseSearchContextProvider;

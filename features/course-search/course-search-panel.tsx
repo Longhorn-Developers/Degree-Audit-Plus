@@ -1,6 +1,7 @@
 import Button from "@/components/ui/button";
 import SelectDropdown from "@/components/ui/select-dropdown";
 import type { CatalogCourse } from "@/domain/catalog";
+import type { CoreArea } from "@/domain/course";
 import { matchesCatalogQuery } from "@/features/catalog/catalog-course-mappers";
 import { searchCatalogCourses } from "@/features/catalog/catalog-db";
 import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
@@ -10,42 +11,14 @@ import {
   ChalkboardTeacherIcon,
   CircleNotchIcon,
 } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
 import PlannedCoursesModal from "./planned-courses-modal";
-
-interface CourseSearchData {
-  searchQuery: string;
-  department: string;
-  lowerDivision: boolean;
-  upperDivision: boolean;
-}
+import type { CourseSearchData } from "./course-search-state";
+import { useCourseSearchContext } from "./course-search-provider";
 
 const DEPARTMENTS = [...new Set(Object.values(DEPARTMENT_MAP))].sort();
 const ALL_DEPARTMENTS = "All Departments";
-
-const EMPTY_FORM: CourseSearchData = {
-  searchQuery: "",
-  department: "",
-  lowerDivision: true,
-  upperDivision: true,
-};
-
-// session storage so a refresh keeps the last search but a new tab starts empty
-function useSessionState<T>(key: string, initial: T): [T, (value: T) => void] {
-  const [value, setValue] = useState<T>(() => {
-    const saved = sessionStorage.getItem(key);
-    if (saved === null) return initial;
-    return JSON.parse(saved) as T;
-  });
-
-  const setAndSave = (next: T) => {
-    setValue(next);
-    sessionStorage.setItem(key, JSON.stringify(next));
-  };
-
-  return [value, setAndSave];
-}
 
 interface CourseSearchContentProps {
   formData: CourseSearchData;
@@ -176,12 +149,14 @@ function CourseSearchResults({
   courses,
   onBack,
   isGeneric,
+  core,
   searchQuery,
   setSearchQuery,
 }: {
   courses: CatalogCourse[];
   onBack: () => void;
   isGeneric: boolean;
+  core?: CoreArea;
   searchQuery: string;
   setSearchQuery: (searchQuery: string) => void;
 }) {
@@ -206,6 +181,12 @@ function CourseSearchResults({
         <CaretLeftIcon size={16} weight="bold" />
         Search Results
       </button>
+      {core && (
+        <p className="mb-3 text-sm text-muted">
+          Courses that fulfill{" "}
+          <span className="font-semibold text-text">{core}</span>
+        </p>
+      )}
       <div>
         {isGeneric && (
           <input
@@ -226,8 +207,9 @@ function CourseSearchResults({
           <div className="min-h-[180px] rounded-md border border-dashed border-dap-border bg-background px-6 py-8 flex flex-col items-center justify-center text-center">
             <p className="text-lg font-semibold text-text">No courses found</p>
             <p className="mt-2 text-sm text-muted">
-              Try a different course code or title, or change the department and
-              division filters.
+              {core
+                ? "Try a different course code or title."
+                : "Try a different course code or title, or change the department and division filters."}
             </p>
           </div>
         )}
@@ -237,22 +219,24 @@ function CourseSearchResults({
 }
 
 export function CourseSearchPanel() {
-  const [formData, setFormData] = useSessionState(
-    "courseSearchForm",
-    EMPTY_FORM,
-  );
-  const [resultsQuery, setResultsQuery] = useSessionState(
-    "courseSearchFilter",
-    "",
-  );
-  // the search that is showing results, null when the form is showing
-  const [submittedSearch, setSubmittedSearch] =
-    useSessionState<CourseSearchData | null>("courseSearchSubmitted", null);
+  const {
+    formData,
+    resultsQuery,
+    submittedSearch,
+    setFormData,
+    setResultsQuery,
+    setSubmittedSearch,
+    fulfillingRequestId,
+  } = useCourseSearchContext();
   const [courses, setCourses] = useState<CatalogCourse[] | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [isHighlighted, setIsHighlighted] = useState(false);
 
   useEffect(() => {
     if (!submittedSearch) return;
     let isCurrent = true;
+    // clear old results so a new search from outside the panel shows the spinner
+    setCourses(null);
     void searchCatalogCourses(submittedSearch).then((results) => {
       if (isCurrent) setCourses(results);
     });
@@ -261,37 +245,66 @@ export function CourseSearchPanel() {
     };
   }, [submittedSearch]);
 
-  if (!submittedSearch) {
+  // scroll to and briefly highlight the panel when "See Fulfilling Courses" is clicked
+  useEffect(() => {
+    if (fulfillingRequestId === 0) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    panelRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+    setIsHighlighted(true);
+    const timeout = setTimeout(() => setIsHighlighted(false), 1500);
+    return () => clearTimeout(timeout);
+  }, [fulfillingRequestId]);
+
+  const renderContent = () => {
+    if (!submittedSearch) {
+      return (
+        <CourseSearchContent
+          formData={formData}
+          setFormData={setFormData}
+          onSearchSubmit={(search) => {
+            setResultsQuery("");
+            setSubmittedSearch(search);
+          }}
+        />
+      );
+    }
+
+    if (!courses) {
+      return (
+        <div className="flex justify-center py-8">
+          <CircleNotchIcon className="h-6 w-6 animate-spin" />
+        </div>
+      );
+    }
+
+    const isGeneric = submittedSearch.searchQuery.trim().length === 0;
+
     return (
-      <CourseSearchContent
-        formData={formData}
-        setFormData={setFormData}
-        onSearchSubmit={(search) => {
-          setCourses(null);
-          setResultsQuery("");
-          setSubmittedSearch(search);
-        }}
+      <CourseSearchResults
+        courses={courses}
+        isGeneric={isGeneric}
+        core={submittedSearch.core}
+        searchQuery={resultsQuery}
+        setSearchQuery={setResultsQuery}
+        onBack={() => setSubmittedSearch(null)}
       />
     );
-  }
-
-  if (!courses) {
-    return (
-      <div className="flex justify-center py-8">
-        <CircleNotchIcon className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
-  const isGeneric = submittedSearch.searchQuery.trim().length === 0;
+  };
 
   return (
-    <CourseSearchResults
-      courses={courses}
-      isGeneric={isGeneric}
-      searchQuery={resultsQuery}
-      setSearchQuery={setResultsQuery}
-      onBack={() => setSubmittedSearch(null)}
-    />
+    <div
+      ref={panelRef}
+      className={cn(
+        "scroll-mt-4 rounded-lg transition-shadow duration-500",
+        isHighlighted && "ring-2 ring-dap-orange ring-offset-2",
+      )}
+    >
+      {renderContent()}
+    </div>
   );
 }
