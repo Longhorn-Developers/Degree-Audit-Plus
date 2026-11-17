@@ -44,10 +44,9 @@ export default function CoursePreviewList({
 
   // audit changed elsewhere so the preview is stale; skip our own Add to plan
   useEffect(() => {
-    if (currentAuditId === acceptedAuditId.current) {
-      acceptedAuditId.current = null;
-      return;
-    }
+    const accepted = currentAuditId === acceptedAuditId.current;
+    acceptedAuditId.current = null;
+    if (accepted) return;
     latest.current++;
     shownCourse.current = null;
     setSelectedId(null);
