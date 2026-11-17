@@ -15,11 +15,8 @@ import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
 import { useCourseSearchContext } from "@/features/course-search/course-search-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
-import {
-  getRulePlannedProgress,
-  isCoreSection,
-  isCreditSection,
-} from "@/features/audit/audit-calculations";
+import { getRulePlannedProgress } from "@/features/audit/audit-calculations";
+import { getCoreAreaFromRequirementRule } from "@/features/course-search/course-recommendations";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";
@@ -167,9 +164,6 @@ const parseRequirementCode = (
   return { code: text, description: "" };
 };
 
-const isCoreOrCreditSection = (title: string): boolean =>
-  isCoreSection(title) || isCreditSection(title);
-
 // Individual requirement row with expandable courses
 const RequirementRow = ({
   requirement,
@@ -189,7 +183,9 @@ const RequirementRow = ({
     requirement.appliedHours + getRulePlannedProgress(requirement, courseMap);
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(false);
-  const showActionButton = isCoreOrCreditSection(requirementTitle);
+  const showActionButton =
+    getCoreAreaFromRequirementRule(requirementTitle, requirement.text) !==
+      null && applied < requirement.requiredHours;
 
   return (
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
