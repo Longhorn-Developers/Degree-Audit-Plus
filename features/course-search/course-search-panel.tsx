@@ -299,10 +299,8 @@ export function CourseSearchPanel() {
   return (
     <div
       ref={panelRef}
-      className={cn(
-        "scroll-mt-4 rounded-lg transition-shadow duration-500",
-        isHighlighted && "ring-2 ring-dap-orange ring-offset-2",
-      )}
+      className="scroll-mt-4"
+      data-highlighted={isHighlighted || undefined}
     >
       {renderContent()}
     </div>
