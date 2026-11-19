@@ -203,7 +203,7 @@ const RequirementRow = ({
           total={requirement.requiredHours}
         />
         <VStack gap={0} className="flex-1 text-left">
-          <span className="text-[20.25px] font-medium leading-normal text-text">
+          <span className="text-[20.25px] font-semibold leading-normal text-text">
             {code}
           </span>
           <span className="text-base leading-normal tracking-[0.32px] text-text mt-0.5">
