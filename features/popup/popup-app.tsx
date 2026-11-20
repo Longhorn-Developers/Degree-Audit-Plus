@@ -103,7 +103,7 @@ export default function App() {
     setRunningAudit(true);
     try {
       const response = await sendRuntimeMessage({ type: "RUN_NEW_AUDIT" });
-      if (response && !response.ok) setRunningAudit(false);
+      if (response && !response.success) setRunningAudit(false);
     } catch (error) {
       console.error("Failed to run audit:", error);
       setRunningAudit(false);
@@ -140,6 +140,7 @@ export default function App() {
         <div className="flex items-center space-x-3">
           <Button
             className="rounded-md"
+            disabled={runningAudit} // avoid spams
             onClick={needsLogin ? handleLogin : handleRerunAudit}
           >
             {loggedIn === null ? (

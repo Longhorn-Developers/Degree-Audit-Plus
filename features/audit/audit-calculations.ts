@@ -1,8 +1,11 @@
 import type {
   AuditRequirement,
+  CachedAuditData,
   CompositeAuditData,
+  RuleChange,
   CompositeAuditRequirement,
   DuplicateCourseRequirementFlag,
+  RequirementRule,
 } from "@/domain/audit";
 import type { Course, CourseCode, CourseId } from "@/domain/course";
 import type { CurrentAuditProgress } from "@/domain/progress";
@@ -113,6 +116,29 @@ export function getCompositeAuditRequirements(
   });
 }
 
+export function getRulePlannedProgress(
+  rule: RequirementRule,
+  courses: Record<CourseId, Course>,
+): number {
+  let plannedContribution = 0;
+
+  rule.courses.forEach((courseId) => {
+    const course = courses[courseId];
+    if (!course || course.status !== "Planned") {
+      return;
+    }
+
+    if (rule.progressUnit === "courses") {
+      plannedContribution += 1;
+    } else {
+      plannedContribution += course.hours;
+    }
+  });
+
+  const remainingForRule = Math.max(0, rule.remainingHours);
+  return Math.min(plannedContribution, remainingForRule);
+}
+
 export function calculateWeightedDegreeCompletion(
   sections: AuditRequirement[],
   courses: Record<CourseId, Course>,
@@ -133,29 +159,9 @@ export function calculateWeightedDegreeCompletion(
 
     section.rules.forEach((rule) => {
       sectionProgress.progress.current += rule.appliedHours;
-      let plannedContribution = 0;
-
-      rule.courses.forEach((courseId) => {
-        const course = courses[courseId];
-        if (!course || course.status !== "Planned") {
-          return;
-        }
-
-        if (rule.progressUnit === "courses") {
-          plannedContribution += 1;
-        } else {
-          plannedContribution += course.hours;
-        }
-      });
-
-      const remainingForRule = Math.max(0, rule.remainingHours);
-      const cappedPlannedContribution = Math.min(
-        plannedContribution,
-        remainingForRule,
-      );
-
-      results.total.planned += cappedPlannedContribution;
-      sectionProgress.progress.planned += cappedPlannedContribution;
+      const plannedContribution = getRulePlannedProgress(rule, courses);
+      results.total.planned += plannedContribution;
+      sectionProgress.progress.planned += plannedContribution;
     });
 
     results.sections.push(sectionProgress);
@@ -173,4 +179,90 @@ export function calculateWeightedDegreeCompletion(
     0,
   );
   return results;
+}
+
+// --------------------------------------------------------- diffing audits
+
+// Every rule whose applied hours moved between two audits of the same degree.
+export function diffAudits(
+  before: CachedAuditData,
+  after: CachedAuditData,
+): RuleChange[] {
+  const old = new Map(ruleProgress(before).map((rule) => [keyOf(rule), rule]));
+  const rules = ruleProgress(after).flatMap((now): RuleChange[] => {
+    const appliedBefore = old.get(keyOf(now))?.applied ?? 0;
+    if (appliedBefore === now.applied) return [];
+    return [
+      {
+        requirement: now.requirement,
+        rule: now.rule,
+        unit: now.unit,
+        required: now.required,
+        appliedBefore,
+        appliedAfter: now.applied,
+      },
+    ];
+  });
+  return rules;
+}
+
+export function findMissingPlannedCourses(
+  before: CachedAuditData,
+  after: CachedAuditData,
+  previewed: string,
+): CourseCode[] {
+  const plannedBefore = new Set<string>();
+  for (const course of Object.values(before.courses)) {
+    if (course.status !== "Planned") continue;
+    plannedBefore.add(normalizeCode(course.code));
+  }
+
+  const missing: CourseCode[] = [];
+  for (const course of Object.values(after.courses)) {
+    if (course.status !== "Planned") continue;
+    const code = normalizeCode(course.code);
+    if (code === normalizeCode(previewed) || plannedBefore.has(code)) continue;
+    missing.push(course.code);
+  }
+  return missing;
+}
+
+export function hasPlannedCourse(
+  audit: CachedAuditData,
+  codes: string[],
+): boolean {
+  const wanted = new Set(codes.map(normalizeCode));
+  return Object.values(audit.courses).some(
+    (course) =>
+      course.status === "Planned" && wanted.has(normalizeCode(course.code)),
+  );
+}
+
+// ------------------------------------------------------------------ helpers
+
+// Codes come from both UT's audit page and the catalog, so compare them
+// without spaces.
+function normalizeCode(code: string): string {
+  return code.replace(/\s+/g, "");
+}
+
+type RuleProgress = Omit<RuleChange, "appliedBefore" | "appliedAfter"> & {
+  applied: number;
+};
+
+// Course ids are re-minted on every scrape, so rules match by their text.
+function keyOf(rule: RuleProgress): string {
+  return `${rule.requirement}|${rule.rule}`;
+}
+
+function ruleProgress(audit: CachedAuditData): RuleProgress[] {
+  return audit.requirements.flatMap((requirement) =>
+    requirement.rules.map((rule) => ({
+      requirement: requirement.title,
+      rule: rule.text,
+      unit: rule.progressUnit,
+      required: rule.requiredHours,
+      applied: rule.appliedHours + getRulePlannedProgress(rule, audit.courses),
+    })),
+  );
 }

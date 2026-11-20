@@ -1,0 +1,1279 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="EN"><bettercampus-components style="opacity: 1; transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);"></bettercampus-components><head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+
+  <title>Student Planner - IDA</title>
+
+
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/utd_javascript.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/jquery-1.4.2.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/jquery.hint.js"></script>
+<script language="javascript" type="text/javascript" src="https://utdirect.utexas.edu/utdirect/system/js/utd.js"></script>
+
+
+<style type="text/css">
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/utd_typography.css);
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/custom_utdirect.css);
+  @import url(https://utdirect.utexas.edu/utdirect/system/css/utd_subnav.css);
+
+</style>
+
+
+<link rel="stylesheet" href="https://utdirect.utexas.edu/utdirect/system/css/utd_css_print.css" media="print">
+
+
+<script language="JavaScript" type="text/javascript">
+
+
+
+  function utd_load_a() {
+    utd_load();
+
+  }
+
+
+  function utd_unload_a() {
+    utd_unload();
+
+  }
+</script>
+
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery-1.4.4.min.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/requirements.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/dropdown_catalog_inputs.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery.tablednd-0.5.js"></script>
+
+    <script language="JavaScript" type="text/javascript" src="/apps/degree/audits/static/js/jquery.infobar.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/degree_audit_system.css" media="all">
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/submissions.css" media="all">
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/requirements.css" media="all">
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/infobar.css" media="all">
+
+    <link rel="stylesheet" type="text/css" href="/apps/degree/audits/static/css/planner.css" media="all">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Staatliches:wght@400&amp;family=Roboto+Flex:opsz,wght@8..144,100..1000&amp;display=swap"><style wxt-shadow-root-document-styles="25z2jpe7vig">@property --tw-animation-delay{syntax:"*";inherits:false;initial-value:0s}@property --tw-animation-direction{syntax:"*";inherits:false;initial-value:normal}@property --tw-animation-duration{syntax:"*";inherits:false}@property --tw-animation-fill-mode{syntax:"*";inherits:false;initial-value:none}@property --tw-animation-iteration-count{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-scale-x{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-y{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-z{syntax:"*";inherits:false;initial-value:1}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-pan-x{syntax:"*";inherits:false}@property --tw-pan-y{syntax:"*";inherits:false}@property --tw-pinch-zoom{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-gradient-position{syntax:"*";inherits:false}@property --tw-gradient-from{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-via{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-to{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-stops{syntax:"*";inherits:false}@property --tw-gradient-via-stops{syntax:"*";inherits:false}@property --tw-gradient-from-position{syntax:"<length-percentage>";inherits:false;initial-value:0%}@property --tw-gradient-via-position{syntax:"<length-percentage>";inherits:false;initial-value:50%}@property --tw-gradient-to-position{syntax:"<length-percentage>";inherits:false;initial-value:100%}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-backdrop-blur{syntax:"*";inherits:false}@property --tw-backdrop-brightness{syntax:"*";inherits:false}@property --tw-backdrop-contrast{syntax:"*";inherits:false}@property --tw-backdrop-grayscale{syntax:"*";inherits:false}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false}@property --tw-backdrop-invert{syntax:"*";inherits:false}@property --tw-backdrop-opacity{syntax:"*";inherits:false}@property --tw-backdrop-saturate{syntax:"*";inherits:false}@property --tw-backdrop-sepia{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}</style><style wxt-shadow-root-document-styles="8oblwwspvsb">@property --tw-animation-delay{syntax:"*";inherits:false;initial-value:0s}@property --tw-animation-direction{syntax:"*";inherits:false;initial-value:normal}@property --tw-animation-duration{syntax:"*";inherits:false}@property --tw-animation-fill-mode{syntax:"*";inherits:false;initial-value:none}@property --tw-animation-iteration-count{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-scale-x{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-y{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-z{syntax:"*";inherits:false;initial-value:1}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-pan-x{syntax:"*";inherits:false}@property --tw-pan-y{syntax:"*";inherits:false}@property --tw-pinch-zoom{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-gradient-position{syntax:"*";inherits:false}@property --tw-gradient-from{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-via{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-to{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-stops{syntax:"*";inherits:false}@property --tw-gradient-via-stops{syntax:"*";inherits:false}@property --tw-gradient-from-position{syntax:"<length-percentage>";inherits:false;initial-value:0%}@property --tw-gradient-via-position{syntax:"<length-percentage>";inherits:false;initial-value:50%}@property --tw-gradient-to-position{syntax:"<length-percentage>";inherits:false;initial-value:100%}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-backdrop-blur{syntax:"*";inherits:false}@property --tw-backdrop-brightness{syntax:"*";inherits:false}@property --tw-backdrop-contrast{syntax:"*";inherits:false}@property --tw-backdrop-grayscale{syntax:"*";inherits:false}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false}@property --tw-backdrop-invert{syntax:"*";inherits:false}@property --tw-backdrop-opacity{syntax:"*";inherits:false}@property --tw-backdrop-saturate{syntax:"*";inherits:false}@property --tw-backdrop-sepia{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}</style><style wxt-shadow-root-document-styles="cf4msq0r4gm">@property --tw-animation-delay{syntax:"*";inherits:false;initial-value:0s}@property --tw-animation-direction{syntax:"*";inherits:false;initial-value:normal}@property --tw-animation-duration{syntax:"*";inherits:false}@property --tw-animation-fill-mode{syntax:"*";inherits:false;initial-value:none}@property --tw-animation-iteration-count{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-enter-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-enter-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-blur{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-opacity{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-rotate{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-scale{syntax:"*";inherits:false;initial-value:1}@property --tw-exit-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-exit-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-scale-x{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-y{syntax:"*";inherits:false;initial-value:1}@property --tw-scale-z{syntax:"*";inherits:false;initial-value:1}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-pan-x{syntax:"*";inherits:false}@property --tw-pan-y{syntax:"*";inherits:false}@property --tw-pinch-zoom{syntax:"*";inherits:false}@property --tw-space-y-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-gradient-position{syntax:"*";inherits:false}@property --tw-gradient-from{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-via{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-to{syntax:"<color>";inherits:false;initial-value:#0000}@property --tw-gradient-stops{syntax:"*";inherits:false}@property --tw-gradient-via-stops{syntax:"*";inherits:false}@property --tw-gradient-from-position{syntax:"<length-percentage>";inherits:false;initial-value:0%}@property --tw-gradient-via-position{syntax:"<length-percentage>";inherits:false;initial-value:50%}@property --tw-gradient-to-position{syntax:"<length-percentage>";inherits:false;initial-value:100%}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-backdrop-blur{syntax:"*";inherits:false}@property --tw-backdrop-brightness{syntax:"*";inherits:false}@property --tw-backdrop-contrast{syntax:"*";inherits:false}@property --tw-backdrop-grayscale{syntax:"*";inherits:false}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false}@property --tw-backdrop-invert{syntax:"*";inherits:false}@property --tw-backdrop-opacity{syntax:"*";inherits:false}@property --tw-backdrop-saturate{syntax:"*";inherits:false}@property --tw-backdrop-sepia{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}</style></head>
+
+
+<body class="minWidth" onload="utd_load_a();" onunload="utd_unload_a();" cz-shortcut-listen="true"><bettercanvas-portal style="overflow: visible; position: relative; width: 0px; height: 0px; display: block;"></bettercanvas-portal>
+<div id="skip"><a href="#main_content">Skip to Main Content</a></div>
+
+
+  <div id="header" role="navigation" aria-label="top"> <!-- HEADER -->
+    <div id="mainnavtext"> <!-- MAINNAVTEXT -->
+      <ul>
+	      <li>
+            <a href="https://utdirect.utexas.edu/utdirect/help/index.WBX?c=0" onclick="utd_openNPW('https://utdirect.utexas.edu/utdirect/help/index.WBX?c=0','win','height=400,width=500,location=no,menubar=no,resizable=yes,scrollbars=yes,status=no,toolbar=no'); return false;">
+              UT Direct Help
+            </a>
+          </li>
+          <li class="last_item">
+            <a href="https://utdirect.utexas.edu/security-443/logoff.cgi?goto=http://www.utexas.edu">
+              Logoff
+            </a>
+          </li>
+        <li class="last_item">
+          <a href="https://utdirect.utexas.edu/utdirect/index.WBX?t=MYHOME" title="My Home Tab" accesskey="1">
+            <img alt="UT Direct Home" title="UT Direct Home" src="https://utdirect.utexas.edu/utdirect/system/images/home.png">
+          </a>
+        </li>
+        <li class="last_item">
+          <a id="search_link" href="#">
+            <img alt="Search UT Direct" title="Search UT Direct" src="https://utdirect.utexas.edu/utdirect/system/images/search.png">
+          </a>
+        </li>
+      </ul>
+    </div> <!-- MAINNAVTEXT CLOSE -->
+    <div id="search_display">   <!-- SEARCH_DISPLAY -->
+      <form name="utd_search" id="search_form" action="https://utdirect.utexas.edu/utdirect/search/index.WBX" method="get">
+        <input type="hidden" name="s_component" value="0">
+        <input type="hidden" name="s_environment" value="PUTD">
+        <input type="hidden" name="s_security_flag" value="S">
+
+        <label for="search_type" class="nodisplaytext">Select the type of search to perform:</label>
+        <select id="search_type" name="s_search_type">
+          <option value="SS">any word</option>
+          <option value="AW">all words</option>
+          <option value="EX">exact phrase</option>
+        </select>
+
+        <label for="search_term" class="nodisplaytext">Enter a search term:</label>
+        <input id="search_term" type="text" name="input_srch_string" size="72" maxlength="126" title="You may search for a maximum of 7 words" value="">
+        <input type="submit" value="search">
+      </form>
+    </div>   <!-- SEARCH_DISPLAY CLOSE -->
+    <div id="header_bottom"> <!-- HEADER_BOTTOM -->
+    </div> <!-- HEADER_BOTTOM CLOSE -->
+
+        <div id="ut_ribbon" onclick="location.href='http://www.utexas.edu';" style="cursor:pointer;" title="Link to University of Texas homepage">  <!-- UT_RIBBON -->
+        </div>  <!-- UT_RIBBON CLOSE -->
+
+  </div>  <!-- HEADER CLOSE -->
+
+
+      <div id="navbar_ut_direct_logo" onclick="location.href='https://utdirect.utexas.edu/utdirect/index.WBX';" style="cursor:pointer;" title="Link to UT Direct homepage">  <!-- NAVBAR_UT_DIRECT_LOGO -->
+      </div>
+
+
+  <div id="utd_container">  <!-- UTD_CONTAINER -->
+
+     <div id="navbarFloat">  <!-- NAVBARFLOAT -->
+       <div id="navbarContainer">  <!-- NAVBARCONTAINER -->
+        <div id="navbar" role="navigation" aria-label="side">  <!-- NAVBAR -->
+          <div id="navbar_menu">  <!-- NAVBAR_MENU -->
+
+              <div id="navbar1" class="menu"> <!-- NAVBAR1 -->
+                <h1>NAVIGATION MENU</h1>
+                  <ul>
+
+	                        <li>
+                            <a href="/apps/degree/audits/" target="_blank">
+                              Home
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="/apps/degree/audits/submissions/student_individual" target="_blank">
+                              Audit Requests
+                            </a>
+                          </li>
+
+	                        <li>
+                            <a href="/apps/degree/audits/submissions/history" target="_blank">
+                              Audit Results
+                            </a>
+                          </li>
+
+	                     <li class="activeLink">
+                           &nbsp;
+                         </li>
+
+	                        <li>
+                            <h6>Student Planner</h6>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/instructions/">
+                              Instructions
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/">
+                              Menu
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/ut_course/">
+                              UT Austin Courses
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/transfer_course/">
+                              Transfer Courses
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/freeform_course/">
+                              Free Form Courses
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/view_planner/">
+                              View Courses
+                            </a>
+                          </li>
+
+	                        <li class="secondary">
+                            <a href="/apps/degree/audits/planner/view_reg_record/">
+                              Existing Courses
+                            </a>
+                          </li>
+
+                          </ul>
+                  </div>  <!-- NAVBAR1 CLOSE -->
+
+              </div>  <!-- NAVBAR_MENU CLOSE -->
+          </div>  <!-- NAVBAR CLOSE -->
+        </div>  <!-- NAVBARCONTAINER CLOSE -->
+
+
+          <div id="navbar_bottom">  <!-- NAVBAR_BOTTOM -->
+          </div>  <!-- NAVBAR_BOTTOM CLOSE -->
+
+
+      </div>  <!-- NAVBARFLOAT -->
+
+        <div id="content" role="main">  <!-- CONTENT -->
+          <a name="main_content"></a>
+
+          <div id="utd_toppage" style="height: 96px;">           <!-- UTD_TOPPAGE -->
+
+              <div id="tabs-container" role="navigation" aria-label="sub">  <!-- TABS-CONTAINER -->
+                <div id="tabs">  <!-- TABS -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/instructions/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              Instructions
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              Planner Menu
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="active-tab-left"></div> <!-- ACTIVE TAB LEFT AND CLOSE -->
+                          <span class="active-tab-center"> <!-- ACTIVE TAB CENTER -->
+	                        UT Austin Courses
+                          </span> <!-- ACTIVE TAB CENTER CLOSE-->
+                          <div class="active-tab-right"></div> <!-- ACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/transfer_course/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              Transfer Courses
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/freeform_course/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              Free Form Courses
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/view_planner/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              View Courses
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+                    <div class="tab"> <!-- TAB -->
+
+                          <div class="inactive-tab-left"></div> <!-- INACTIVE TAB LEFT AND CLOSE -->
+                          <a href="/apps/degree/audits/planner/view_reg_record/">
+                            <span class="inactive-tab-center"> <!-- INACTIVE TAB CENTER -->
+                              Existing Courses
+                            </span> <!-- INACTIVE TAB CENTER CLOSE -->
+                          </a>
+                          <div class="inactive-tab-right"></div> <!-- INACTIVE TAB RIGHT AND CLOSE -->
+
+                  </div> <!-- TAB CLOSE -->
+
+              </div> <!-- TABS CLOSE -->
+              <div id="tabs_end"> <!-- TABS_END -->
+              </div> <!-- TABS_END CLOSE -->
+            </div> <!-- TABS_CONTAINER -->
+
+        <div class="pageTitle"> <!-- PAGETITLE -->
+
+                <div id="pgTitle"><h1>Interactive Degree Audit (IDA)</h1></div>
+
+            <div id="utilities"> <!-- UTILITIES -->
+
+                <ul>
+
+                    <li class="last_item">
+                        <a href="https://utdirect.utexas.edu/utdirect/bookmarks/bkms_popup.WBX" onclick="window.open('https://utdirect.utexas.edu/utdirect/bookmarks/bkms_popup.WBX?add_or_edit_sw=AC&amp;cname=Degree Audit Requests System&amp;env=PUTD&amp;sec=S','MyBookmarks','scrollbars=yes,resizable=yes,width=515,height=300');return false;">
+                          bookmark
+                        </a>
+                    </li>
+
+                </ul>
+
+              </div> <!-- UTILITIES CLOSE -->
+
+        </div> <!-- PAGETITLE CLOSE -->
+
+      </div><!-- UTD_TOPPAGE CLOSE-->
+
+    <div id="service_content">
+
+
+
+
+  
+
+  
+
+
+
+
+  <h2>Student Planner</h2>
+  
+
+  
+
+  <div class="eid_lookup">
+    
+      <strong>Senior Countdown:</strong>
+      0
+    
+  </div>
+
+  
+  
+  
+    <div>
+      <table border="0" cellpadding="2">
+        <tbody><tr align="left" valign="top">
+          <td colspan="3">
+            <span class="ida-b">
+              Select the Advertising course you wish to add to your planner
+            </span>
+          </td>
+        </tr>
+        <tr align="left" valign="bottom">
+          <th><span class="ida-sm">Crse Abr<br>&amp; Nbr</span></th>
+          <th><span class="ida-sm">Course Title</span></th>
+          <th><span class="ida-sm">Topics</span></th>
+        </tr>
+
+        
+          
+            <tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 303
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=303&amp;course_topic_id=">ADVERTISING &amp;amp; POPULAR CULTURE</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 305
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=305&amp;course_topic_id=">FUNDAMENTALS OF ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 305S
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=305S&amp;course_topic_id=">INTEGRATED COMM FOR SPORTS</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 309R
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=309R&amp;course_topic_id=">INTRO TO ADV/PUBL RELS RSCH</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 111
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=111&amp;course_topic_id=">TOPICS IN ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 211
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=211&amp;course_topic_id=">TOPICS IN ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 311
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=311&amp;course_topic_id=">TOPICS IN ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 314
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=314&amp;course_topic_id=">SOCIAL AND ETHICAL ISSUES</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 315
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=315&amp;course_topic_id=">HISTORY &amp;amp; DEVEL OF ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 316
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=316&amp;course_topic_id=">CREATIVITY/AMERICAN CULTURE</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 318J
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=318J&amp;course_topic_id=">INTRO TO INTEGRTD BRAND COMM</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 319
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=319&amp;course_topic_id=">PSYCHOLOGY OF ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 320
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=320&amp;course_topic_id=">INTEG COMM FOR NONPROF ORGS</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 321
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=321&amp;course_topic_id=">LEADERSHIP AND ETHICS</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 322
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=322&amp;course_topic_id=">HLTH COMM: MSSGS/CMPGNS/MED</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 323
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=323&amp;course_topic_id=">PUBLIC COMM OF SCIENCE/TECH</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 324
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=324&amp;course_topic_id=">COMMUNICATING SUSTAINABILITY</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 325
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=325&amp;course_topic_id=">INTRO TO ADVERTISING CREATVTY</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 327
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=327&amp;course_topic_id=">ACCOUNT PLANNING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 328
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=328&amp;course_topic_id=">PSYCHOLGY OF VIDEO GAME ADV</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 330
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=330&amp;course_topic_id=">STRATEGIC SCIENCE COMM</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 331
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=331&amp;course_topic_id=">ENVIRONMENTAL COMM CAMPAIGNS</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 332
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=332&amp;course_topic_id=">TECHNOLOGY MARKETING/ADV</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 332C
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=332C&amp;course_topic_id=">NEW MEDIA ENTREPRENEURIALISM</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 332D
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=332D&amp;course_topic_id=">ENTREPRENEURIALISM IN COMM</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 334
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=334&amp;course_topic_id=">INTERNATIONAL ADVERTISING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 336
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=336&amp;course_topic_id=">TPCS IN MULTICUL ISS IN ADV/PR</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 338K
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=338K&amp;course_topic_id=">DIGITAL CREATIVE PORTFOLIO</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 338L
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=338L&amp;course_topic_id=">COPYWRITING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 339K
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=339K&amp;course_topic_id=">DIGITAL GRAPHIC COMM</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 339L
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=339L&amp;course_topic_id=">BRAND STORYTELLING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 341S
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=341S&amp;course_topic_id=">RESEARCH IN SPORTS COMM/MEDIA</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 343K
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=343K&amp;course_topic_id=">PORTFOLIO I</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 344K
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=344K&amp;course_topic_id=">ADVRT/PUBL RELATN RESEARCH</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 345J
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=345J&amp;course_topic_id=">ADV/PUBL REL MEDIA PLANNING</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 347C
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=347C&amp;course_topic_id=">ART DIRECTION</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 447C
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=447C&amp;course_topic_id=">ART DIRECTION</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 348S
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=348S&amp;course_topic_id=">THE BUSINESS OF SPORTS MEDIA</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 350
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=350&amp;course_topic_id=">ADVERTISING INTERNSHIP</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+            </tr><tr align="left" valign="top">
+              <td nowrap="nowrap">
+                <span class="ida-sm">
+                  ADV 650
+                </span>
+              </td>
+              <td>
+                <span class="ida-sm">
+                  <a href="../ut_course/?page=4&amp;course_ccyys=20272&amp;course_pass_fail=&amp;course_type=1&amp;dpt=ADV&amp;course_num=650&amp;course_topic_id=">ADVERTISING INTERNSHIP</a>
+                </span>
+              </td>
+              <td></td>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </tr></tbody></table>
+    </div>
+    <br>
+
+    
+
+    
+      <p align="left">
+        <span class="ida-sm">
+          <a href="../ut_course/?page=3&amp;course_ccyys=20272&amp;course_pass_fail=&amp;s_pf=&amp;course_type=1&amp;dpt=ADV&amp;course_num=350S&amp;s_lvl=A">Next courses</a>
+        </span>
+       </p>
+    
+
+    <br>
+<div align="left">
+  <table border="0" cellpadding="2">
+    <tbody><tr align="left" valign="top">
+      <td><span class="ida-sm">
+        All
+        <a href="../ut_course/?page=2&amp;cls=U&amp;s_path=UT&amp;s_cy=2027&amp;s_s=2&amp;s_type=1&amp;s_pf=">
+          areas of study
+        </a>
+        in all colleges
+      </span></td>
+    </tr>
+    <tr align="left" valign="top">
+      <td>
+        <span class="ida-sm">
+          All
+          <a href="../ut_course/?page=2&amp;start=001&amp;cls=U&amp;s_path=UT&amp;s_cy=2027&amp;s_s=2&amp;s_type=1&amp;s_pf=">
+            areas of study
+          </a>
+          in all colleges <span class="ida-gr">(partial listing for slower connections)</span>
+        </span>
+      </td>
+    </tr>
+    <tr align="left" valign="top">
+      <td>
+        <form name="altform" id="altform" action="" method="get">
+          <input type="hidden" name="page" value="2">
+          <input type="hidden" name="s_path" value="UT">
+          <input type="hidden" name="s_ccyys" value="20272">
+          <input type="hidden" name="s_cy" value="2027">
+          <input type="hidden" name="s_s" value="2">
+          <input type="hidden" name="s_pf" value="">
+          <input type="hidden" name="s_type" value="1">
+          <input type="hidden" name="cls" value="U">
+        
+          <span class="ida-sm">
+            <span class="ida-b">All areas of study</span> for
+            <select name="s_only_sch" size="1">
+              <option value="9">Architecture</option>
+              <option value="2">Business Administration</option>
+              <option value="C">Communication</option>
+              <option value="3">Education</option>
+              <option value="4">Engineering</option>
+              <option value="5">Fine Arts</option>
+              <option value="J">Geosciences</option>
+              <option value="B">Graduate Business</option>
+              <option value="7">Law School</option>
+              <option value="L">Liberal Arts</option>
+              <option value="E" selected="selected">Natural Sciences</option>
+              <option value="N">Nursing</option>
+              <option value="8">Pharmacy</option>
+              <option value="S">Social Work</option>
+            </select>
+
+<!--      <input type="hidden" name="s_xida" value="" /> -->
+
+          &nbsp; <input type="submit" value="Submit">
+          </span>
+        </form>
+      </td>
+    </tr>
+  </tbody></table>
+</div>
+
+  
+  <br>
+
+  <p align="left">
+  <br>
+  <span class="ida-sm">
+    <span class="ida-b">Courses currently in your IDA Planner:</span>
+    <br>
+    Courses in <span class="ida-re">(parentheses)</span> will not apply to new audits.
+    See <a href="/apps/degree/audits/planner/help/?page=select_ut_course" target="_blank">Help</a>
+    for explanation<br>
+    and for additional information regarding prerequisites and course availability.
+  </span>
+</p>
+
+<div align="left">
+  <table border="0" cellpadding="0">
+    <thead></thead>
+    <tfoot></tfoot>
+    <tbody>
+      
+      
+    </tbody>
+  </table>
+</div>
+
+
+
+
+
+
+
+  </div> <!-- SERVICE_CONTENT -->
+ </div> <!-- CONTENT CLOSE  or  CONTENT_FULLPAGE CLOSE-->
+</div> <!-- UTD_CONTAINER CLOSE -->
+
+
+<div id="utd_close" class="#min_width_style" role="contentinfo">
+
+  <!--div "footer_top" contains the departmental footer div and the site map divs -->
+  <div id="footer_top">
+  <div id="dept_footer">
+
+
+<ul>
+
+    <li class="last_item"></li>
+
+</ul>
+<div>
+
+</div><!-- close for legal notice -->
+
+
+  </div> <!-- close DEPT_FOOTER div -->
+<div id="site_map">
+  <h3>Sitemap
+  <span class="pad10"></span></h3>
+  
+  <div id="site_map1">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ACADEMICS&amp;s_env=PUTD&amp;s_sf=S">Academics</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ADMINISTRATIVEAPPLICATIONS&amp;s_env=PUTD&amp;s_sf=S">Administrative Applications</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=ADMISSIONS&amp;s_env=PUTD&amp;s_sf=S">Admissions</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=AROUNDCAMPUS&amp;s_env=PUTD&amp;s_sf=S">Around Campus</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=COLLEGES&amp;s_env=PUTD&amp;s_sf=S">Colleges, Schools and Academic Units</a></li>
+    </ul>
+  </div>
+  
+  <div id="site_map2">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=COMPUTINGANDTECHNOLOGY&amp;s_env=PUTD&amp;s_sf=S">Computing and Technology</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=DIRECTORIESANDOFFICES&amp;s_env=PUTD&amp;s_sf=S">Directories and Offices</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=EMPLOYMENTANDCAREERS&amp;s_env=PUTD&amp;s_sf=S">Employment and Careers</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=FINANCES&amp;s_env=PUTD&amp;s_sf=S">Finances</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=GRADUATION&amp;s_env=PUTD&amp;s_sf=S">Graduation</a></li>
+    </ul>
+  </div>
+  
+  <div id="site_map3">
+    <ul>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=INSTRUCTION&amp;s_env=PUTD&amp;s_sf=S">Instruction</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=NEWS&amp;s_env=PUTD&amp;s_sf=S">News, Events and Calendars</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=PERSONALINFO&amp;s_env=PUTD&amp;s_sf=S">Personal Info</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=RESEARCH&amp;s_env=PUTD&amp;s_sf=S">Research</a></li>
+      <li><a href="https://utdirect.utexas.edu/utdirect/sitemap/index.WBX?s_cin=WORKINGATUT&amp;s_env=PUTD&amp;s_sf=S">Working at UT</a></li>
+    </ul>
+  </div>
+  
+  <div id="ut_wordmark_footer" onclick="location.href='http://www.utexas.edu';" style="cursor:pointer;" title="Link to The University of Texas at Austin home page"><img src="https://utdirect.utexas.edu/utdirect/system/images/ut_logo_footer.png" width="130" height="69" alt="the university of texas at austin"><br>
+              <!-- The University of Texas at Austin
+                   1 University Station
+                   Austin, Texas  78712 -->
+             
+  </div>
+
+</div><!-- close site_map div -->
+
+
+
+
+
+
+
+
+
+
+
+
+  </div> <!-- close for footer_top -->
+
+
+
+<div id="footer_bottom" class="_bottom">
+  <!--div "footer_tower" is absolutely positioned on top of the "footer_top" and "footer_bottom"  
+  and contains the graphic with the wordmark and tower in the background-->
+  <div id="footer_tower"></div>
+  <div id="footer_ribbon" class="">
+
+    <div id="ut_footer">
+
+    <ul>
+
+
+        <li><a href="https://utdirect.utexas.edu/security-443/logoff.cgi?goto=http://www.utexas.edu" target="_top" onmouseover="status='LOGOFF'; return true;" onmouseout="status=' '; return true;">Logoff</a></li>
+
+    <li><a href="mailto:utd-stewards@utlists.utexas.edu" target="_top" onmouseover="status='Send a comment to the UT Direct team.'; return true;" onmouseout="status=' '; return true;">UT Direct Comments</a></li>
+    <li><a href="http://www.utexas.edu/web-privacy-policy" target="_blank" onmouseover="status='Read the UT Austin Web Privacy Policy.'; return true;" onmouseout="status=' '; return true;">Web Privacy Policy</a></li>
+    <li class="last_item"><a href="http://www.utexas.edu/web-accessibility-policy" target="_blank" accesskey="0">Web Accessibility</a></li>
+  </ul>
+
+  <div id="ut_copyright">©<a href="http://www.utexas.edu" target="_blank" onmouseover="status='Go to the UT Home Page.'; return true;" onmouseout="status=' '; return true;">The University of Texas at Austin</a> 2019</div>
+
+  </div> <!-- close ut_footer -->
+</div> <!-- close footer_ribbon -->
+</div> <!-- close footer_bottom -->
+
+</div> <!-- utd_close -->
+
+
+
+
+<div id="loading_indicator" style="display: none;"><img alt="ajax starburst" src="/apps/degree/audits/static/img/ajax_loader.gif"></div><bettercanvas-reminders></bettercanvas-reminders></body></html>

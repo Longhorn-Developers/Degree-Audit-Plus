@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import type { ActionResult } from "@/lib/browser/messages";
 import React from "react";
+import { capPercentage } from "@/lib/utils";
 
 export interface DegreeAuditCardProps {
   title?: string;
@@ -169,7 +170,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
                   isSelected ? "text-dap-orange" : "text-white"
                 }`}
               >
-                {percentage}%
+                {capPercentage(percentage)}%
               </span>
             </div>
 
