@@ -16,7 +16,7 @@ import EyeIcon from "@/assets/svgs/Eye.svg";
 import { useCourseSearchContext } from "@/features/course-search/course-search-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import { getRulePlannedProgress } from "@/features/audit/audit-calculations";
-import { getCoreAreaFromRequirementRule } from "@/features/course-search/course-recommendations";
+import { getCoreAreaFromRequirementRule } from "@/features/course-search/core-area-from-rule";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";

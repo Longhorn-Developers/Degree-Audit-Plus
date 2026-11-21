@@ -87,8 +87,9 @@ The important constraints are:
 - Audit never imports Dashboard, Course Search, Planner, Popup, Banner, or
   Audit Scraping. It is a pure state/storage/mutations/calculations feature plus
   the provider seam.
-- Course Search is the explicit join between Audit and Catalog. Recommendation
-  functions accept audit sections as arguments and do not use React.
+- Course Search is the explicit join between Audit and Catalog. Its pure
+  helpers (such as `getCoreAreaFromRequirementRule`) take plain arguments and do
+  not use React.
 - Planner reuses Audit as the persisted state owner. Drag, menu, and preview
   state stay local to Planner UI.
 - Audit Scraping contains no React/UI code. It writes through Audit Storage and
@@ -170,8 +171,10 @@ Catalog owns the bundled course data and its IndexedDB representation:
 
 Course Search owns the audit-aware user flow:
 
-- `course-recommendations.ts` joins audit requirements to Catalog queries using
-  plain function arguments.
+- `core-area-from-rule.ts` maps a Core Curriculum rule's `CORE (0xx)` code to
+  its `CoreArea` via `getCoreAreaFromRequirementRule(requirementTitle,
+  ruleText)`. It is a pure function shared by Dashboard (to decide whether to
+  show "see fulfilling courses") and the Course Search provider.
 - `course-search-provider.tsx` owns the sidebar search state (session-persisted)
   and `showFulfillingCourses()`, which Dashboard calls to fill the search with
   the courses that fulfill a requirement.
@@ -459,7 +462,7 @@ a real user workflow, as Course Search does between Audit and Catalog.
 |                           | [M] Course Search             |                                |
 |                           |                               |                                |
 |                           | search and filters            |                                |
-|                           | Core recommendations          |                                |
+|                           | core-area-from-rule lookup    |                                |
 |                           | add-course modal              |                                |
 |                           | catalog-to-planned mapping    |                                |
 |                           +---------------+---------------+                                |
@@ -478,14 +481,6 @@ a real user workflow, as Course Search does between Audit and Catalog.
 |                                    Implementation hides:                                    |
 | [A] assets/ut-courses.json           Dexie schema and indexes                               |
 | [A] Dexie / IndexedDB                filtering, department mapping, deduplication           |
-|                                                                                            |
-| [M] Course Recommendations                                                                 |
-| Interface:                                                                                 |
-|   getMissingCoreRequirements(sections)                                                     |
-|   getSuggestedCoreCourses(sections)                                                        |
-|   getSuggestedCoursesForRequirement(requirement, rule)                                     |
-|                                                                                            |
-| This module is the explicit join between Audit vocabulary and Catalog queries.             |
 +============================================================================================+
 | SHARED FOUNDATIONS                                                                          |
 |                                                                                            |

@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { getCoreAreaFromRequirementRule } from "./course-recommendations";
+import { getCoreAreaFromRequirementRule } from "./core-area-from-rule";
 import {
   type CourseSearchData,
   EMPTY_FORM,
