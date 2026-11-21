@@ -55,6 +55,7 @@ export function searchCatalogCourses(filters: {
   department: string;
   lowerDivision: boolean;
   upperDivision: boolean;
+  core?: CoreArea;
 }): Promise<CatalogCourse[]> {
   // Normalize the search inputs once before filtering the collection.
   const normalizedQuery = filters.searchQuery.trim().toLowerCase();
@@ -62,8 +63,11 @@ export function searchCatalogCourses(filters: {
     ? getDepartmentCodesByName(filters.department)
     : [];
 
-  return db.courses
-    .toCollection()
+  const base = filters.core
+    ? db.courses.where("core").equals(filters.core)
+    : db.courses.toCollection();
+
+  return base
     .filter((course) => {
       // Match the search text against code, title, short name, and instructors.
       const matchesQuery = matchesCatalogQuery(course, normalizedQuery);
