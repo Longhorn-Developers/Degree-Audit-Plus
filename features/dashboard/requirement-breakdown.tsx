@@ -13,13 +13,10 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
-import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
+import { useCourseSearchContext } from "@/features/course-search/course-search-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
-import {
-  getRulePlannedProgress,
-  isCoreSection,
-  isCreditSection,
-} from "@/features/audit/audit-calculations";
+import { getRulePlannedProgress } from "@/features/audit/audit-calculations";
+import { getCoreAreaFromRequirementRule } from "@/features/course-search/core-area-from-rule";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";
@@ -167,9 +164,6 @@ const parseRequirementCode = (
   return { code: text, description: "" };
 };
 
-const isCoreOrCreditSection = (title: string): boolean =>
-  isCoreSection(title) || isCreditSection(title);
-
 // Individual requirement row with expandable courses
 const RequirementRow = ({
   requirement,
@@ -179,7 +173,7 @@ const RequirementRow = ({
   requirementTitle: string;
 }) => {
   const { getCourseById, courseMap } = useAuditContext();
-  const { openModal } = useCourseModalContext();
+  const { showFulfillingCourses } = useCourseSearchContext();
 
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
@@ -189,7 +183,9 @@ const RequirementRow = ({
     requirement.appliedHours + getRulePlannedProgress(requirement, courseMap);
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(false);
-  const showActionButton = isCoreOrCreditSection(requirementTitle);
+  const showActionButton =
+    getCoreAreaFromRequirementRule(requirementTitle, requirement.text) !==
+      null && applied < requirement.requiredHours;
 
   return (
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
@@ -237,7 +233,7 @@ const RequirementRow = ({
                 fill="solid"
                 className="bg-dap-orange hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
                 onClick={() =>
-                  openModal({
+                  showFulfillingCourses({
                     requirementTitle,
                     ruleTitle: requirement.text,
                   })
@@ -249,7 +245,7 @@ const RequirementRow = ({
                   className="w-5 h-5"
                   aria-hidden="true"
                 />
-                See Fufilling Courses
+                See Fulfilling Courses
               </Button>
             </div>
           )}
