@@ -191,6 +191,28 @@ export function isRowFor(
   return key.courseId === courseId && key.ccyys === course.ccyys;
 }
 
+// The planner rows behind a planned course on the audit. The audit only
+// knows the code and semester, and a course moved on the planner page keeps
+// its UT semester, so a lone row for the code is still a match.
+export function findPlannerRowsForCourse(
+  rows: PlannedCourseRow[],
+  code: string,
+  semester: StringSemester,
+): PlannedCourseRow[] {
+  const wanted = normalizeCourseCode(code);
+  const sameCode = rows.filter(
+    (row) => normalizeCourseCode(row.code) === wanted,
+  );
+  const ccyys = semesterToCcyys(semester);
+  const sameSemester = sameCode.filter((row) => row.key.ccyys === ccyys);
+  if (sameSemester.length > 0) return sameSemester;
+  return sameCode.length === 1 ? sameCode : [];
+}
+
+function normalizeCourseCode(code: string): string {
+  return code.replace(/\s+/g, "").toUpperCase();
+}
+
 // ut's course_type for a regular ut austin course
 export const REGULAR_COURSE_TYPE = "1";
 

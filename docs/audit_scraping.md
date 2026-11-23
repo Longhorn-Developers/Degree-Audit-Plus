@@ -150,29 +150,31 @@ The courses the user added from previews are in `acceptedCourses`. The UT
 planner can also have rows the app never added (typed in on UT, or left from
 before), and the user can delete rows on UT at any time.
 
+A planned course is deleted by dragging it onto the bar along the bottom of the
+planner view (`delete-course-zone.tsx`). The bar only appears while a planned
+course is being dragged; completed and in-progress courses can't be dropped.
+
 ```text
-Add-courses panel (planned-courses-modal.tsx)   background                 UT tab
-─────────────────────────────────────────────   ──────────                 ──────
-page load, or "Manage planned courses"
-  ──CHECK_PLANNER──▶ checkPlanner()   queued with runs, never opens a login tab
+Planner (semester-dropdowns.tsx)              background                 UT tab
+────────────────────────────────              ──────────                 ──────
+drop on "Drag here to delete course"
+  ──REMOVE_PLANNED_COURSE { code, semester }──▶ removePlannedCourse()
                        ├ READ_PLANNER ───────────────────────▶ readPlanner()
                        │                                         ├ dropPendingPreview()
                        │                                         └ fetchPlannedCourses()
-                       └ syncAcceptedCourses(rows)   courses gone from the planner leave the plan
-  ◀──── { courses: [{ row, accepted }] }   any row not accepted opens the prompt
-
-Save ──UPDATE_PLANNER { keep, remove }──▶ updatePlanner()
-                                            ├ updateAcceptedCourses(keep, remove)
-                                            ├ open audit plans a removed course? rerunForPlan({ remove }) ──▶ runAudit deletes
-                                            │                                                       those rows, then the usual run
-                                            └ otherwise PLANNER_DELETE each row in a UT tab, no run
-  ◀──── { auditId | null }
+                       ├ syncAcceptedCourses(rows)   courses gone from the planner leave the plan
+                       ├ findPlannerRowsForCourse()  same code, its semester first
+                       ├ open audit plans it? rerunForPlan({ remove }) ──▶ runAudit deletes
+                       │                                                    those rows, then the usual run
+                       ├ otherwise PLANNER_DELETE each row in a UT tab, no run
+                       └ updateAcceptedCourses([], remove)
+  ◀──── { auditId | null }   a rerun audit opens; null drops it from the saved audit
 ```
 
-Every row needs a Keep or Remove answer before Save, so nothing leaves the
-planner without the user picking it. Rows are deleted one at a time; UT's
-Delete All is never used. The open audit is only rerun when it has one of the
-removed courses as planned; otherwise the rerun would come back the same.
+The course is hidden while the delete runs and comes back if it fails. One
+delete runs at a time, since each reruns the audit. Rows are deleted one at a
+time; UT's Delete All is never used. If UT has no row for the course, only the
+saved audit changes.
 
 ## Detecting an audit run on UT's own page
 

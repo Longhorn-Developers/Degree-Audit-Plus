@@ -13,20 +13,51 @@ import {
   DragOverlay,
   pointerWithin,
 } from "@dnd-kit/core";
+import { getErrorMessage } from "@/features/course-search/error-messages";
+import { cn } from "@/lib/utils";
 import { PlusIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import DeleteCourseZone, {
+  DELETE_ZONE_ID,
+  type DeleteZoneState,
+} from "./delete-course-zone";
 import PlannerCourseCard from "./planner-course-card";
 import SemesterCard from "./semester-card";
 
 const SemesterDropdowns = () => {
-  const { courseMap, semesters, moveCourseToNewSemester } = useAuditContext();
+  const { courseMap, semesters, moveCourseToNewSemester, deletePlannedCourse } =
+    useAuditContext();
   const [extraEmptySemesters, setExtraEmptySemesters] = useState<
     StringSemester[]
   >([]);
   const [activeDragId, setActiveDragId] = useState<CourseId | null>(null);
   const [dragSemester, setDragSemester] = useState<StringSemester | null>(null);
+  const [isOverDelete, setIsOverDelete] = useState(false);
+  const [deleteState, setDeleteState] = useState<DeleteZoneState>({
+    status: "idle",
+  });
+  // hidden while UT deletes it until the audit drops it, back if it fails
+  const [deletingId, setDeletingId] = useState<CourseId | null>(null);
+
+  useEffect(() => {
+    if (deletingId && !courseMap[deletingId]) setDeletingId(null);
+  }, [courseMap, deletingId]);
+
+  useEffect(() => {
+    if (deleteState.status !== "error") return;
+    const timeout = setTimeout(() => setDeleteState({ status: "idle" }), 6000);
+    return () => clearTimeout(timeout);
+  }, [deleteState]);
+
   const combined = useMemo(() => {
     const combined = structuredClone(semesters);
+    if (deletingId) {
+      for (const semester of Object.keys(combined) as StringSemester[]) {
+        combined[semester] = combined[semester].filter(
+          ({ id }) => id !== deletingId,
+        );
+      }
+    }
     extraEmptySemesters.forEach((semester) => {
       if (!(semester in semesters)) combined[semester] = [];
     });
@@ -46,13 +77,26 @@ const SemesterDropdowns = () => {
       ];
     }
     return combined;
-  }, [activeDragId, courseMap, dragSemester, extraEmptySemesters, semesters]);
+  }, [
+    activeDragId,
+    courseMap,
+    deletingId,
+    dragSemester,
+    extraEmptySemesters,
+    semesters,
+  ]);
 
   function onDragOver(event: DragOverEvent) {
     const activeId = event.active.id;
     if (typeof activeId !== "string") return;
 
     const overId = event.over?.id;
+    setIsOverDelete(overId === DELETE_ZONE_ID);
+    // the card goes back to its own semester while it hovers the delete bar
+    if (overId === DELETE_ZONE_ID) {
+      setDragSemester(courseMap[activeId]?.semester ?? null);
+      return;
+    }
     if (
       typeof overId === "string" &&
       !courseMap[overId] &&
@@ -65,6 +109,24 @@ const SemesterDropdowns = () => {
   function clearDrag() {
     setActiveDragId(null);
     setDragSemester(null);
+    setIsOverDelete(false);
+    setDeleteState((state) =>
+      state.status === "dragging" ? { status: "idle" } : state,
+    );
+  }
+
+  async function deleteCourse(courseId: CourseId) {
+    const course = courseMap[courseId];
+    if (!course) return;
+    setDeletingId(courseId);
+    setDeleteState({ status: "deleting", code: course.code });
+    const result = await deletePlannedCourse(courseId);
+    if (result.ok) {
+      setDeleteState({ status: "idle" });
+      return;
+    }
+    setDeletingId(null);
+    setDeleteState({ status: "error", message: getErrorMessage(result.error) });
   }
 
   return (
@@ -72,12 +134,22 @@ const SemesterDropdowns = () => {
       id="degree-planner-general"
       onDragStart={(event) => {
         if (typeof event.active.id !== "string") return;
+        const course = courseMap[event.active.id];
         setActiveDragId(event.active.id);
-        setDragSemester(courseMap[event.active.id]?.semester ?? null);
+        setDragSemester(course?.semester ?? null);
+        // one delete at a time, since each reruns the audit on UT
+        if (course?.status === "Planned" && deleteState.status !== "deleting") {
+          setDeleteState({ status: "dragging" });
+        }
       }}
       onDragEnd={(event) => {
         const activeId = event.active.id;
         const overId = event.over?.id;
+        if (typeof activeId === "string" && overId === DELETE_ZONE_ID) {
+          clearDrag();
+          void deleteCourse(activeId);
+          return;
+        }
         if (
           typeof activeId === "string" &&
           typeof overId === "string" &&
@@ -135,12 +207,17 @@ const SemesterDropdowns = () => {
       <DragOverlay>
         {activeDragId ? (
           <PlannerCourseCard
-            className="cursor-grabbing"
+            className={cn(
+              "cursor-grabbing transition-transform duration-150",
+              isOverDelete &&
+                "-rotate-6 border-dashed border-red-700 bg-dap-red-bg",
+            )}
             courseId={activeDragId}
             showDots
           />
         ) : null}
       </DragOverlay>
+      <DeleteCourseZone state={deleteState} />
     </DndContext>
   );
 };

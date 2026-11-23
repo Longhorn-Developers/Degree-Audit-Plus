@@ -6,6 +6,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   RUN_TIMEOUT: "UT isn't finishing audits right now. Try again later.",
   MAIN_AUDIT_NOT_FOUND: "Run an audit of your degree first, then try again.",
   NO_PREVIEW: "This preview is out of date. Click the course again.",
+  NOT_PLANNED: "Only planned courses can be deleted.",
   NOT_PREVIEWABLE:
     "Courses can't be checked against this audit. Run a new audit and try again.",
 };

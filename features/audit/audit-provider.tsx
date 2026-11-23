@@ -56,6 +56,9 @@ interface AuditContextValue {
     ruleTitle: string,
   ) => Promise<CourseId | null>;
   removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
+  // takes a planned course off the UT planner too, rerunning the audit if
+  // it counted the course; errors are codes for getErrorMessage
+  deletePlannedCourse: (courseId: CourseId) => Promise<ActionResult>;
 }
 
 const AuditContext = createContext<AuditContextValue | null>(null);
@@ -153,6 +156,19 @@ export function AuditContextProvider({
   const value = useMemo<AuditContextValue>(() => {
     // currentAuditId and history are guaranteed non-null past the loading
     // guard below, which is the only path that renders this provider's value.
+    const setCurrentAuditId = (id: string) => {
+      window.history.pushState({}, "", `?auditId=${id}`);
+      setCurrentAuditIdState(id);
+      updateLastAuditId(id);
+    };
+    const removePlannedCourse = async (courseId: CourseId) => {
+      if (!loadedAudit?.data) return false;
+      const updated = removeCourse(loadedAudit.data, courseId);
+      if (!updated) return false;
+      await saveAuditData(loadedAudit.auditId, updated);
+      return true;
+    };
+
     return {
       sections,
       history: history as AuditHistoryData,
@@ -167,11 +183,7 @@ export function AuditContextProvider({
         if (!course) throw new Error(`Course ${id} not found`);
         return course;
       },
-      setCurrentAuditId: (id) => {
-        window.history.pushState({}, "", `?auditId=${id}`);
-        setCurrentAuditIdState(id);
-        updateLastAuditId(id);
-      },
+      setCurrentAuditId,
       renameAuditTitle: async (auditId, title) => {
         const cleanTitle = title.trim();
         if (!cleanTitle) return false;
@@ -214,12 +226,28 @@ export function AuditContextProvider({
         await saveAuditData(loadedAudit.auditId, result.audit);
         return result.courseId;
       },
-      removePlannedCourse: async (courseId) => {
-        if (!loadedAudit?.data) return false;
-        const updated = removeCourse(loadedAudit.data, courseId);
-        if (!updated) return false;
-        await saveAuditData(loadedAudit.auditId, updated);
-        return true;
+      removePlannedCourse,
+      deletePlannedCourse: async (courseId) => {
+        const course = loadedAudit?.data?.courses[courseId];
+        if (course?.status !== "Planned") {
+          return { ok: false, error: "NOT_PLANNED" };
+        }
+        const response = await sendRuntimeMessage({
+          type: "REMOVE_PLANNED_COURSE",
+          code: course.code,
+          semester: course.semester,
+          auditId: currentAuditId as string,
+        }).catch((error: unknown) => ({
+          success: false as const,
+          error: String(error),
+        }));
+        if (!response?.success) {
+          return { ok: false, error: response?.error ?? "NO_RESPONSE" };
+        }
+        // the rerun audit no longer has it; otherwise drop it from this one
+        if (response.auditId) setCurrentAuditId(response.auditId);
+        else await removePlannedCourse(courseId);
+        return { ok: true };
       },
     };
   }, [

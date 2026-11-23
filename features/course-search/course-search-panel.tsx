@@ -13,7 +13,6 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
-import PlannedCoursesModal from "./planned-courses-modal";
 import type { CourseSearchData } from "./course-search-state";
 import { useCourseSearchContext } from "./course-search-provider";
 
@@ -85,10 +84,7 @@ function CourseSearchContent({
   return (
     <div>
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <p className="font-semibold text-xl tracking-wide">Add Courses</p>
-          <PlannedCoursesModal />
-        </div>
+        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
       </div>
 
       <form onSubmit={handleSearch}>
