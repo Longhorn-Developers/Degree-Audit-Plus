@@ -3,14 +3,19 @@ import Dropdown, {
   DropdownHeader,
 } from "@/components/ui/dropdown";
 import { HStack, VStack } from "@/components/ui/stack";
-import { getCurrentSemester, sortSemesters } from "@/domain/course";
-import { isDeletableCourse } from "@/domain/course";
-import type { Course, CourseId, StringSemester } from "@/domain/course";
+import {
+  compareCourseCodes,
+  getCurrentSemester,
+  isDeletableCourse,
+  sortSemesters,
+  type Course,
+  type CourseId,
+  type StringSemester,
+} from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { forwardRef, useState } from "react";
 import PlannerCourseCard from "./planner-course-card";
-import { compareCourseCodes } from "@/domain/course";
 
 interface SemesterCardProps {
   semester: StringSemester;
