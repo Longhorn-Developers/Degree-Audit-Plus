@@ -99,29 +99,6 @@ export function findDedupedAuditIds(
     .map((row) => row.auditId as string);
 }
 
-// The history rows a finished run replaces: the one `replaces` row, and every
-// run on the `replacesCard` card. Nothing on the card the new run folds into
-// (`cardId`) is replaced, since that card now shows the new run.
-export function findReplacedAuditIds(
-  document: Document,
-  cardId: string,
-  { replaces, replacesCard }: { replaces?: string; replacesCard?: string },
-): string[] {
-  const rows = parseAuditHistoryRows(document);
-  const ids = new Set<string>();
-  if (replacesCard && replacesCard !== cardId) {
-    for (const id of findDedupedAuditIds(document, replacesCard)) ids.add(id);
-  }
-  if (
-    replaces &&
-    replaces !== cardId &&
-    rows.some((row) => row.auditId === replaces)
-  ) {
-    ids.add(replaces);
-  }
-  return [...ids];
-}
-
 // The id of the card a run folds into.
 export function findCardId(rows: AuditHistoryRow[], auditId: string): string {
   const target = rows.find((row) => row.auditId === auditId);

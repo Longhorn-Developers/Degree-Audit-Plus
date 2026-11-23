@@ -415,17 +415,22 @@ async function removePlannedCourse(
     return null;
   }
 
-  // The rerun deletes the rows on UT before it runs, and replaces the open
-  // audit's card: if the result matches another card (e.g. the audit from
-  // before these courses were planned) it lands there and this card goes.
-  // A renamed or pinned card is kept.
+  // the rerun deletes the rows on UT before it runs
   const card = await findAuditCard(mainAuditId);
-  const auditId = await rerunForPlan({
-    remove,
-    degree: card?.degree,
-    replacesCard: (await hasUserEdits(mainAuditId)) ? undefined : mainAuditId,
-  });
+  const auditId = await rerunForPlan({ remove, degree: card?.degree });
   await updateAcceptedCourses([], remove);
+
+  // The open card still shows the removed course. Unless the rerun folded
+  // back into it, the rerun is now its own card or joined a matching one
+  // (e.g. the audit from before these courses were planned), so delete the
+  // open card and every run on it, the same as the sidebar's Delete. That
+  // also resyncs the history from UT. A renamed or pinned card is kept.
+  if (auditId !== mainAuditId && !(await hasUserEdits(mainAuditId))) {
+    await queue(() => deleteAudit(mainAuditId)).catch((error: unknown) =>
+      // the course is off the plan either way; the card is only clutter
+      console.error(`Failed to delete replaced audit ${mainAuditId}:`, error),
+    );
+  }
   return auditId;
 }
 

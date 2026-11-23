@@ -4,7 +4,6 @@ import {
   findCardId,
   findDedupedAuditIds,
   findNewRowKey,
-  findReplacedAuditIds,
   parseAuditHistory,
   parseAuditHistoryRows,
   type AuditHistoryRow,
@@ -94,49 +93,6 @@ test("finds every rerun folded into a card", async () => {
 test("finds nothing for an audit no longer on the page", async () => {
   const document = await loadHistoryDocument();
   expect(findDedupedAuditIds(document, "999")).toEqual([]);
-});
-
-test("replaces every run on the replaced card", async () => {
-  const document = await loadHistoryDocument();
-  const card = findDedupedAuditIds(document, "100018374967");
-
-  expect(
-    findReplacedAuditIds(document, "100018347796", {
-      replacesCard: "100018374967",
-    }),
-  ).toEqual(card);
-});
-
-test("keeps the replaced card when the new run folds into it", async () => {
-  const document = await loadHistoryDocument();
-  expect(
-    findReplacedAuditIds(document, "100018374967", {
-      replacesCard: "100018374967",
-    }),
-  ).toEqual([]);
-});
-
-test("replaces the plan audit row alongside the card, once", async () => {
-  const document = await loadHistoryDocument();
-  const card = findDedupedAuditIds(document, "100018374967");
-
-  expect(
-    findReplacedAuditIds(document, "100018587720", {
-      replaces: "100018347796",
-      replacesCard: "100018374967",
-    }),
-  ).toEqual([...card, "100018347796"]);
-  // a plan audit already on the replaced card isn't listed twice
-  expect(
-    findReplacedAuditIds(document, "100018587720", {
-      replaces: "100018374966",
-      replacesCard: "100018374967",
-    }),
-  ).toEqual(card);
-  // an audit gone from UT isn't replaced
-  expect(
-    findReplacedAuditIds(document, "100018587720", { replaces: "999" }),
-  ).toEqual([]);
 });
 
 test("reads the degree plan and catalog year off each row's Rerun link", () => {

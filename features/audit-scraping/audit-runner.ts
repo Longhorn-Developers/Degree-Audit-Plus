@@ -27,7 +27,6 @@ import {
   findCardId,
   findDedupedAuditIds,
   findNewRowKey,
-  findReplacedAuditIds,
   parseAuditHistory,
   parseAuditHistoryRows,
   toAuditHistoryEntries,
@@ -77,14 +76,7 @@ export function cancelRun(runId: string): void {
 // RUN_TIMEOUT, SCRAPE_FAILED, DELETE_FAILED, CANCELLED or a planner code.
 export async function runAudit(
   runId: string,
-  {
-    custom,
-    degree,
-    preview,
-    remove = [],
-    replaces,
-    replacesCard,
-  }: AuditRunRequest = {},
+  { custom, degree, preview, remove = [], replaces }: AuditRunRequest = {},
   timing = DEFAULT_TIMING,
 ): Promise<AuditRunOutcome> {
   const { steps, mark } = stopwatch();
@@ -123,11 +115,8 @@ export async function runAudit(
     mark("scrape");
 
     const cardId = findCardId(rows, auditId);
-    const history = await deleteReplacedAudits(rows, page, cardId, {
-      replaces,
-      replacesCard,
-    });
-    if (history !== rows) mark("delete replaced audits");
+    const history = await deleteReplacedAudit(rows, page, replaces, cardId);
+    if (history !== rows) mark("delete old plan audit");
 
     console.log(
       `Audit ${auditId} done · ${result.audit.requirements.length} requirements, ` +
@@ -162,30 +151,34 @@ export async function promotePreview(
     throw new Error("NO_PREVIEW");
   }
   const cardId = findCardId(rows, auditId);
-  const history = await deleteReplacedAudits(rows, page, cardId, { replaces });
+  const history = await deleteReplacedAudit(rows, page, replaces, cardId);
   return { cardId, history: toAuditHistoryEntries(history) };
 }
 
-// Deletes the audits a new one replaces once it's in (see
-// findReplacedAuditIds), and returns the history after.
-async function deleteReplacedAudits(
+// Deletes the degree's previous plan audit once a new one is in, and returns
+// the history after. A new audit that folds into that audit's card keeps it.
+async function deleteReplacedAudit(
   rows: AuditHistoryRow[],
   page: Document,
+  replaces: string | undefined,
   cardId: string,
-  replaced: { replaces?: string; replacesCard?: string },
 ): Promise<AuditHistoryRow[]> {
-  const ids = findReplacedAuditIds(page, cardId, replaced);
-  let current = { rows, page };
-  for (const id of ids) {
-    try {
-      current = await deleteAuditRow(id, current.page);
-      await deleteAuditData([id]);
-    } catch (error) {
-      // the new audit is in, a leftover one is only clutter
-      console.error(`Failed to delete replaced audit ${id}:`, error);
-    }
+  if (
+    !replaces ||
+    replaces === cardId ||
+    !rows.some((row) => row.auditId === replaces)
+  ) {
+    return rows;
   }
-  return current.rows;
+  try {
+    const history = await deleteAuditRow(replaces, page);
+    await deleteAuditData([replaces]);
+    return history;
+  } catch (error) {
+    // the new audit is in, a leftover one is only clutter
+    console.error(`Failed to delete replaced audit ${replaces}:`, error);
+    return rows;
+  }
 }
 
 async function planPreview(course: PlannerSyncTarget): Promise<void> {
@@ -374,18 +367,18 @@ export async function deleteAudit(auditId: string): Promise<void> {
 }
 
 // Deletes just this one history row on UT, none of the reruns on its card.
-// `page` is a history page that still has the row; returns the page after.
+// `page` is a history page that still has the row.
 async function deleteAuditRow(
   auditId: string,
   page: Document,
-): Promise<{ rows: AuditHistoryRow[]; page: Document }> {
+): Promise<AuditHistoryRow[]> {
   const response = await postDeleteForm(page, auditId);
   const isHistory =
     new URL(response.url).pathname === "/apps/degree/audits/requests/history/";
   if (!isHistory || findDeleteForm(response.page, auditId)) {
     throw new Error("DELETE_FAILED");
   }
-  return { rows: parseAuditHistoryRows(response.page), page: response.page };
+  return parseAuditHistoryRows(response.page);
 }
 
 async function postDeleteForm(
