@@ -415,9 +415,16 @@ async function removePlannedCourse(
     return null;
   }
 
-  // the rerun deletes the rows on UT before it runs
+  // The rerun deletes the rows on UT before it runs, and replaces the open
+  // audit's card: if the result matches another card (e.g. the audit from
+  // before these courses were planned) it lands there and this card goes.
+  // A renamed or pinned card is kept.
   const card = await findAuditCard(mainAuditId);
-  const auditId = await rerunForPlan({ remove, degree: card?.degree });
+  const auditId = await rerunForPlan({
+    remove,
+    degree: card?.degree,
+    replacesCard: (await hasUserEdits(mainAuditId)) ? undefined : mainAuditId,
+  });
   await updateAcceptedCourses([], remove);
   return auditId;
 }

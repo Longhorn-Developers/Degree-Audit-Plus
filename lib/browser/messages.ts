@@ -94,6 +94,9 @@ export interface AuditRunRequest {
   remove?: PlannerRowKey[];
   // an earlier audit to delete on UT once this one is in
   replaces?: string;
+  // a card to delete on UT, every run on it, once this one is in, unless
+  // this run folds into that same card
+  replacesCard?: string;
 }
 
 // Everything the tab learned from one run.

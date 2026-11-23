@@ -129,10 +129,17 @@ does. Either way the panel says to run a new audit, since those hours move the
 diff too. The main audit and the history list are
 never written. Clicking another course cancels the run in flight.
 
-Add to plan and the planner prompt's Remove keep one audit per degree: the
-audit made by the previous Add or Remove of that degree (`planAudits`) is
+Add to plan and deleting a planned course keep one audit per degree: the
+audit made by the previous Add or delete of that degree (`planAudits`) is
 deleted on UT once the new one is in, unless the user renamed or pinned it or
 the new audit folded into its card.
+
+Deleting a planned course also replaces the card it was deleted from
+(`replacesCard`): every run on that card is deleted on UT once the rerun is
+in, unless the card is renamed or pinned or the rerun folds back into it. So
+deleting the last planned course lands on the card from before those courses
+were planned, when one matches, and the plan card goes
+(`findReplacedAuditIds`).
 
 The course and the preview's audit stay on UT until the next run of any kind,
 which takes both back off unless the preview was added. A preview records its
@@ -166,8 +173,8 @@ drop on "Drag here to delete course"
                        │                                         └ fetchPlannedCourses()
                        ├ syncAcceptedCourses(rows)   courses gone from the planner leave the plan
                        ├ findPlannerRowsForCourse()  same code, its semester first
-                       ├ open audit plans it? rerunForPlan({ remove }) ──▶ runAudit deletes
-                       │                                                    those rows, then the usual run
+                       ├ open audit plans it? rerunForPlan({ remove, replacesCard }) ──▶ runAudit
+                       │                     deletes those rows, runs, then deletes the open card
                        ├ otherwise PLANNER_DELETE each row in a UT tab, no run
                        └ updateAcceptedCourses([], remove)
   ◀──── { auditId | null }   a rerun audit opens; null drops it from the saved audit
