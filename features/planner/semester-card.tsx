@@ -4,7 +4,8 @@ import Dropdown, {
 } from "@/components/ui/dropdown";
 import { HStack, VStack } from "@/components/ui/stack";
 import { getCurrentSemester, sortSemesters } from "@/domain/course";
-import type { Course, StringSemester } from "@/domain/course";
+import { isDeletableCourse } from "@/domain/course";
+import type { Course, CourseId, StringSemester } from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { forwardRef, useState } from "react";
@@ -14,6 +15,8 @@ import { compareCourseCodes } from "@/domain/course";
 interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
+  // set on cards whose courses can be deleted; shows the × on hover
+  onDeleteCourse?: (courseId: CourseId) => void;
 
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -22,64 +25,86 @@ interface SemesterCardProps {
 const SemesterCardVisual = forwardRef<
   HTMLDivElement,
   SemesterCardProps & React.HTMLAttributes<HTMLDivElement>
->(({ semester, courses, className, isOpen, onOpenChange, ...props }, ref) => {
-  return (
-    <Dropdown
-      {...props}
-      ref={ref}
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      className={cn(
-        "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-surface",
-        className,
-      )}
-      gap={6}
-    >
-      <DropdownHeader>
-        <HStack y="middle" x="between" fill>
-          <h2 className="text-[20.25px] font-semibold leading-normal uppercase text-dap-orange">
-            {semester}
-          </h2>
-        </HStack>
-      </DropdownHeader>
-      <DropdownContent className="w-full max-h-86 overflow-y-auto">
-        <VStack fill className="w-full" gap={4}>
-          {courses.length > 0 ? (
-            [...courses]
-              .sort((a, b) => compareCourseCodes(a.code, b.code))
-              .map((course) => (
-                <PlannerCourseCard
-                  key={course.id}
-                  draggable={course.status !== "Completed"}
-                  courseId={course.id}
-                  className="w-full"
-                />
-              ))
-          ) : (
-            <VStack
-              centered
-              className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-background"
-              fillWidth
-            >
-              Drag and drop courses here
-            </VStack>
-          )}
-        </VStack>
-      </DropdownContent>
-    </Dropdown>
-  );
-});
+>(
+  (
+    {
+      semester,
+      courses,
+      onDeleteCourse,
+      className,
+      isOpen,
+      onOpenChange,
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <Dropdown
+        {...props}
+        ref={ref}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        className={cn(
+          "w-full h-fit min-w-[250px] p-6 rounded-lg border border-gray-200 bg-surface",
+          className,
+        )}
+        gap={6}
+      >
+        <DropdownHeader>
+          <HStack y="middle" x="between" fill>
+            <h2 className="text-[20.25px] font-semibold leading-normal uppercase text-dap-orange">
+              {semester}
+            </h2>
+          </HStack>
+        </DropdownHeader>
+        <DropdownContent className="w-full max-h-86 overflow-y-auto">
+          <VStack fill className="w-full" gap={4}>
+            {courses.length > 0 ? (
+              [...courses]
+                .sort((a, b) => compareCourseCodes(a.code, b.code))
+                .map((course) => (
+                  <PlannerCourseCard
+                    key={course.id}
+                    draggable={course.status !== "Completed"}
+                    courseId={course.id}
+                    className="w-full"
+                    onRemove={
+                      onDeleteCourse && isDeletableCourse(course)
+                        ? () => onDeleteCourse(course.id)
+                        : undefined
+                    }
+                  />
+                ))
+            ) : (
+              <VStack
+                centered
+                className="max-h-[16.5rem] text-ut-charcoal/50 h-[16.5rem] text-lg font-bold border-dashed border border-black rounded-md py-4 px-6 bg-background"
+                fillWidth
+              >
+                Drag and drop courses here
+              </VStack>
+            )}
+          </VStack>
+        </DropdownContent>
+      </Dropdown>
+    );
+  },
+);
 SemesterCardVisual.displayName = "SemesterCardVisual";
 
-const SemesterCard = ({ semester, courses }: SemesterCardProps) => {
+const SemesterCard = (props: SemesterCardProps) => {
   // If the semester is in the past, make it non-droppable
-  if (sortSemesters(semester, getCurrentSemester()) < 0) {
-    return <SemesterCardVisual semester={semester} courses={courses} />;
+  if (sortSemesters(props.semester, getCurrentSemester()) < 0) {
+    return <SemesterCardVisual {...props} />;
   }
-  return <DroppableSemesterCard semester={semester} courses={courses} />;
+  return <DroppableSemesterCard {...props} />;
 };
 
-const DroppableSemesterCard = ({ semester, courses }: SemesterCardProps) => {
+const DroppableSemesterCard = ({
+  semester,
+  courses,
+  onDeleteCourse,
+}: SemesterCardProps) => {
   const { isOver, setNodeRef: droppableRef } = useDroppable({ id: semester });
   const [isOpen, setIsOpen] = useState(false);
 
@@ -94,6 +119,7 @@ const DroppableSemesterCard = ({ semester, courses }: SemesterCardProps) => {
       <SemesterCardVisual
         semester={semester}
         courses={courses}
+        onDeleteCourse={onDeleteCourse}
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         className={cn(isOver ? "opacity-35" : "opacity-100")}

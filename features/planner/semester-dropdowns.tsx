@@ -3,6 +3,7 @@ import { Grid } from "@/components/ui/stack";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
   CourseId,
+  isDeletableCourse,
   nextSemester,
   sortSemesters,
   StringSemester,
@@ -19,6 +20,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import DeleteCourseZone, {
   DELETE_ZONE_ID,
+  isPointerOverDeleteZone,
   type DeleteZoneState,
 } from "./delete-course-zone";
 import PlannerCourseCard from "./planner-course-card";
@@ -117,7 +119,7 @@ const SemesterDropdowns = () => {
 
   async function deleteCourse(courseId: CourseId) {
     const course = courseMap[courseId];
-    if (!course) return;
+    if (!isDeletableCourse(course) || deleteState.status === "deleting") return;
     setDeletingId(courseId);
     setDeleteState({ status: "deleting", code: course.code });
     const result = await deletePlannedCourse(courseId);
@@ -138,7 +140,7 @@ const SemesterDropdowns = () => {
         setActiveDragId(event.active.id);
         setDragSemester(course?.semester ?? null);
         // one delete at a time, since each reruns the audit on UT
-        if (course?.status === "Planned" && deleteState.status !== "deleting") {
+        if (isDeletableCourse(course) && deleteState.status !== "deleting") {
           setDeleteState({ status: "dragging" });
         }
       }}
@@ -165,17 +167,27 @@ const SemesterDropdowns = () => {
       }}
       onDragCancel={clearDrag}
       onDragOver={onDragOver}
-      collisionDetection={(args) =>
-        pointerWithin({
+      collisionDetection={(args) => {
+        // the bar sits over the semesters, so it wins wherever it is
+        if (
+          deleteState.status === "dragging" &&
+          isPointerOverDeleteZone(args.pointerCoordinates)
+        ) {
+          return [{ id: DELETE_ZONE_ID }];
+        }
+        return pointerWithin({
           ...args,
           droppableContainers: args.droppableContainers.filter(
             (container) =>
-              container.id !== args.active.id && !(container.id in courseMap),
+              container.id !== args.active.id &&
+              container.id !== DELETE_ZONE_ID &&
+              !(container.id in courseMap),
           ),
-        })
-      }
+        });
+      }}
     >
-      <Grid className="w-full" maxCols={2}>
+      {/* room below the last semester for the delete bar */}
+      <Grid className="w-full pb-32" maxCols={2}>
         {Object.entries(combined)
           .sort((a, b) =>
             sortSemesters(a[0] as StringSemester, b[0] as StringSemester),
@@ -185,6 +197,12 @@ const SemesterDropdowns = () => {
               key={index}
               semester={semester[0] as StringSemester}
               courses={semester[1]}
+              // one delete at a time, since each reruns the audit on UT
+              onDeleteCourse={
+                deleteState.status === "deleting"
+                  ? undefined
+                  : (courseId) => void deleteCourse(courseId)
+              }
             />
           ))}
         <Button

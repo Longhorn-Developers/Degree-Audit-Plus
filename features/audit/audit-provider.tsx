@@ -5,11 +5,12 @@ import {
   type CachedAuditData,
   getAuditDisplayName,
 } from "@/domain/audit";
-import type {
-  Course,
-  CourseId,
-  PlannedCourseOutline,
-  StringSemester,
+import {
+  isDeletableCourse,
+  type Course,
+  type CourseId,
+  type PlannedCourseOutline,
+  type StringSemester,
 } from "@/domain/course";
 import type { CurrentAuditProgress } from "@/domain/progress";
 import LoadingPage from "@/components/loading-page";
@@ -229,7 +230,7 @@ export function AuditContextProvider({
       removePlannedCourse,
       deletePlannedCourse: async (courseId) => {
         const course = loadedAudit?.data?.courses[courseId];
-        if (course?.status !== "Planned") {
+        if (!course || !isDeletableCourse(course)) {
           return { ok: false, error: "NOT_PLANNED" };
         }
         const response = await sendRuntimeMessage({

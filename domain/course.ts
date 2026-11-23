@@ -53,6 +53,15 @@ export interface Course {
   grade?: string;
   status: PlannableStatus;
   type: CourseCompletionMethod;
+  // UT's Future icon: registered for a coming semester. It reads as Planned
+  // for progress, but it isn't on the UT planner.
+  future?: boolean;
+}
+
+// Only courses on the UT planner can be deleted; completed, in-progress and
+// registered (future) courses can't.
+export function isDeletableCourse(course: Course | undefined): boolean {
+  return course?.status === "Planned" && !course.future;
 }
 
 export type PlannedCourseOutline = Omit<Course, "id" | "status"> & {

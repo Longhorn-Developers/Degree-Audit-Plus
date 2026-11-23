@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
   findPlannerRowsForCourse,
+  isDeletableCourse,
+  type Course,
   type CourseCode,
+  type PlannableStatus,
   type PlannedCourseRow,
 } from "../../domain/course";
 
@@ -53,5 +56,26 @@ describe("findPlannerRowsForCourse", () => {
         "Fall 2026",
       ),
     ).toEqual([]);
+  });
+});
+
+describe("isDeletableCourse", () => {
+  const course = (status: PlannableStatus, future?: boolean): Course => ({
+    id: "1",
+    code: "CS 303E",
+    name: "Elements of Computing",
+    hours: 3,
+    semester: "Fall 2026",
+    status,
+    type: "In-Residence",
+    ...(future ? { future } : {}),
+  });
+
+  test("only planner courses can be deleted", () => {
+    expect(isDeletableCourse(course("Planned"))).toBe(true);
+    expect(isDeletableCourse(course("Planned", true))).toBe(false);
+    expect(isDeletableCourse(course("In Progress"))).toBe(false);
+    expect(isDeletableCourse(course("Completed"))).toBe(false);
+    expect(isDeletableCourse(undefined)).toBe(false);
   });
 });

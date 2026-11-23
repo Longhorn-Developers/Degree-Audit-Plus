@@ -151,8 +151,10 @@ planner can also have rows the app never added (typed in on UT, or left from
 before), and the user can delete rows on UT at any time.
 
 A planned course is deleted by dragging it onto the bar along the bottom of the
-planner view (`delete-course-zone.tsx`). The bar only appears while a planned
-course is being dragged; completed and in-progress courses can't be dropped.
+planner view (`delete-course-zone.tsx`), or with the × on its card on hover.
+Only courses on the UT planner can be deleted (`isDeletableCourse`): completed,
+in-progress and registered courses (UT's Future icon, scraped as `Planned` with
+`future: true`) never show the bar or the ×.
 
 ```text
 Planner (semester-dropdowns.tsx)              background                 UT tab

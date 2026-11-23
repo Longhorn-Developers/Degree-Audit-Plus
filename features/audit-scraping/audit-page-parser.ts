@@ -96,6 +96,9 @@ export function scrapeCourseworkTable(
       type: cells[4]?.textContent?.trim() as CourseCompletionMethod,
       hours: parseInt((cells[5] as HTMLElement).innerText, 10),
       semester: currentSemester!,
+      ...(cells[0]?.querySelector("img[alt='Future icon']")
+        ? { future: true }
+        : {}),
     };
   }
 
