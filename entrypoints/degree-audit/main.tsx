@@ -46,7 +46,6 @@ const MainContent = () => {
           "ml-0": !sidebarIsOpen,
         },
       )}
-      // fixed overlays inside the page (the planner's delete bar) line up with it
       style={
         {
           "--sidebar-width": sidebarIsOpen ? "365px" : "0px",

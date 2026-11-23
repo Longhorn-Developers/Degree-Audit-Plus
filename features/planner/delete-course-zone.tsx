@@ -4,8 +4,6 @@ import { CircleNotchIcon, TrashIcon } from "@phosphor-icons/react";
 
 export const DELETE_ZONE_ID = "delete-course-zone";
 
-// True when the pointer is over the bar, measured now rather than from the
-// rect dnd-kit cached when the drag started.
 export function isPointerOverDeleteZone(
   pointer: { x: number; y: number } | null,
 ): boolean {
@@ -21,13 +19,10 @@ export function isPointerOverDeleteZone(
 
 export type DeleteZoneState =
   | { status: "idle" }
-  // a planned course is being dragged, so it can be dropped here
   | { status: "dragging" }
   | { status: "deleting"; code: string }
   | { status: "error"; message: string };
 
-// The bar along the bottom of the planner that planned courses are dropped on
-// to delete them. It also reports the delete while UT reruns the audit.
 export default function DeleteCourseZone({
   state,
 }: {
@@ -40,8 +35,6 @@ export default function DeleteCourseZone({
   const hidden = state.status === "idle";
   const releasing = state.status === "dragging" && isOver;
 
-  // The drop target never moves, so its hitbox is the whole bar even while
-  // the bar inside it is still sliding up.
   return (
     <div
       ref={setNodeRef}

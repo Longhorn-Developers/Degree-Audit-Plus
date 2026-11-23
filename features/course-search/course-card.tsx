@@ -18,7 +18,6 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   showDots?: boolean;
   type?: "add";
   loading?: boolean;
-  // shows an × in the top right on hover
   onRemove?: () => void;
 }
 
@@ -63,7 +62,6 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
           type="button"
           aria-label={`Remove ${course.code}`}
           title="Remove course"
-          // keep the press from starting a drag on the card
           onPointerDown={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
           onClick={(event) => {

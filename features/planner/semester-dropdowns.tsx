@@ -38,7 +38,6 @@ const SemesterDropdowns = () => {
   const [deleteState, setDeleteState] = useState<DeleteZoneState>({
     status: "idle",
   });
-  // hidden while UT deletes it until the audit drops it, back if it fails
   const [deletingId, setDeletingId] = useState<CourseId | null>(null);
 
   useEffect(() => {
@@ -94,7 +93,6 @@ const SemesterDropdowns = () => {
 
     const overId = event.over?.id;
     setIsOverDelete(overId === DELETE_ZONE_ID);
-    // the card goes back to its own semester while it hovers the delete bar
     if (overId === DELETE_ZONE_ID) {
       setDragSemester(courseMap[activeId]?.semester ?? null);
       return;
@@ -139,7 +137,6 @@ const SemesterDropdowns = () => {
         const course = courseMap[event.active.id];
         setActiveDragId(event.active.id);
         setDragSemester(course?.semester ?? null);
-        // one delete at a time, since each reruns the audit on UT
         if (isDeletableCourse(course) && deleteState.status !== "deleting") {
           setDeleteState({ status: "dragging" });
         }
@@ -168,7 +165,6 @@ const SemesterDropdowns = () => {
       onDragCancel={clearDrag}
       onDragOver={onDragOver}
       collisionDetection={(args) => {
-        // the bar sits over the semesters, so it wins wherever it is
         if (
           deleteState.status === "dragging" &&
           isPointerOverDeleteZone(args.pointerCoordinates)
@@ -186,7 +182,6 @@ const SemesterDropdowns = () => {
         });
       }}
     >
-      {/* room below the last semester for the delete bar */}
       <Grid className="w-full pb-32" maxCols={2}>
         {Object.entries(combined)
           .sort((a, b) =>
@@ -197,7 +192,6 @@ const SemesterDropdowns = () => {
               key={index}
               semester={semester[0] as StringSemester}
               courses={semester[1]}
-              // one delete at a time, since each reruns the audit on UT
               onDeleteCourse={
                 deleteState.status === "deleting"
                   ? undefined

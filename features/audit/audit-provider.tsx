@@ -57,8 +57,6 @@ interface AuditContextValue {
     ruleTitle: string,
   ) => Promise<CourseId | null>;
   removePlannedCourse: (courseId: CourseId) => Promise<boolean>;
-  // takes a planned course off the UT planner too, rerunning the audit if
-  // it counted the course; errors are codes for getErrorMessage
   deletePlannedCourse: (courseId: CourseId) => Promise<ActionResult>;
 }
 
@@ -245,7 +243,6 @@ export function AuditContextProvider({
         if (!response?.success) {
           return { ok: false, error: response?.error ?? "NO_RESPONSE" };
         }
-        // the rerun audit no longer has it; otherwise drop it from this one
         if (response.auditId) setCurrentAuditId(response.auditId);
         else await removePlannedCourse(courseId);
         return { ok: true };

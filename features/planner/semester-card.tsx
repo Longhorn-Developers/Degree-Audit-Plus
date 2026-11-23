@@ -20,7 +20,6 @@ import PlannerCourseCard from "./planner-course-card";
 interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
-  // set on cards whose courses can be deleted; shows the × on hover
   onDeleteCourse?: (courseId: CourseId) => void;
 
   isOpen?: boolean;

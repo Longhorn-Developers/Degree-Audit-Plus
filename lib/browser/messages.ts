@@ -30,10 +30,7 @@ export type ExtensionMessage =
   | { type: "ACCEPT_PREVIEW"; auditId: string }
   // Background -> UT tab: the tab half of ACCEPT_PREVIEW.
   | { type: "PROMOTE_PREVIEW"; auditId: string; replaces?: string }
-  // Background -> UT tab: tidy up and read the UT planner.
   | { type: "READ_PLANNER" }
-  // UI -> background: a planned course dropped on the delete bar. Deletes its
-  // rows from the UT planner and reruns the open audit, which counts it.
   | {
       type: "REMOVE_PLANNED_COURSE";
       code: CourseCode;
@@ -141,7 +138,6 @@ interface MessageResponses {
   PROMOTE_PREVIEW:
     | { ok: true; cardId: string; history: AuditHistoryEntry[] }
     | { ok: false; error: string };
-  // auditId is the rerun audit, or null when UT had no row for the course
   REMOVE_PLANNED_COURSE:
     | { success: true; auditId: string | null }
     | { success: false; error: string };

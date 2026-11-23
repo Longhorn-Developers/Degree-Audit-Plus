@@ -391,15 +391,12 @@ async function readPlannerRows(): Promise<PlannedCourseRow[]> {
   });
 }
 
-// Takes one planned course off the UT planner. Resolves the rerun audit, or
-// null when nothing was rerun and only the saved audit needs the change.
 async function removePlannedCourse(
   code: CourseCode,
   semester: StringSemester,
   mainAuditId: string,
 ): Promise<string | null> {
   const rows = await readPlannerRows();
-  // courses gone from the planner leave the plan
   await syncAcceptedCourses(rows);
   const remove = findPlannerRowsForCourse(rows, code, semester).map(
     ({ key }) => key,
@@ -415,19 +412,12 @@ async function removePlannedCourse(
     return null;
   }
 
-  // the rerun deletes the rows on UT before it runs
   const card = await findAuditCard(mainAuditId);
   const auditId = await rerunForPlan({ remove, degree: card?.degree });
   await updateAcceptedCourses([], remove);
 
-  // The open card still shows the removed course. Unless the rerun folded
-  // back into it, the rerun is now its own card or joined a matching one
-  // (e.g. the audit from before these courses were planned), so delete the
-  // open card and every run on it, the same as the sidebar's Delete. That
-  // also resyncs the history from UT. A renamed or pinned card is kept.
   if (auditId !== mainAuditId && !(await hasUserEdits(mainAuditId))) {
     await queue(() => deleteAudit(mainAuditId)).catch((error: unknown) =>
-      // the course is off the plan either way; the card is only clutter
       console.error(`Failed to delete replaced audit ${mainAuditId}:`, error),
     );
   }
