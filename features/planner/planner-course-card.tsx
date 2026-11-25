@@ -53,7 +53,7 @@ function ResolvedPlannerCourseCard({
   return (
     <CourseCard
       course={course}
-      colored={!isDeletableCourse(course)}
+      colored={!isDeletableCourse(course) && !course?.future}
       className={className}
       showDots={showDots}
     />
