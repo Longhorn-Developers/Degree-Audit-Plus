@@ -46,6 +46,11 @@ const MainContent = () => {
           "ml-0": !sidebarIsOpen,
         },
       )}
+      style={
+        {
+          "--sidebar-width": sidebarIsOpen ? "365px" : "0px",
+        } as React.CSSProperties
+      }
     >
       <Navbar />
       <VStack

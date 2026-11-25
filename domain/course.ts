@@ -53,6 +53,11 @@ export interface Course {
   grade?: string;
   status: PlannableStatus;
   type: CourseCompletionMethod;
+  future?: boolean;
+}
+
+export function isDeletableCourse(course: Course | undefined): boolean {
+  return course?.status === "Planned" && !course.future;
 }
 
 export type PlannedCourseOutline = Omit<Course, "id" | "status"> & {
@@ -189,6 +194,25 @@ export function isRowFor(
     course.number,
   );
   return key.courseId === courseId && key.ccyys === course.ccyys;
+}
+
+export function findPlannerRowsForCourse(
+  rows: PlannedCourseRow[],
+  code: string,
+  semester: StringSemester,
+): PlannedCourseRow[] {
+  const wanted = normalizeCourseCode(code);
+  const sameCode = rows.filter(
+    (row) => normalizeCourseCode(row.code) === wanted,
+  );
+  const ccyys = semesterToCcyys(semester);
+  const sameSemester = sameCode.filter((row) => row.key.ccyys === ccyys);
+  if (sameSemester.length > 0) return sameSemester;
+  return sameCode.length === 1 ? sameCode : [];
+}
+
+function normalizeCourseCode(code: string): string {
+  return code.replace(/\s+/g, "").toUpperCase();
 }
 
 // ut's course_type for a regular ut austin course

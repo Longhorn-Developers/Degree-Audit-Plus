@@ -4,6 +4,7 @@ import {
   CircleNotchIcon,
   DotsSixVerticalIcon,
   PlusCircleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 
@@ -17,16 +18,20 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   showDots?: boolean;
   type?: "add";
   loading?: boolean;
+  onRemove?: () => void;
 }
 
 const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
-  ({ course, className, showDots = false, type, loading, ...props }, ref) => (
+  (
+    { course, className, showDots = false, type, loading, onRemove, ...props },
+    ref,
+  ) => (
     <div
       {...props}
       ref={ref}
       aria-disabled={loading || undefined}
       className={cn(
-        "bg-background rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
+        "group relative bg-background rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
         className,
         loading &&
           "opacity-50 cursor-not-allowed border-dap-border hover:shadow-none hover:border-dap-border",
@@ -51,6 +56,22 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
             <PlusCircleIcon size={24} className="text-700" />
           )}
         </div>
+      ) : null}
+      {onRemove ? (
+        <button
+          type="button"
+          aria-label={`Remove ${course.code}`}
+          title="Remove course"
+          onPointerDown={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove();
+          }}
+          className="absolute top-1.5 right-1.5 rounded p-0.5 text-gray-500 opacity-0 transition-opacity hover:bg-black/5 hover:text-text focus-visible:opacity-100 group-hover:opacity-100 cursor-pointer"
+        >
+          <XIcon size={14} weight="bold" />
+        </button>
       ) : null}
     </div>
   ),

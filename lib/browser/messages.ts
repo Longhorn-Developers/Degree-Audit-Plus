@@ -14,6 +14,7 @@ import type {
   PlannerResolution,
   PlannerRowKey,
   PlannerSyncTarget,
+  StringSemester,
 } from "@/domain/course";
 import { browser } from "wxt/browser";
 
@@ -29,17 +30,11 @@ export type ExtensionMessage =
   | { type: "ACCEPT_PREVIEW"; auditId: string }
   // Background -> UT tab: the tab half of ACCEPT_PREVIEW.
   | { type: "PROMOTE_PREVIEW"; auditId: string; replaces?: string }
-  // UI -> background: tidy up and read the UT planner, with which rows the
-  // user already added to their plan.
-  | { type: "CHECK_PLANNER" }
-  // Background -> UT tab: the tab half of CHECK_PLANNER.
   | { type: "READ_PLANNER" }
-  // UI -> background: the planner prompt's answer. Removing a course the open
-  // audit counts reruns it.
   | {
-      type: "UPDATE_PLANNER";
-      keep: PlannerRowKey[];
-      remove: PlannerRowKey[];
+      type: "REMOVE_PLANNED_COURSE";
+      code: CourseCode;
+      semester: StringSemester;
       auditId: string;
     }
   // UI -> background -> UT tab: the background opens a UT tab and forwards it
@@ -98,11 +93,6 @@ export interface AuditRunRequest {
   replaces?: string;
 }
 
-export interface PlannerCourse {
-  row: PlannedCourseRow;
-  accepted: boolean;
-}
-
 // Everything the tab learned from one run.
 export interface AuditRunOutcome {
   auditId: string;
@@ -142,16 +132,13 @@ interface MessageResponses {
   ACCEPT_PREVIEW:
     | { success: true; auditId: string }
     | { success: false; error: string };
-  CHECK_PLANNER:
-    | { success: true; courses: PlannerCourse[] }
-    | { success: false; error: string };
   READ_PLANNER:
     | { ok: true; rows: PlannedCourseRow[] }
     | { ok: false; error: string };
   PROMOTE_PREVIEW:
     | { ok: true; cardId: string; history: AuditHistoryEntry[] }
     | { ok: false; error: string };
-  UPDATE_PLANNER:
+  REMOVE_PLANNED_COURSE:
     | { success: true; auditId: string | null }
     | { success: false; error: string };
   DELETE_AUDIT: ActionResult;
@@ -179,10 +166,9 @@ type ResponseRequest = Extract<
       | "RUN_NEW_AUDIT"
       | "PREVIEW_COURSE"
       | "ACCEPT_PREVIEW"
-      | "CHECK_PLANNER"
       | "READ_PLANNER"
       | "PROMOTE_PREVIEW"
-      | "UPDATE_PLANNER"
+      | "REMOVE_PLANNED_COURSE"
       | "DELETE_AUDIT"
       | "GET_SYNC_STATUS"
       | "SCRAPE_ALL_AUDITS"

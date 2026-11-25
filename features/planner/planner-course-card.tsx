@@ -9,11 +9,13 @@ interface PlannerCourseCardProps {
   className?: string;
   draggable?: boolean;
   showDots?: boolean;
+  onRemove?: () => void;
 }
 
 function DraggablePlannerCourseCard({
   courseId,
   className,
+  onRemove,
 }: PlannerCourseCardProps) {
   const { getCourseById } = useAuditContext();
   const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
@@ -27,6 +29,7 @@ function DraggablePlannerCourseCard({
       ref={setNodeRef}
       course={getCourseById(courseId)}
       showDots
+      onRemove={onRemove}
       className={cn(
         isDragging ? "opacity-50" : "opacity-100",
         "cursor-grab",

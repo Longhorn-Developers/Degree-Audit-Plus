@@ -134,6 +134,12 @@ audit made by the previous Add or Remove of that degree (`planAudits`) is
 deleted on UT once the new one is in, unless the user renamed or pinned it or
 the new audit folded into its card.
 
+Deleting a planned course also deletes the card it was deleted from once the
+rerun is in, every run on it, the same way as the sidebar's Delete
+(`DELETE_AUDIT`), unless the card is renamed or pinned or the rerun folded
+back into it. So deleting the last planned course lands on the matching card
+from before those courses were planned, and the plan card leaves the sidebar.
+
 The course and the preview's audit stay on UT until the next run of any kind,
 which takes both back off unless the preview was added. A preview records its
 audit id as soon as UT lists the row, before the audit is done. If UT hasn't
@@ -150,29 +156,34 @@ The courses the user added from previews are in `acceptedCourses`. The UT
 planner can also have rows the app never added (typed in on UT, or left from
 before), and the user can delete rows on UT at any time.
 
+A planned course is deleted by dragging it onto the bar along the bottom of the
+planner view (`delete-course-zone.tsx`), or with the × on its card on hover.
+Only courses on the UT planner can be deleted (`isDeletableCourse`): completed,
+in-progress and registered courses (UT's Future icon, scraped as `Planned` with
+`future: true`) never show the bar or the ×.
+
 ```text
-Add-courses panel (planned-courses-modal.tsx)   background                 UT tab
-─────────────────────────────────────────────   ──────────                 ──────
-page load, or "Manage planned courses"
-  ──CHECK_PLANNER──▶ checkPlanner()   queued with runs, never opens a login tab
+Planner (semester-dropdowns.tsx)              background                 UT tab
+────────────────────────────────              ──────────                 ──────
+drop on "Drag here to delete course"
+  ──REMOVE_PLANNED_COURSE { code, semester }──▶ removePlannedCourse()
                        ├ READ_PLANNER ───────────────────────▶ readPlanner()
                        │                                         ├ dropPendingPreview()
                        │                                         └ fetchPlannedCourses()
-                       └ syncAcceptedCourses(rows)   courses gone from the planner leave the plan
-  ◀──── { courses: [{ row, accepted }] }   any row not accepted opens the prompt
-
-Save ──UPDATE_PLANNER { keep, remove }──▶ updatePlanner()
-                                            ├ updateAcceptedCourses(keep, remove)
-                                            ├ open audit plans a removed course? rerunForPlan({ remove }) ──▶ runAudit deletes
-                                            │                                                       those rows, then the usual run
-                                            └ otherwise PLANNER_DELETE each row in a UT tab, no run
-  ◀──── { auditId | null }
+                       ├ syncAcceptedCourses(rows)   courses gone from the planner leave the plan
+                       ├ findPlannerRowsForCourse()  same code, its semester first
+                       ├ open audit plans it? rerunForPlan({ remove }) ──▶ runAudit deletes
+                       │                                                    those rows, then the usual run
+                       │   then DELETE_AUDIT the open card, unless the rerun folded into it
+                       ├ otherwise PLANNER_DELETE each row in a UT tab, no run
+                       └ updateAcceptedCourses([], remove)
+  ◀──── { auditId | null }   a rerun audit opens; null drops it from the saved audit
 ```
 
-Every row needs a Keep or Remove answer before Save, so nothing leaves the
-planner without the user picking it. Rows are deleted one at a time; UT's
-Delete All is never used. The open audit is only rerun when it has one of the
-removed courses as planned; otherwise the rerun would come back the same.
+The course is hidden while the delete runs and comes back if it fails. One
+delete runs at a time, since each reruns the audit. Rows are deleted one at a
+time; UT's Delete All is never used. If UT has no row for the course, only the
+saved audit changes.
 
 ## Detecting an audit run on UT's own page
 

@@ -5,10 +5,13 @@ import {
   type CachedAuditData,
 } from "@/domain/audit";
 import {
-  isRowFor,
+  findPlannerRowsForCourse,
   plannerCourseIdToCode,
+  type CourseCode,
+  type PlannedCourseRow,
   type PlannerRowKey,
   type PlannerSyncTarget,
+  type StringSemester,
 } from "@/domain/course";
 import {
   acceptPendingPreview,
@@ -38,7 +41,6 @@ import {
   type AuditRunRequest,
   type CoursePreview,
   type ExtensionMessage,
-  type PlannerCourse,
 } from "@/lib/browser/messages";
 import {
   getCachedLoginState,
@@ -370,8 +372,8 @@ async function acceptPreview(mainAuditId: string): Promise<string> {
 }
 
 // It runs on its own when the dashboard opens, so it never opens a login tab.
-async function checkPlanner(): Promise<PlannerCourse[]> {
-  const rows = await queue(async () => {
+async function readPlannerRows(): Promise<PlannedCourseRow[]> {
+  return queue(async () => {
     if ((await getCachedLoginState()) === false) {
       throw new Error("AUTH_REQUIRED");
     }
@@ -387,37 +389,38 @@ async function checkPlanner(): Promise<PlannerCourse[]> {
       if (created) await browser.tabs.remove(tabId).catch(() => undefined);
     }
   });
-
-  const accepted = await syncAcceptedCourses(rows);
-  return rows.map((row) => ({
-    row,
-    accepted: accepted.some((course) => isRowFor(row.key, course.course)),
-  }));
 }
 
-async function updatePlanner(
-  keep: PlannerRowKey[],
-  remove: PlannerRowKey[],
+async function removePlannedCourse(
+  code: CourseCode,
+  semester: StringSemester,
   mainAuditId: string,
 ): Promise<string | null> {
-  // the kept list only changes once UT has the change too
-  if (remove.length === 0) {
-    await updateAcceptedCourses(keep, remove);
-    return null;
-  }
+  const rows = await readPlannerRows();
+  await syncAcceptedCourses(rows);
+  const remove = findPlannerRowsForCourse(rows, code, semester).map(
+    ({ key }) => key,
+  );
+  if (remove.length === 0) return null;
 
   // the open audit doesn't count these, so rerunning it would change nothing
   const main = await getAuditData(mainAuditId);
   const codes = remove.map((key) => plannerCourseIdToCode(key.courseId));
   if (!main || !hasPlannedCourse(main, codes)) {
     await queue(() => deletePlannerRows(remove));
-    await updateAcceptedCourses(keep, remove);
+    await updateAcceptedCourses([], remove);
     return null;
   }
 
   const card = await findAuditCard(mainAuditId);
   const auditId = await rerunForPlan({ remove, degree: card?.degree });
-  await updateAcceptedCourses(keep, remove);
+  await updateAcceptedCourses([], remove);
+
+  if (auditId !== mainAuditId && !(await hasUserEdits(mainAuditId))) {
+    await queue(() => deleteAudit(mainAuditId)).catch((error: unknown) =>
+      console.error(`Failed to delete replaced audit ${mainAuditId}:`, error),
+    );
+  }
   return auditId;
 }
 
@@ -588,21 +591,12 @@ function registerAuditRunHandlers(): void {
         return true;
       }
 
-      if (message.type === "CHECK_PLANNER") {
-        void checkPlanner().then(
-          (courses) =>
-            sendMessageResponse(message, sendResponse, {
-              success: true,
-              courses,
-            }),
-          (error: unknown) =>
-            sendMessageResponse(message, sendResponse, failure(error)),
-        );
-        return true;
-      }
-
-      if (message.type === "UPDATE_PLANNER") {
-        void updatePlanner(message.keep, message.remove, message.auditId).then(
+      if (message.type === "REMOVE_PLANNED_COURSE") {
+        void removePlannedCourse(
+          message.code,
+          message.semester,
+          message.auditId,
+        ).then(
           (auditId) =>
             sendMessageResponse(message, sendResponse, {
               success: true,
