@@ -45,6 +45,7 @@ import {
 import {
   getCachedLoginState,
   openLoginTab,
+  refreshLoginState,
   registerSessionCookieWatcher,
 } from "@/features/session/session";
 import { registerPlannerBridge } from "./planner-bridge";
@@ -541,6 +542,10 @@ export async function sendTabMessageWhenReady<M extends ExtensionMessage>(
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
+  if (!(await refreshLoginState())) {
+    await openLoginTab();
+    throw new Error("AUTH_REQUIRED");
+  }
   throw new Error("Audit page did not respond");
 }
 
@@ -660,11 +665,11 @@ async function deleteAudit(auditId: string): Promise<void> {
   }
 }
 
-// A dead session would land a hidden tab on SSO, where our content script
-// never runs. Send the user to log in instead. The cached read is instant;
-// the UT tab re-checks the session on every request.
+// Catches a dead session up front and sends the user to log in. The cache can
+// be empty or stale, and a hidden tab on the SSO page never answers, so this
+// probes UT directly instead of trusting it.
 async function failIfLoggedOut(): Promise<void> {
-  if ((await getCachedLoginState()) !== false) return;
+  if (await refreshLoginState()) return;
   await openLoginTab();
   throw new Error("AUTH_REQUIRED");
 }
