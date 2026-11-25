@@ -16,7 +16,6 @@ export interface CourseCardData {
 interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   course: CourseCardData;
   showDots?: boolean;
-  /** Tint the card with the course's color (taken, in-progress or registered). */
   colored?: boolean;
   dashed?: boolean;
   type?: "add";
