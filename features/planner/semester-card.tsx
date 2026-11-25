@@ -69,7 +69,7 @@ const SemesterCardVisual = forwardRef<
                 .map((course) => (
                   <PlannerCourseCard
                     key={course.id}
-                    draggable={course.status !== "Completed"}
+                    draggable={isDeletableCourse(course)}
                     courseId={course.id}
                     className="w-full"
                     onRemove={

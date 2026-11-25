@@ -1,6 +1,7 @@
 import type { CourseId } from "@/domain/course";
 import { cn } from "@/lib/utils";
 import { useDraggable } from "@dnd-kit/core";
+import { isDeletableCourse } from "@/domain/course";
 import CourseCard from "@/features/course-search/course-card";
 import { useAuditContext } from "@/features/audit/audit-provider";
 
@@ -18,6 +19,7 @@ function DraggablePlannerCourseCard({
   onRemove,
 }: PlannerCourseCardProps) {
   const { getCourseById } = useAuditContext();
+  const course = getCourseById(courseId);
   const { isDragging, attributes, listeners, setNodeRef } = useDraggable({
     id: courseId,
   });
@@ -27,8 +29,9 @@ function DraggablePlannerCourseCard({
       {...attributes}
       {...listeners}
       ref={setNodeRef}
-      course={getCourseById(courseId)}
+      course={course}
       showDots
+      dashed
       onRemove={onRemove}
       className={cn(
         isDragging ? "opacity-50" : "opacity-100",
@@ -45,10 +48,12 @@ function ResolvedPlannerCourseCard({
   showDots,
 }: PlannerCourseCardProps) {
   const { getCourseById } = useAuditContext();
+  const course = getCourseById(courseId);
 
   return (
     <CourseCard
-      course={getCourseById(courseId)}
+      course={course}
+      colored={!isDeletableCourse(course)}
       className={className}
       showDots={showDots}
     />
