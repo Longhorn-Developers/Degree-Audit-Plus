@@ -109,7 +109,7 @@ const SemesterCard = (props: SemesterCardProps) => {
   return <DroppableSemesterCard {...props} />;
 };
 
-const GRAYED_OUT = "opacity-40 grayscale";
+const GRAYED_OUT = "opacity-40";
 
 const DroppableSemesterCard = ({
   semester,
