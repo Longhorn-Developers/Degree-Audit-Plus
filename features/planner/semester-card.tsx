@@ -21,7 +21,6 @@ interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
   onDeleteCourse?: (courseId: CourseId) => void;
-  /** Whether a course is currently being dragged. */
   isDragging?: boolean;
 
   isOpen?: boolean;
