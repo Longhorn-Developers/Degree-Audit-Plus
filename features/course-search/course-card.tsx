@@ -18,7 +18,6 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   showDots?: boolean;
   /** Tint the card with the course's color (taken, in-progress or registered). */
   colored?: boolean;
-  /** Dashed outline for courses that can still be moved or removed. */
   dashed?: boolean;
   type?: "add";
   loading?: boolean;
