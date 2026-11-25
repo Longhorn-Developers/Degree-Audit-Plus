@@ -542,7 +542,6 @@ export async function sendTabMessageWhenReady<M extends ExtensionMessage>(
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
-  // A tab stuck on the SSO page never answers; send the user to log in.
   if (!(await refreshLoginState())) {
     await openLoginTab();
     throw new Error("AUTH_REQUIRED");
