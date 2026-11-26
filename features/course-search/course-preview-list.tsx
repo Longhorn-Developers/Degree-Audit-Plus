@@ -217,7 +217,7 @@ function listCourses(codes: string[]): string {
 
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-md border border-gray-400 bg-gray-50 px-3 py-2 text-sm text-text">
+    <div className="flex items-center gap-2.5 rounded-md border border-gray-400 bg-surface px-3 py-2 text-sm text-text">
       <InfoIcon size={18} className="shrink-0 text-gray-500" />
       <p>{children}</p>
     </div>
@@ -282,7 +282,7 @@ function PreviewResult({
                 "flex items-center gap-2.5 rounded-md border px-3 py-2",
                 adds
                   ? "border-dap-plan-green bg-dap-plan-green/10"
-                  : "border-gray-300 bg-gray-50",
+                  : "border-gray-400 bg-surface",
               )}
             >
               <Icon
@@ -303,8 +303,8 @@ function PreviewResult({
         })
       )}
       <p>
-        <span className="text-gray-600">Degree progress:</span>{" "}
-        <span className="text-gray-500">{beforeFormattedPercentage}%</span> →{" "}
+        <span className="text-muted">Degree progress:</span>{" "}
+        <span className="text-muted">{beforeFormattedPercentage}%</span> →{" "}
         <span className="font-semibold">{afterFormattedPercentage}%</span>
       </p>
       {missingPlanned.length > 0 && (

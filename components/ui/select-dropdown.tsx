@@ -53,7 +53,7 @@ export default function SelectDropdown({
 
   return (
     <div ref={containerRef} className="flex items-center gap-3">
-      {icon && <div className="text-ut-charcoal">{icon}</div>}
+      {icon && <div className="text-text">{icon}</div>}
       <div className="flex-1 relative">
         <input
           type="text"
