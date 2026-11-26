@@ -9,11 +9,55 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 import { mapCatalogCourseToPreview } from "@/features/catalog/catalog-course-mappers";
 import { sendRuntimeMessage, type CoursePreview } from "@/lib/browser/messages";
 import { capPercentage, cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CourseCard from "./course-card";
 import { getErrorMessage } from "./error-messages";
 
 const PREVIEW_TERM = semesterToCcyys(nextSemester(getCurrentSemester()));
+
+function normalize(text: string): string {
+  return text.replace(/\s+/g, " ").trim().toUpperCase();
+}
+
+function courseCode(course: CatalogCourse): string {
+  return normalize(`${course.department} ${course.number}`);
+}
+
+// Courses the open audit already has, so adding them again would duplicate.
+// A topics course (one code, many titles in this list) must match by title too.
+function findCoursesInAudit(
+  courses: CatalogCourse[],
+  auditCourses: { code: string; name: string }[],
+): Set<number> {
+  const auditNames = new Map<string, Set<string>>();
+  for (const { code, name } of auditCourses) {
+    const key = normalize(code);
+    auditNames.set(
+      key,
+      (auditNames.get(key) ?? new Set()).add(normalize(name)),
+    );
+  }
+  const titlesByCode = new Map<string, Set<string>>();
+  for (const course of courses) {
+    const key = courseCode(course);
+    titlesByCode.set(
+      key,
+      (titlesByCode.get(key) ?? new Set()).add(normalize(course.courseName)),
+    );
+  }
+
+  const found = new Set<number>();
+  for (const course of courses) {
+    const key = courseCode(course);
+    const names = auditNames.get(key);
+    if (!names) continue;
+    const isTopic = (titlesByCode.get(key)?.size ?? 0) > 1;
+    if (!isTopic || names.has(normalize(course.courseName))) {
+      found.add(course.uniqueId);
+    }
+  }
+  return found;
+}
 
 type Preview =
   | { status: "idle" }
@@ -38,11 +82,17 @@ export default function CoursePreviewList({
   courses: CatalogCourse[];
   className?: string;
 }) {
-  const { currentAuditId, setCurrentAuditId } = useAuditContext();
+  const { currentAuditId, setCurrentAuditId, courseMap } = useAuditContext();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [preview, setPreview] = useState<Preview>({ status: "idle" });
   // courses added from this list, shown with a check instead of a plus
   const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
+  const inAuditIds = useMemo(
+    () => findCoursesInAudit(courses, Object.values(courseMap)),
+    [courses, courseMap],
+  );
+  const isAdded = (course: CatalogCourse) =>
+    addedIds.has(course.uniqueId) || inAuditIds.has(course.uniqueId);
   const latest = useRef(0);
   // refs, not state, so a double click in the same frame is still caught
   const shownCourse = useRef<number | null>(null);
@@ -66,7 +116,7 @@ export default function CoursePreviewList({
     // the course already loading or shown, clicking another one still switches
     if (shownCourse.current === course.uniqueId) return;
     // already in the plan, so there is nothing to preview
-    if (addedIds.has(course.uniqueId)) return;
+    if (isAdded(course)) return;
     shownCourse.current = course.uniqueId;
     const request = ++latest.current;
     const auditId = currentAuditId;
@@ -157,7 +207,7 @@ export default function CoursePreviewList({
             loading={
               preview.status === "loading" && course.uniqueId === selectedId
             }
-            added={addedIds.has(course.uniqueId)}
+            added={isAdded(course)}
             onClick={() => void previewCourse(course)}
             className={cn(
               "w-full",

@@ -42,6 +42,7 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
       {...props}
       ref={ref}
       aria-disabled={loading || added || undefined}
+      title={added ? "Already in your plan" : undefined}
       className={cn(
         "group relative bg-background rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
         className,
@@ -69,7 +70,7 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
             <CheckCircleIcon
               size={24}
               weight="fill"
-              aria-label="Added to plan"
+              aria-label="Already in your plan"
               className="text-dap-plan-green-dark"
             />
           ) : (
