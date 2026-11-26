@@ -19,7 +19,6 @@ function normalize(text: string): string {
   return text.replace(/\s+/g, " ").trim().toUpperCase();
 }
 
-// Code and title together, since topics courses share one code.
 function courseKey(code: string, title: string): string {
   return `${normalize(code)}|${normalize(title)}`;
 }
