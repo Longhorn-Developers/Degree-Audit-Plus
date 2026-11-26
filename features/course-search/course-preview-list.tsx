@@ -9,6 +9,7 @@ import { useAuditContext } from "@/features/audit/audit-provider";
 import { mapCatalogCourseToPreview } from "@/features/catalog/catalog-course-mappers";
 import { sendRuntimeMessage, type CoursePreview } from "@/lib/browser/messages";
 import { capPercentage, cn } from "@/lib/utils";
+import { CheckIcon, InfoIcon, MinusIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import CourseCard from "./course-card";
 import { getErrorMessage } from "./error-messages";
@@ -22,6 +23,7 @@ type Preview =
   | { status: "done"; result: CoursePreview; auditId: string }
   | { status: "adding"; result: CoursePreview; auditId: string }
   | { status: "added" }
+  | { status: "taken" }
   | { status: "error"; error: string };
 
 // A list of courses. Clicking one asks UT what it would fulfill and shows the
@@ -88,11 +90,13 @@ export default function CoursePreviewList({
     // A newer click owns the panel now.
     if (request !== latest.current) return;
     if (!response?.success) shownCourse.current = null;
-    setPreview(
-      response?.success
-        ? { status: "done", result: response, auditId }
-        : { status: "error", error: getErrorMessage(response?.error) },
-    );
+    if (response?.success) {
+      setPreview({ status: "done", result: response, auditId });
+    } else if (response?.error === "ALREADY_TAKEN") {
+      setPreview({ status: "taken" });
+    } else {
+      setPreview({ status: "error", error: getErrorMessage(response?.error) });
+    }
   };
 
   const acceptPreview = async (result: CoursePreview, auditId: string) => {
@@ -156,6 +160,15 @@ function listCourses(codes: string[]): string {
   return `${codes.slice(0, -1).join(", ")} and ${codes[codes.length - 1]}`;
 }
 
+function InfoBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-md border border-gray-400 bg-gray-50 px-3 py-2 text-sm text-text">
+      <InfoIcon size={18} className="shrink-0 text-gray-500" />
+      <p>{children}</p>
+    </div>
+  );
+}
+
 function PreviewResult({
   preview,
   onAccept,
@@ -167,13 +180,14 @@ function PreviewResult({
 
   if (preview.status === "loading") {
     return (
+      <p className="mt-4 text-sm text-text">Checking degree requirements...</p>
+    );
+  }
+
+  if (preview.status === "taken") {
+    return (
       <div className="mt-4">
-        <p className="text-sm text-text mb-2">
-          Checking degree requirements...
-        </p>
-        <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-          <div className="h-full w-2/3 rounded-full bg-dap-plan-green animate-pulse" />
-        </div>
+        <InfoBox>You've taken this class already</InfoBox>
       </div>
     );
   }
@@ -197,30 +211,46 @@ function PreviewResult({
   const afterFormattedPercentage = capPercentage(progress.after);
 
   return (
-    <div className="mt-4 space-y-1 rounded-md border border-dap-plan-green bg-dap-plan-green/10 px-4 py-3 text-sm text-text">
-      <p className="text-xs">Compared with your {degree} audit</p>
+    <div className="mt-4 space-y-2 text-sm text-text">
       {rules.length === 0 ? (
-        <p>Does not count toward any requirement.</p>
+        <InfoBox>Doesn't fulfill any degree requirements</InfoBox>
       ) : (
         rules.map((rule) => {
           // UT can move another course off a rule to make room for this one.
           const change = rule.appliedAfter - rule.appliedBefore;
+          const adds = change > 0;
+          const Icon = adds ? CheckIcon : MinusIcon;
           return (
-            <p key={`${rule.requirement}|${rule.rule}`}>
-              {change > 0 ? "Adds" : "Removes"} {Math.abs(change)}{" "}
-              {rule.unit === "hours" ? "credit hour" : "course"}
-              {Math.abs(change) === 1 ? "" : "s"} {change > 0 ? "to" : "from"}{" "}
-              <span className="font-semibold">
+            <div
+              key={`${rule.requirement}|${rule.rule}`}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md border px-3 py-2",
+                adds
+                  ? "border-dap-plan-green bg-dap-plan-green/10"
+                  : "border-gray-300 bg-gray-50",
+              )}
+            >
+              <Icon
+                size={18}
+                className={cn(
+                  "shrink-0",
+                  adds ? "text-dap-plan-green" : "text-gray-500",
+                )}
+              />
+              <p className="text-sm">
+                {adds ? "Adds" : "Removes"} {Math.abs(change)}{" "}
+                {rule.unit === "hours" ? "credit hour" : "course"}
+                {Math.abs(change) === 1 ? "" : "s"} {adds ? "to" : "from"}{" "}
                 {rule.requirement}: {rule.rule}
-              </span>
-            </p>
+              </p>
+            </div>
           );
         })
       )}
       <p>
-        New progress:{" "}
-        <span className="font-semibold">{afterFormattedPercentage}%</span> (was{" "}
-        {beforeFormattedPercentage}%)
+        <span className="text-gray-600">Degree progress:</span>{" "}
+        <span className="text-gray-500">{beforeFormattedPercentage}%</span> →{" "}
+        <span className="font-semibold">{afterFormattedPercentage}%</span>
       </p>
       {missingPlanned.length > 0 && (
         <p className="text-xs">
