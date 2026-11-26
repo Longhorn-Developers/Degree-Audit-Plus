@@ -102,13 +102,14 @@ const SemesterCard = (props: SemesterCardProps) => {
   // If the semester is in the past, make it non-droppable
   if (sortSemesters(props.semester, getCurrentSemester()) < 0) {
     return (
-      <SemesterCardVisual {...rest} className={cn(isDragging && GRAYED_OUT)} />
+      <SemesterCardVisual
+        {...rest}
+        className={cn(isDragging && "opacity-40")}
+      />
     );
   }
   return <DroppableSemesterCard {...props} />;
 };
-
-const GRAYED_OUT = "opacity-40";
 
 const DroppableSemesterCard = ({
   semester,
@@ -132,7 +133,7 @@ const DroppableSemesterCard = ({
         onDeleteCourse={onDeleteCourse}
         isOpen={isOpen}
         onOpenChange={setIsOpen}
-        className={cn(isOver ? "opacity-35" : "opacity-100")}
+        className={cn(isOver ? "opacity-40" : "opacity-100")}
       />
     </div>
   );
