@@ -23,7 +23,7 @@ function courseCode(course: CatalogCourse): string {
   return normalize(`${course.department} ${course.number}`);
 }
 
-// Courses the open audit already has, so adding them again would duplicate.
+// Courses the open audit already plans, so adding them again would duplicate.
 // A topics course (one code, many titles in this list) must match by title too.
 function findCoursesInAudit(
   courses: CatalogCourse[],
@@ -88,7 +88,12 @@ export default function CoursePreviewList({
   // courses added from this list, shown with a check instead of a plus
   const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
   const inAuditIds = useMemo(
-    () => findCoursesInAudit(courses, Object.values(courseMap)),
+    () =>
+      findCoursesInAudit(
+        courses,
+        // only planned courses for now; completed ones can still be retaken
+        Object.values(courseMap).filter(({ status }) => status === "Planned"),
+      ),
     [courses, courseMap],
   );
   const isAdded = (course: CatalogCourse) =>
