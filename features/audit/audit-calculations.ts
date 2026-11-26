@@ -227,6 +227,16 @@ export function findMissingPlannedCourses(
   return missing;
 }
 
+// completed or in progress, so planning it again only tests a retake
+export function hasTakenCourse(audit: CachedAuditData, code: string): boolean {
+  const wanted = normalizeCode(code);
+  return Object.values(audit.courses).some(
+    (course) =>
+      (course.status === "Completed" || course.status === "In Progress") &&
+      normalizeCode(course.code) === wanted,
+  );
+}
+
 export function hasPlannedCourse(
   audit: CachedAuditData,
   codes: string[],
@@ -255,8 +265,12 @@ function keyOf(rule: RuleProgress): string {
   return `${rule.requirement}|${rule.rule}`;
 }
 
+// GPA rules hold the GPA in appliedHours, not hours, so they're left out
 function ruleProgress(audit: CachedAuditData): RuleProgress[] {
-  return audit.requirements.flatMap((requirement) =>
+  const requirements = audit.requirements.filter(
+    (requirement) => !isGpaSection(requirement.title),
+  );
+  return requirements.flatMap((requirement) =>
     requirement.rules.map((rule) => ({
       requirement: requirement.title,
       rule: rule.text,

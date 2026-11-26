@@ -8,8 +8,9 @@ import { DEPARTMENT_MAP } from "@/features/catalog/department-map";
 import { cn } from "@/lib/utils";
 import {
   CaretLeftIcon,
-  ChalkboardTeacherIcon,
+  GraduationCapIcon,
   CircleNotchIcon,
+  MagnifyingGlassIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import CoursePreviewList from "./course-preview-list";
@@ -84,24 +85,30 @@ function CourseSearchContent({
   return (
     <div>
       <div className="mb-6">
-        <p className="font-semibold text-xl tracking-wide mb-3">Add Courses</p>
+        <p className="font-semibold text-2xl tracking-wide mb-3">Add Courses</p>
       </div>
 
       <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          name="searchQuery"
-          value={formData.searchQuery}
-          onChange={handleInputChange}
-          placeholder="Search for a specific course"
-          className="w-full px-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        />
+        <div className="relative">
+          <MagnifyingGlassIcon
+            size={20}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+          <input
+            type="text"
+            name="searchQuery"
+            value={formData.searchQuery}
+            onChange={handleInputChange}
+            placeholder="Search for a specific course"
+            className="w-full pl-10 pr-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+        </div>
 
         <div className="flex items-center gap-3 my-4" />
 
         <div className="mb-4">
           <SelectDropdown
-            icon={<ChalkboardTeacherIcon size={28} />}
+            icon={<GraduationCapIcon size={28} />}
             placeholder="Department"
             options={[ALL_DEPARTMENTS, ...DEPARTMENTS]}
             value={formData.department || ALL_DEPARTMENTS}
@@ -132,7 +139,7 @@ function CourseSearchContent({
           color="orange"
           fill="solid"
           disabled={isSearchDisabled}
-          className="px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+          className="w-full px-6 py-2 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Search
         </Button>
@@ -170,13 +177,21 @@ function CourseSearchResults({
 
   return (
     <div>
-      <button
-        onClick={onBack}
-        className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide mb-4 hover:underline rounded-lg transition-all duration-200 ease-in-out"
-      >
-        <CaretLeftIcon size={16} weight="bold" />
-        Search Results
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-start gap-1 text-dap-orange font-semibold text-[14px] uppercase tracking-wide hover:underline rounded-lg transition-all duration-200 ease-in-out"
+        >
+          <CaretLeftIcon size={16} weight="bold" />
+          Search Results
+        </button>
+        {filteredCourses.length > 0 && (
+          <span className="text-sm text-muted">
+            {filteredCourses.length}{" "}
+            {filteredCourses.length === 1 ? "result" : "results"}
+          </span>
+        )}
+      </div>
       {core && (
         <p className="mb-3 text-sm text-muted">
           Courses that fulfill{" "}
@@ -185,19 +200,25 @@ function CourseSearchResults({
       )}
       <div>
         {isGeneric && (
-          <input
-            type="text"
-            name="searchQuery"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search for a specific course"
-            className="w-full px-4 py-2 mb-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          />
+          <div className="relative mb-3">
+            <MagnifyingGlassIcon
+              size={20}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
+            <input
+              type="text"
+              name="searchQuery"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search for a specific course"
+              className="w-full pl-10 pr-4 py-2 border border-dap-border rounded-md text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-dap-orange focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
         )}
         {filteredCourses.length > 0 ? (
           <CoursePreviewList
             courses={filteredCourses}
-            className="max-h-[60vh] overflow-y-auto -mr-3 pr-5"
+            className="max-h-[60vh] overflow-y-auto -mr-6 pr-8"
           />
         ) : (
           <div className="min-h-[180px] rounded-md border border-dashed border-dap-border bg-background px-6 py-8 flex flex-col items-center justify-center text-center">

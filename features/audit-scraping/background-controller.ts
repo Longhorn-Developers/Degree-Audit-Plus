@@ -31,6 +31,7 @@ import {
   diffAudits,
   findMissingPlannedCourses,
   hasPlannedCourse,
+  hasTakenCourse,
 } from "@/features/audit/audit-calculations";
 import {
   sendMessageResponse,
@@ -299,6 +300,7 @@ async function previewCourse(
   if (!card?.degree) throw new Error("NOT_PREVIEWABLE");
   const main = await getAuditData(mainAuditId);
   if (!main) throw new Error("MAIN_AUDIT_NOT_FOUND");
+  if (hasTakenCourse(main, name)) throw new Error("ALREADY_TAKEN");
 
   console.log(`Preview ${name}: planning it and running an audit`);
   const { auditId, audit, percentage, steps } = await queueRun({
