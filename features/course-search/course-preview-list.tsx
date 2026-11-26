@@ -18,9 +18,14 @@ const PREVIEW_TERM = semesterToCcyys(nextSemester(getCurrentSemester()));
 type Preview =
   | { status: "idle" }
   | { status: "loading" }
-  // auditId is the audit the preview was compared with
-  | { status: "done"; result: CoursePreview; auditId: string }
-  | { status: "adding"; result: CoursePreview; auditId: string }
+  // auditId is the audit the preview was compared with, courseId the course
+  | { status: "done"; result: CoursePreview; auditId: string; courseId: number }
+  | {
+      status: "adding";
+      result: CoursePreview;
+      auditId: string;
+      courseId: number;
+    }
   | { status: "added" }
   | { status: "error"; error: string };
 
@@ -36,6 +41,8 @@ export default function CoursePreviewList({
   const { currentAuditId, setCurrentAuditId } = useAuditContext();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [preview, setPreview] = useState<Preview>({ status: "idle" });
+  // courses added from this list, shown with a check instead of a plus
+  const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
   const latest = useRef(0);
   // refs, not state, so a double click in the same frame is still caught
   const shownCourse = useRef<number | null>(null);
@@ -51,11 +58,14 @@ export default function CoursePreviewList({
     shownCourse.current = null;
     setSelectedId(null);
     setPreview({ status: "idle" });
+    setAddedIds(new Set());
   }, [currentAuditId]);
 
   const previewCourse = async (course: CatalogCourse) => {
     // the course already loading or shown, clicking another one still switches
     if (shownCourse.current === course.uniqueId) return;
+    // already in the plan, so there is nothing to preview
+    if (addedIds.has(course.uniqueId)) return;
     shownCourse.current = course.uniqueId;
     const request = ++latest.current;
     const auditId = currentAuditId;
@@ -90,16 +100,25 @@ export default function CoursePreviewList({
     if (!response?.success) shownCourse.current = null;
     setPreview(
       response?.success
-        ? { status: "done", result: response, auditId }
+        ? {
+            status: "done",
+            result: response,
+            auditId,
+            courseId: course.uniqueId,
+          }
         : { status: "error", error: getErrorMessage(response?.error) },
     );
   };
 
-  const acceptPreview = async (result: CoursePreview, auditId: string) => {
+  const acceptPreview = async (
+    result: CoursePreview,
+    auditId: string,
+    courseId: number,
+  ) => {
     if (isAdding.current) return;
     isAdding.current = true;
     const request = latest.current;
-    setPreview({ status: "adding", result, auditId });
+    setPreview({ status: "adding", result, auditId, courseId });
 
     // the audit the preview was made on, even if another one is open now
     const response = await sendRuntimeMessage({
@@ -113,6 +132,8 @@ export default function CoursePreviewList({
     if (response?.success) {
       acceptedAuditId.current = response.auditId;
       setCurrentAuditId(response.auditId);
+      // the course is in the plan even if a newer click owns the panel
+      setAddedIds((ids) => new Set(ids).add(courseId));
     }
 
     if (request !== latest.current) return;
@@ -135,6 +156,7 @@ export default function CoursePreviewList({
             loading={
               preview.status === "loading" && course.uniqueId === selectedId
             }
+            added={addedIds.has(course.uniqueId)}
             onClick={() => void previewCourse(course)}
             className={cn(
               "w-full",
@@ -145,7 +167,9 @@ export default function CoursePreviewList({
       </div>
       <PreviewResult
         preview={preview}
-        onAccept={(result, auditId) => void acceptPreview(result, auditId)}
+        onAccept={(result, auditId, courseId) =>
+          void acceptPreview(result, auditId, courseId)
+        }
       />
     </div>
   );
@@ -161,7 +185,7 @@ function PreviewResult({
   onAccept,
 }: {
   preview: Preview;
-  onAccept: (result: CoursePreview, auditId: string) => void;
+  onAccept: (result: CoursePreview, auditId: string, courseId: number) => void;
 }) {
   if (preview.status === "idle") return null;
 
@@ -241,7 +265,9 @@ function PreviewResult({
         type="button"
         fill="solid"
         disabled={adding}
-        onClick={() => onAccept(preview.result, preview.auditId)}
+        onClick={() =>
+          onAccept(preview.result, preview.auditId, preview.courseId)
+        }
         className="mt-2 w-full h-10 bg-dap-plan-green hover:bg-dap-plan-green-hover text-white border-none rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {adding ? "Adding..." : "Add to plan"}

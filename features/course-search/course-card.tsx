@@ -1,6 +1,7 @@
 import type { CourseCode } from "@/domain/course";
 import { cn, getColorByCourseCode } from "@/lib/utils";
 import {
+  CheckCircleIcon,
   CircleNotchIcon,
   DotsSixVerticalIcon,
   PlusCircleIcon,
@@ -18,23 +19,35 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   showDots?: boolean;
   type?: "add";
   loading?: boolean;
+  // type "add" only: the course was added, so show a check instead of a plus
+  added?: boolean;
   onRemove?: () => void;
 }
 
 const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
   (
-    { course, className, showDots = false, type, loading, onRemove, ...props },
+    {
+      course,
+      className,
+      showDots = false,
+      type,
+      loading,
+      added,
+      onRemove,
+      ...props
+    },
     ref,
   ) => (
     <div
       {...props}
       ref={ref}
-      aria-disabled={loading || undefined}
+      aria-disabled={loading || added || undefined}
       className={cn(
         "group relative bg-background rounded-md flex items-stretch overflow-hidden border-2 border-dap-border transition-all duration-200 hover:shadow-md hover:border-gray-300 cursor-pointer",
         className,
         loading &&
           "opacity-50 cursor-not-allowed border-dap-border hover:shadow-none hover:border-dap-border",
+        added && "cursor-default hover:shadow-none",
       )}
     >
       <div
@@ -52,6 +65,13 @@ const CourseCard = forwardRef<HTMLDivElement, CourseCardProps>(
         <div className="flex items-center justify-center px-3">
           {loading ? (
             <CircleNotchIcon size={24} className="text-text animate-spin" />
+          ) : added ? (
+            <CheckCircleIcon
+              size={24}
+              weight="fill"
+              aria-label="Added to plan"
+              className="text-dap-plan-green-dark"
+            />
           ) : (
             <PlusCircleIcon size={24} className="text-700" />
           )}
