@@ -58,7 +58,8 @@ export default function CoursePreviewList({
     shownCourse.current = null;
     setSelectedId(null);
     setPreview({ status: "idle" });
-    setAddedIds(new Set());
+    // addedIds stays: the course is on the UT planner whichever audit shows,
+    // and an add can switch audits more than once before history catches up
   }, [currentAuditId]);
 
   const previewCourse = async (course: CatalogCourse) => {
