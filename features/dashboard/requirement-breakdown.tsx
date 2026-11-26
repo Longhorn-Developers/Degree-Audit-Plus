@@ -3,7 +3,7 @@ import { HStack, VStack } from "@/components/ui/stack";
 import type { RequirementRule } from "@/domain/audit";
 import type { Course, PlannableStatus } from "@/domain/course";
 import { Progress, RequirementProgressUnit } from "@/domain/progress";
-import { CATEGORY_COLORS, cn } from "@/lib/utils";
+import { CATEGORY_COLORS, cn, toPercent } from "@/lib/utils";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -13,12 +13,10 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import EyeIcon from "@/assets/svgs/Eye.svg";
-import { useCourseModalContext } from "@/features/course-search/course-modal-provider";
+import { useCourseSearchContext } from "@/features/course-search/course-search-provider";
 import { useAuditContext } from "@/features/audit/audit-provider";
-import {
-  isCoreSection,
-  isCreditSection,
-} from "@/features/audit/audit-calculations";
+import { getRulePlannedProgress } from "@/features/audit/audit-calculations";
+import { getCoreAreaFromRequirementRule } from "@/features/course-search/core-area-from-rule";
 
 type RequirementCompletionState = "completed" | "not-started" | "in-progress";
 type ProgressLabelUnit = RequirementProgressUnit | "progress";
@@ -166,9 +164,6 @@ const parseRequirementCode = (
   return { code: text, description: "" };
 };
 
-const isCoreOrCreditSection = (title: string): boolean =>
-  isCoreSection(title) || isCreditSection(title);
-
 // Individual requirement row with expandable courses
 const RequirementRow = ({
   requirement,
@@ -177,15 +172,20 @@ const RequirementRow = ({
   requirement: RequirementRule;
   requirementTitle: string;
 }) => {
-  const { getCourseById } = useAuditContext();
-  const { openModal } = useCourseModalContext();
+  const { getCourseById, courseMap } = useAuditContext();
+  const { showFulfillingCourses } = useCourseSearchContext();
 
   const courses = requirement.courses.map((courseId) =>
     getCourseById(courseId),
   );
+  // planned courses count as done, same as UT
+  const applied =
+    requirement.appliedHours + getRulePlannedProgress(requirement, courseMap);
   const { code, description } = parseRequirementCode(requirement.text);
   const [isExpanded, setIsExpanded] = useState(false);
-  const showActionButton = isCoreOrCreditSection(requirementTitle);
+  const showActionButton =
+    getCoreAreaFromRequirementRule(requirementTitle, requirement.text) !==
+      null && applied < requirement.requiredHours;
 
   return (
     <div className="border border-gray-200 rounded-lg mb-3 last:mb-0 overflow-hidden">
@@ -195,11 +195,11 @@ const RequirementRow = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <RequirementStatusIcon
-          current={requirement.appliedHours}
+          current={applied}
           total={requirement.requiredHours}
         />
         <VStack gap={0} className="flex-1 text-left">
-          <span className="text-[20.25px] font-medium leading-normal text-text">
+          <span className="text-[20.25px] font-semibold leading-normal text-text">
             {code}
           </span>
           <span className="text-base leading-normal tracking-[0.32px] text-text mt-0.5">
@@ -208,7 +208,7 @@ const RequirementRow = ({
         </VStack>
         <HStack y="middle" gap={3} className="self-center">
           <RequirementBadge
-            current={requirement.appliedHours}
+            current={applied}
             total={requirement.requiredHours}
             unit={requirement.progressUnit ?? "hours"}
           />
@@ -233,7 +233,7 @@ const RequirementRow = ({
                 fill="solid"
                 className="bg-dap-orange hover:opacity-90 text-white border-none w-max px-[24px] h-[40px] rounded-md font-semibold text-base flex items-center justify-center gap-[12px]"
                 onClick={() =>
-                  openModal({
+                  showFulfillingCourses({
                     requirementTitle,
                     ruleTitle: requirement.text,
                   })
@@ -245,7 +245,7 @@ const RequirementRow = ({
                   className="w-5 h-5"
                   aria-hidden="true"
                 />
-                See Fufilling Courses
+                See Fulfilling Courses
               </Button>
             </div>
           )}
@@ -266,7 +266,7 @@ const ProgressBar = ({
   colorIndex?: number;
 }) => {
   const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
-  const percentage = Math.min((current / total) * 100, 100);
+  const percentage = toPercent(current, total);
 
   const trackColor = color.rgb.replace("rgb", "rgba").replace(")", ", 0.2)");
 

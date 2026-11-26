@@ -5,8 +5,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { HStack, VStack } from "@/components/ui/stack";
 import DegreeAuditPage from "@/features/dashboard/degree-audit-page";
-import CourseAddModal from "@/features/course-search/course-add-modal";
-import CourseModalContextProvider from "@/features/course-search/course-modal-provider";
+import CourseSearchContextProvider from "@/features/course-search/course-search-provider";
 import DegreePlannerPage from "@/features/planner/degree-planner-page";
 import AuditContextProvider from "@/features/audit/audit-provider";
 import {
@@ -22,13 +21,12 @@ const App = () => {
     <PreferencesProvider>
       <div className="min-h-screen bg-background text-text">
         <AuditContextProvider>
-          <CourseModalContextProvider>
+          <CourseSearchContextProvider>
             <HStack fill className="w-screen" gap={0}>
               <Sidebar />
               <MainContent />
             </HStack>
-            <CourseAddModal />
-          </CourseModalContextProvider>
+          </CourseSearchContextProvider>
         </AuditContextProvider>
       </div>
     </PreferencesProvider>
@@ -48,6 +46,11 @@ const MainContent = () => {
           "ml-0": !sidebarIsOpen,
         },
       )}
+      style={
+        {
+          "--sidebar-width": sidebarIsOpen ? "365px" : "0px",
+        } as React.CSSProperties
+      }
     >
       <Navbar />
       <VStack

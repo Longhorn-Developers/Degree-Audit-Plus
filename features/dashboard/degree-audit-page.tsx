@@ -8,6 +8,7 @@ import {
 } from "@/features/audit/audit-calculations";
 import { groupAuditSections } from "./section-groups";
 import DegreeSidePanel from "./degree-side-panel";
+import PlannerTestPanel from "./planner-test-panel";
 import { CreditHourTotalsCard, GPATotalsCard } from "./gpa-credit-cards";
 import RequirementBreakdown, {
   UnifiedDegreeCard,
@@ -63,6 +64,7 @@ const MainContent = () => {
 
   return (
     <VStack className="min-w-0 flex-1">
+      {import.meta.env.DEV && <PlannerTestPanel />}
       {pre.map((section, idx) => (
         <RequirementBreakdown
           key={section.title}

@@ -96,6 +96,9 @@ export function scrapeCourseworkTable(
       type: cells[4]?.textContent?.trim() as CourseCompletionMethod,
       hours: parseInt((cells[5] as HTMLElement).innerText, 10),
       semester: currentSemester!,
+      ...(cells[0]?.querySelector("img[alt='Future icon']")
+        ? { future: true }
+        : {}),
     };
   }
 
@@ -189,6 +192,24 @@ export function scrapeRequirementSections(
             rule.courses.push(courseId);
           }
         }
+      }
+
+      // UT counts planned courses in a rule's applied hours. The app counts
+      // planned courses on top of applied (the donut and the preview diff), so
+      // take them back out here. GPA rules hold a GPA, not hours.
+      let planned = 0;
+      for (const courseId of rule.courses) {
+        const course = courses[courseId];
+        if (course?.status !== "Planned") continue;
+        planned += rule.progressUnit === "courses" ? 1 : course.hours;
+      }
+      const isGpaRule = /gpa/i.test((cells[3] as HTMLElement).innerText);
+      if (planned > 0 && !isGpaRule) {
+        rule.appliedHours = Math.max(0, rule.appliedHours - planned);
+        rule.remainingHours = Math.max(
+          0,
+          rule.requiredHours - rule.appliedHours,
+        );
       }
 
       rules.push(rule);

@@ -7,6 +7,9 @@ import {
 } from "@phosphor-icons/react";
 import type { ActionResult } from "@/lib/browser/messages";
 import React from "react";
+import { capPercentage } from "@/lib/utils";
+import Button from "@/components/ui/button";
+import Modal from "@/components/ui/modal";
 
 export interface DegreeAuditCardProps {
   title?: string;
@@ -38,6 +41,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
   const [draftTitle, setDraftTitle] = React.useState(title ?? "");
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState("");
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -84,19 +88,14 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
     setMenuOpen(false);
   };
 
-  // Confirms, deletes on UT and locally, and shows an inline error on failure.
+  // Deletes on UT and locally, and shows an inline error on failure.
   const handleDelete = async () => {
-    if (
-      !onDelete ||
-      !window.confirm(
-        "Delete this audit from Degree Audit Plus and UT Direct? Duplicate runs of it on UT Direct are deleted too. This can't be undone.",
-      )
-    )
-      return;
+    if (!onDelete) return;
 
     setIsDeleting(true);
     const result = await onDelete();
     setIsDeleting(false);
+    setConfirmingDelete(false);
     setMenuOpen(false);
     if (result.ok) return;
 
@@ -169,7 +168,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
                   isSelected ? "text-dap-orange" : "text-white"
                 }`}
               >
-                {percentage}%
+                {capPercentage(percentage)}%
               </span>
             </div>
 
@@ -222,7 +221,7 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
             <button
               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[15px] text-dap-delete hover:bg-hover-bg disabled:opacity-50"
               disabled={isDeleting}
-              onClick={handleDelete}
+              onClick={() => setConfirmingDelete(true)}
             >
               <Trash size={20} className="shrink-0" />
               <span>{isDeleting ? "Deleting..." : "Delete Audit"}</span>
@@ -235,6 +234,30 @@ const DegreeAuditCard: React.FC<DegreeAuditCardProps> = ({
           {deleteError}
         </p>
       ) : null}
+      <Modal
+        open={confirmingDelete}
+        title="Delete audit?"
+        onClose={() => setConfirmingDelete(false)}
+        footer={
+          <>
+            <Button
+              color="black"
+              fill="outline"
+              onClick={() => setConfirmingDelete(false)}
+            >
+              Cancel
+            </Button>
+            <Button disabled={isDeleting} onClick={handleDelete}>
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-base text-text">
+          Delete this audit from Degree Audit Plus and UT Direct? Duplicate runs
+          of it on UT Direct are deleted too. This can&apos;t be undone.
+        </p>
+      </Modal>
     </div>
   );
 };

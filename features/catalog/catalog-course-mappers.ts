@@ -71,8 +71,14 @@ export function matchesCatalogQuery(
 ): boolean {
   if (!normalizedQuery) return true;
 
+  // ut puts spaces inside some department codes like C S so cs313 and cs 313 should match too
+  const codeWithoutSpaces = `${course.department}${course.number}`
+    .replace(/\s/g, "")
+    .toLowerCase();
+  const queryWithoutSpaces = normalizedQuery.replace(/\s/g, "");
+  if (codeWithoutSpaces.includes(queryWithoutSpaces)) return true;
+
   return [
-    `${course.department} ${course.number}`,
     course.fullName,
     course.courseName,
     course.instructors.map(({ fullName }) => fullName).join(" "),
