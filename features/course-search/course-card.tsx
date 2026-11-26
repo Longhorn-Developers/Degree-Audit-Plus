@@ -19,7 +19,6 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   showDots?: boolean;
   type?: "add";
   loading?: boolean;
-  // type "add" only: the course was added, so show a check instead of a plus
   added?: boolean;
   onRemove?: () => void;
 }
