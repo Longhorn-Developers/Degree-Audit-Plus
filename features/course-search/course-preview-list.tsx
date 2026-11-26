@@ -19,40 +19,23 @@ function normalize(text: string): string {
   return text.replace(/\s+/g, " ").trim().toUpperCase();
 }
 
-function courseCode(course: CatalogCourse): string {
-  return normalize(`${course.department} ${course.number}`);
+// Code and title together, since topics courses share one code.
+function courseKey(code: string, title: string): string {
+  return `${normalize(code)}|${normalize(title)}`;
 }
 
 // Courses the open audit already plans, so adding them again would duplicate.
-// A topics course (one code, many titles in this list) must match by title too.
 function findCoursesInAudit(
   courses: CatalogCourse[],
   auditCourses: { code: string; name: string }[],
 ): Set<number> {
-  const auditNames = new Map<string, Set<string>>();
-  for (const { code, name } of auditCourses) {
-    const key = normalize(code);
-    auditNames.set(
-      key,
-      (auditNames.get(key) ?? new Set()).add(normalize(name)),
-    );
-  }
-  const titlesByCode = new Map<string, Set<string>>();
-  for (const course of courses) {
-    const key = courseCode(course);
-    titlesByCode.set(
-      key,
-      (titlesByCode.get(key) ?? new Set()).add(normalize(course.courseName)),
-    );
-  }
-
+  const planned = new Set(
+    auditCourses.map(({ code, name }) => courseKey(code, name)),
+  );
   const found = new Set<number>();
   for (const course of courses) {
-    const key = courseCode(course);
-    const names = auditNames.get(key);
-    if (!names) continue;
-    const isTopic = (titlesByCode.get(key)?.size ?? 0) > 1;
-    if (!isTopic || names.has(normalize(course.courseName))) {
+    const code = `${course.department} ${course.number}`;
+    if (planned.has(courseKey(code, course.courseName))) {
       found.add(course.uniqueId);
     }
   }
