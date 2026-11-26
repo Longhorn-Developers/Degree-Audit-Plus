@@ -192,6 +192,7 @@ const SemesterDropdowns = () => {
               key={index}
               semester={semester[0] as StringSemester}
               courses={semester[1]}
+              isDragging={!!activeDragId}
               onDeleteCourse={
                 deleteState.status === "deleting"
                   ? undefined

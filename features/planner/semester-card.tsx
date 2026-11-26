@@ -21,6 +21,7 @@ interface SemesterCardProps {
   semester: StringSemester;
   courses: Course[];
   onDeleteCourse?: (courseId: CourseId) => void;
+  isDragging?: boolean;
 
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -69,7 +70,7 @@ const SemesterCardVisual = forwardRef<
                 .map((course) => (
                   <PlannerCourseCard
                     key={course.id}
-                    draggable={course.status !== "Completed"}
+                    draggable={isDeletableCourse(course)}
                     courseId={course.id}
                     className="w-full"
                     onRemove={
@@ -97,9 +98,15 @@ const SemesterCardVisual = forwardRef<
 SemesterCardVisual.displayName = "SemesterCardVisual";
 
 const SemesterCard = (props: SemesterCardProps) => {
+  const { isDragging, ...rest } = props;
   // If the semester is in the past, make it non-droppable
   if (sortSemesters(props.semester, getCurrentSemester()) < 0) {
-    return <SemesterCardVisual {...props} />;
+    return (
+      <SemesterCardVisual
+        {...rest}
+        className={cn(isDragging && "opacity-40")}
+      />
+    );
   }
   return <DroppableSemesterCard {...props} />;
 };
@@ -126,7 +133,7 @@ const DroppableSemesterCard = ({
         onDeleteCourse={onDeleteCourse}
         isOpen={isOpen}
         onOpenChange={setIsOpen}
-        className={cn(isOver ? "opacity-35" : "opacity-100")}
+        className={cn(isOver ? "opacity-40" : "opacity-100")}
       />
     </div>
   );
