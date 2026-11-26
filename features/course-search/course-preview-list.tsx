@@ -23,7 +23,6 @@ function courseKey(code: string, title: string): string {
   return `${normalize(code)}|${normalize(title)}`;
 }
 
-// Courses the open audit already plans, so adding them again would duplicate.
 function findCoursesInAudit(
   courses: CatalogCourse[],
   auditCourses: { code: string; name: string }[],
@@ -67,13 +66,11 @@ export default function CoursePreviewList({
   const { currentAuditId, setCurrentAuditId, courseMap } = useAuditContext();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [preview, setPreview] = useState<Preview>({ status: "idle" });
-  // courses added from this list, shown with a check instead of a plus
   const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
   const inAuditIds = useMemo(
     () =>
       findCoursesInAudit(
         courses,
-        // only planned courses for now; completed ones can still be retaken
         Object.values(courseMap).filter(({ status }) => status === "Planned"),
       ),
     [courses, courseMap],
@@ -95,14 +92,11 @@ export default function CoursePreviewList({
     shownCourse.current = null;
     setSelectedId(null);
     setPreview({ status: "idle" });
-    // addedIds stays: the course is on the UT planner whichever audit shows,
-    // and an add can switch audits more than once before history catches up
   }, [currentAuditId]);
 
   const previewCourse = async (course: CatalogCourse) => {
     // the course already loading or shown, clicking another one still switches
     if (shownCourse.current === course.uniqueId) return;
-    // already in the plan, so there is nothing to preview
     if (isAdded(course)) return;
     shownCourse.current = course.uniqueId;
     const request = ++latest.current;
@@ -170,7 +164,6 @@ export default function CoursePreviewList({
     if (response?.success) {
       acceptedAuditId.current = response.auditId;
       setCurrentAuditId(response.auditId);
-      // the course is in the plan even if a newer click owns the panel
       setAddedIds((ids) => new Set(ids).add(courseId));
     }
 
