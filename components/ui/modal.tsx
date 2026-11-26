@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 interface ModalProps {
   open: boolean;
@@ -15,6 +15,15 @@ export default function Modal({
   children,
   footer,
 }: ModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -23,7 +32,7 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className="bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 overflow-y-auto"
+        className="whitespace-normal bg-background rounded-md border border-dap-border shadow-2xl w-full max-w-[550px] max-h-[90vh] mx-4 overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="px-7 pt-7 pb-7">

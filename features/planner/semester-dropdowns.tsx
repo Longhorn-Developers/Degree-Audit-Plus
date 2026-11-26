@@ -1,4 +1,5 @@
 import Button from "@/components/ui/button";
+import Modal from "@/components/ui/modal";
 import { Grid } from "@/components/ui/stack";
 import { useAuditContext } from "@/features/audit/audit-provider";
 import {
@@ -39,6 +40,8 @@ const SemesterDropdowns = () => {
     status: "idle",
   });
   const [deletingId, setDeletingId] = useState<CourseId | null>(null);
+  const [confirmingId, setConfirmingId] = useState<CourseId | null>(null);
+  const confirmingCourse = confirmingId ? courseMap[confirmingId] : undefined;
 
   useEffect(() => {
     if (deletingId && !courseMap[deletingId]) setDeletingId(null);
@@ -193,9 +196,7 @@ const SemesterDropdowns = () => {
               semester={semester[0] as StringSemester}
               courses={semester[1]}
               onDeleteCourse={
-                deleteState.status === "deleting"
-                  ? undefined
-                  : (courseId) => void deleteCourse(courseId)
+                deleteState.status === "deleting" ? undefined : setConfirmingId
               }
             />
           ))}
@@ -230,6 +231,35 @@ const SemesterDropdowns = () => {
         ) : null}
       </DragOverlay>
       <DeleteCourseZone state={deleteState} />
+      <Modal
+        open={!!confirmingCourse}
+        title="Remove course?"
+        onClose={() => setConfirmingId(null)}
+        footer={
+          <>
+            <Button
+              color="black"
+              fill="outline"
+              onClick={() => setConfirmingId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmingId(null);
+                if (confirmingId) void deleteCourse(confirmingId);
+              }}
+            >
+              Remove
+            </Button>
+          </>
+        }
+      >
+        <p className="text-base text-text">
+          Remove {confirmingCourse?.code} ({confirmingCourse?.semester}) from
+          your UT planner? Your audit will rerun if it counted this course.
+        </p>
+      </Modal>
     </DndContext>
   );
 };
